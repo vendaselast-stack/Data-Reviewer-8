@@ -89,45 +89,41 @@ Histórico (últimos 6 meses): ${JSON.stringify(historicalData)}
 
 Gere previsões para os próximos 3 meses com análise de tendências.`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            forecast_months: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  month: { type: "string" },
-                  receita_bruta: { type: "number" },
-                  custos_diretos: { type: "number" },
-                  despesas_operacionais: { type: "number" },
-                  lucro_previsto: { type: "number" },
-                  margem_prevista: { type: "number" },
-                  confidence: { type: "string", enum: ["high", "medium", "low"] }
-                }
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          forecast_months: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                month: { type: "string" },
+                receita_bruta: { type: "number" },
+                custos_diretos: { type: "number" },
+                despesas_operacionais: { type: "number" },
+                lucro_previsto: { type: "number" },
+                margem_prevista: { type: "number" },
+                confidence: { type: "string", enum: ["high", "medium", "low"] }
               }
-            },
-            trend_analysis: { type: "string" },
-            growth_opportunities: {
-              type: "array",
-              items: { type: "string" }
-            },
-            risk_factors: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  factor: { type: "string" },
-                  impact: { type: "string", enum: ["high", "medium", "low"] }
-                }
-              }
-            },
-            recommendations: {
-              type: "array",
-              items: { type: "string" }
             }
+          },
+          trend_analysis: { type: "string" },
+          growth_opportunities: {
+            type: "array",
+            items: { type: "string" }
+          },
+          risk_factors: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                factor: { type: "string" },
+                impact: { type: "string", enum: ["high", "medium", "low"] }
+              }
+            }
+          },
+          recommendations: {
+            type: "array",
+            items: { type: "string" }
           }
         }
       });

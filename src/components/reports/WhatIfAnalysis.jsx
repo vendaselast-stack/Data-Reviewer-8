@@ -120,44 +120,40 @@ Atraso Pagamentos: ${payableDelay} dias
 
 Forneça análise detalhada e recomendações estratégicas.`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            scenario_analysis: {
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          scenario_analysis: {
+            type: "object",
+            properties: {
+              base_case: { type: "string" },
+              with_changes: { type: "string" },
+              optimistic: { type: "string" },
+              pessimistic: { type: "string" }
+            }
+          },
+          key_risks: {
+            type: "array",
+            items: {
               type: "object",
               properties: {
-                base_case: { type: "string" },
-                with_changes: { type: "string" },
-                optimistic: { type: "string" },
-                pessimistic: { type: "string" }
+                risk: { type: "string" },
+                probability: { type: "string", enum: ["high", "medium", "low"] },
+                impact: { type: "string" }
               }
-            },
-            key_risks: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  risk: { type: "string" },
-                  probability: { type: "string", enum: ["high", "medium", "low"] },
-                  impact: { type: "string" }
-                }
+            }
+          },
+          recommendations: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                action: { type: "string" },
+                scenario: { type: "string" },
+                priority: { type: "string", enum: ["critical", "high", "medium", "low"] }
               }
-            },
-            recommendations: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  action: { type: "string" },
-                  scenario: { type: "string" },
-                  priority: { type: "string", enum: ["critical", "high", "medium", "low"] }
-                }
-              }
-            },
-            cash_flow_impact: { type: "string" }
-          }
+            }
+          },
+          cash_flow_impact: { type: "string" }
         }
       });
 

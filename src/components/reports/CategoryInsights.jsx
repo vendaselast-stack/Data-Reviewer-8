@@ -67,57 +67,53 @@ Identifique:
 3. Oportunidades de otimização (onde há potencial de redução ou melhoria)
 4. Regras de categorização inteligentes (padrões nas descrições que podem ajudar a categorizar automaticamente futuras transações)`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            anomalies: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  category: { type: "string" },
-                  severity: { type: "string", enum: ["high", "medium", "low"] },
-                  description: { type: "string" },
-                  recommendation: { type: "string" }
-                }
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          anomalies: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                category: { type: "string" },
+                severity: { type: "string", enum: ["high", "medium", "low"] },
+                description: { type: "string" },
+                recommendation: { type: "string" }
               }
-            },
-            trends: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  category: { type: "string" },
-                  trend_type: { type: "string", enum: ["positive", "negative", "neutral"] },
-                  description: { type: "string" },
-                  impact: { type: "string" }
-                }
+            }
+          },
+          trends: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                category: { type: "string" },
+                trend_type: { type: "string", enum: ["positive", "negative", "neutral"] },
+                description: { type: "string" },
+                impact: { type: "string" }
               }
-            },
-            optimization_opportunities: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  category: { type: "string" },
-                  opportunity: { type: "string" },
-                  potential_savings: { type: "string" },
-                  action_items: { type: "array", items: { type: "string" } }
-                }
+            }
+          },
+          optimization_opportunities: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                category: { type: "string" },
+                opportunity: { type: "string" },
+                potential_savings: { type: "string" },
+                action_items: { type: "array", items: { type: "string" } }
               }
-            },
-            categorization_rules: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  pattern: { type: "string" },
-                  suggested_category: { type: "string" },
-                  confidence: { type: "string", enum: ["high", "medium", "low"] },
-                  examples: { type: "array", items: { type: "string" } }
-                }
+            }
+          },
+          categorization_rules: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                pattern: { type: "string" },
+                suggested_category: { type: "string" },
+                confidence: { type: "string", enum: ["high", "medium", "low"] },
+                examples: { type: "array", items: { type: "string" } }
               }
             }
           }

@@ -67,25 +67,21 @@ ${formData.marketComparison ? `Preços de Mercado: ${formData.marketComparison}`
 
 Forneça recomendações estratégicas de precificação.`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            recommended_strategy: { type: "string" },
-            optimal_price_range: {
-              type: "object",
-              properties: {
-                min: { type: "number" },
-                max: { type: "number" }
-              }
-            },
-            positioning: { type: "string" },
-            market_insights: { type: "string" },
-            pricing_tactics: {
-              type: "array",
-              items: { type: "string" }
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          recommended_strategy: { type: "string" },
+          optimal_price_range: {
+            type: "object",
+            properties: {
+              min: { type: "number" },
+              max: { type: "number" }
             }
+          },
+          positioning: { type: "string" },
+          market_insights: { type: "string" },
+          pricing_tactics: {
+            type: "array",
+            items: { type: "string" }
           }
         }
       });

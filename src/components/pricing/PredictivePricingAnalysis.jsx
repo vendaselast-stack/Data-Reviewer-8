@@ -35,54 +35,50 @@ Crie uma análise preditiva incluindo:
 4. Ponto ótimo de precificação
 5. Risco de cada estratégia`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            optimal_price_point: {
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          optimal_price_point: {
+            type: "object",
+            properties: {
+              price: { type: "number" },
+              expected_volume: { type: "string" },
+              expected_revenue: { type: "number" },
+              reasoning: { type: "string" }
+            }
+          },
+          demand_forecast: {
+            type: "array",
+            items: {
               type: "object",
               properties: {
+                price_point: { type: "number" },
+                estimated_demand: { type: "string" },
+                total_revenue: { type: "number" },
+                profit_margin: { type: "number" }
+              }
+            }
+          },
+          price_elasticity: {
+            type: "object",
+            properties: {
+              classification: { type: "string", enum: ["elastic", "inelastic", "unitary"] },
+              sensitivity: { type: "string" },
+              recommendations: { type: "string" }
+            }
+          },
+          pricing_strategies: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                strategy: { type: "string" },
                 price: { type: "number" },
-                expected_volume: { type: "string" },
-                expected_revenue: { type: "number" },
-                reasoning: { type: "string" }
+                expected_outcome: { type: "string" },
+                risk_level: { type: "string", enum: ["low", "medium", "high"] }
               }
-            },
-            demand_forecast: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  price_point: { type: "number" },
-                  estimated_demand: { type: "string" },
-                  total_revenue: { type: "number" },
-                  profit_margin: { type: "number" }
-                }
-              }
-            },
-            price_elasticity: {
-              type: "object",
-              properties: {
-                classification: { type: "string", enum: ["elastic", "inelastic", "unitary"] },
-                sensitivity: { type: "string" },
-                recommendations: { type: "string" }
-              }
-            },
-            pricing_strategies: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  strategy: { type: "string" },
-                  price: { type: "number" },
-                  expected_outcome: { type: "string" },
-                  risk_level: { type: "string", enum: ["low", "medium", "high"] }
-                }
-              }
-            },
-            market_positioning: { type: "string" }
-          }
+            }
+          },
+          market_positioning: { type: "string" }
         }
       });
 
