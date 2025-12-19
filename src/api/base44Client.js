@@ -1,9 +1,8 @@
 // PostgreSQL Database Client
-// Mantém a mesma interface que base44 para compatibilidade com as páginas existentes
+// Dados locais para inicialização sem dependência externa
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// Mock data para inicialização
 const mockData = {
   transactions: [
     { id: '1', date: new Date().toISOString(), description: 'Venda de Produto A', amount: 1500.00, type: 'income', category: 'Vendas' },
@@ -77,11 +76,11 @@ export const base44 = {
   },
   auth: {
     user: {
-      id: 'mock-user-id',
-      name: 'Usuário Demo',
-      email: 'demo@financaspro.com'
+      id: 'user-id',
+      name: 'Usuário',
+      email: 'user@app.com'
     },
-    logout: async () => { console.log('Mock logout'); }
+    logout: async () => { console.log('Logout'); }
   },
   integrations: {
     Core: {

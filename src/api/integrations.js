@@ -1,5 +1,8 @@
 import { base44 } from './base44Client';
 
+
+
+
 export const Core = base44.integrations.Core;
 
 export const InvokeLLM = base44.integrations.Core.InvokeLLM;
@@ -15,3 +18,9 @@ export const ExtractDataFromUploadedFile = base44.integrations.Core.ExtractDataF
 export const CreateFileSignedUrl = base44.integrations.Core.CreateFileSignedUrl;
 
 export const UploadPrivateFile = base44.integrations.Core.UploadPrivateFile;
+
+
+
+
+
+
