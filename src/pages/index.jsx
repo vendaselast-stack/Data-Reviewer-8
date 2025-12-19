@@ -56,24 +56,13 @@ function PagesContent() {
     return (
         <Layout currentPageName={currentPage}>
             <Routes>            
-                
-                    <Route path="/" element={<Dashboard />} />
-                
-                
-                <Route path="/Dashboard" element={<Dashboard />} />
-                
-                <Route path="/Transactions" element={<Transactions />} />
-                
-                <Route path="/Customers" element={<Customers />} />
-                
-                <Route path="/Reports" element={<Reports />} />
-                
-                <Route path="/Suppliers" element={<Suppliers />} />
-                
-                <Route path="/CashFlowForecast" element={<CashFlowForecast />} />
-                
-                <Route path="/PricingCalculator" element={<PricingCalculator />} />
-                
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/suppliers" element={<Suppliers />} />
+                <Route path="/cashflowforecast" element={<CashFlowForecast />} />
+                <Route path="/pricingcalculator" element={<PricingCalculator />} />
             </Routes>
         </Layout>
     );

@@ -1,4 +1,3 @@
-import './App.css'
 import Pages from "@/pages/index.jsx"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -11,4 +10,4 @@ function App() {
   )
 }
 
-export default App 
+export default App
