@@ -1,4 +1,4 @@
-
+import { base44 } from './base44Client';
 
 export const Transaction = base44.entities.Transaction;
 export const Customer = base44.entities.Customer;

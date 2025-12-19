@@ -8,11 +8,13 @@ import WidgetWrapper from '../components/dashboard/WidgetWrapper';
 import QuickActionsWidget from '../components/dashboard/QuickActionsWidget';
 import KPIWidget from '../components/dashboard/KPIWidget';
 import RevenueChart from '../components/dashboard/RevenueChart';
-import DashboardCustomizer from '../components/dashboard/DashboardCustomizer';
+// import DashboardCustomizer from '../components/dashboard/DashboardCustomizer';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { Transaction, Installment } from '@/api/entities';
+import { PurchaseInstallment } from '@/api/entities';
 
 export default function DashboardPage() {
-  const [customizerOpen, setCustomizerOpen] = useState(false);
+  // const [customizerOpen, setCustomizerOpen] = useState(false);
   
   // Default widget configuration
   const defaultWidgets = [
@@ -49,7 +51,7 @@ export default function DashboardPage() {
 
   const { data: purchaseInstallments } = useQuery({
     queryKey: ['purchaseInstallments'],
-    queryFn: () => entities.PurchaseInstallment.list(),
+    queryFn: () => PurchaseInstallment.list(),
     initialData: []
   });
 
@@ -255,7 +257,6 @@ export default function DashboardPage() {
           >
             <WidgetWrapper
               title={widget.title}
-              icon={widget.icon}
               isVisible={widget.visible}
               onToggle={() => handleToggleWidget(widget.id)}
               dragHandleProps={provided.dragHandleProps}
@@ -275,14 +276,14 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-slate-500 mt-1">Visão completa do seu negócio</p>
         </div>
-        <Button
+        {/* <Button
           onClick={() => setCustomizerOpen(true)}
           variant="outline"
           className="gap-2"
         >
           <Settings className="w-4 h-4" />
           Personalizar
-        </Button>
+        </Button> */}
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -300,12 +301,12 @@ export default function DashboardPage() {
         </Droppable>
       </DragDropContext>
 
-      <DashboardCustomizer
+      {/* <DashboardCustomizer
         open={customizerOpen}
         onOpenChange={setCustomizerOpen}
         widgets={widgets}
         onToggleWidget={handleToggleWidget}
-      />
+      /> */}
     </div>
   );
 }
