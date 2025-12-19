@@ -8,21 +8,21 @@
 ### Brand Colors
 
 **Primary Color - Royal Blue**
-- Hex: #004E90
-- HSL: 210° 100% 28%
-- RGB: 0, 78, 144
+- Hex: #0066CC
+- HSL: 210° 100% 40%
+- RGB: 0, 102, 204
 - Usage: Headers, primary buttons, active states, key metrics
 
-**Secondary Color - Attention Yellow**
-- Hex: #E4A81D
-- HSL: 43° 84% 50%
-- RGB: 228, 168, 29
-- Usage: Alerts, warnings, attention elements, icons for important information
+**Secondary Color - Golden Yellow**
+- Hex: #FFB800
+- HSL: 39° 100% 50%
+- RGB: 255, 184, 0
+- Usage: Accents, highlights, trends, emphasis elements, icons
 
 **Supporting Colors**
 - Success (Green): 120° 70% 50%
 - Alert/Warning (Orange): 35° 100% 50%
-- Danger/Negative (Red): 0° 76% 46% (#D32F2F) - Used for negative trends, losses, critical errors
+- Danger (Red): 0° 100% 50%
 - Neutral (Gray): 0° 0% 50%
 
 ## Design Approach: Material Design System

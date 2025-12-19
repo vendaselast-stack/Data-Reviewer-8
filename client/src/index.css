@@ -32,15 +32,15 @@
 
   --sidebar-border: 210 15% 85%;
 
-  --sidebar-primary: 210 100% 28%;
+  --sidebar-primary: 210 100% 40%;
 
   --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 43 84% 50%;
+  --sidebar-accent: 39 100% 50%;
 
   --sidebar-accent-foreground: 210 20% 10%;
 
-  --sidebar-ring: 210 100% 28%;
+  --sidebar-ring: 210 100% 40%;
 
   --popover: 0 0% 100%;
 
@@ -48,11 +48,11 @@
 
   --popover-border: 210 15% 90%;
 
-  --primary: 210 100% 28%;
+  --primary: 210 100% 40%;
 
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 43 84% 50%;
+  --secondary: 39 100% 50%;
 
   --secondary-foreground: 210 20% 10%;
 
@@ -60,17 +60,17 @@
 
   --muted-foreground: 210 10% 60%;
 
-  --accent: 43 84% 50%;
+  --accent: 39 100% 50%;
 
   --accent-foreground: 210 20% 10%;
 
-  --destructive: 0 76% 46%;
+  --destructive: 0 100% 50%;
 
   --destructive-foreground: 0 0% 100%;
 
   --input: 210 15% 92%;
-  --ring: 210 100% 28%;
-  --chart-1: 210 100% 28%;
+  --ring: 210 100% 40%;
+  --chart-1: 210 100% 40%;
   --chart-2: 120 70% 50%;
   --chart-3: 35 100% 50%;
   --chart-4: 280 70% 50%;
@@ -150,15 +150,15 @@
 
   --sidebar-border: 210 15% 25%;
 
-  --sidebar-primary: 210 100% 43%;
+  --sidebar-primary: 210 100% 55%;
 
   --sidebar-primary-foreground: 210 20% 10%;
 
-  --sidebar-accent: 43 84% 55%;
+  --sidebar-accent: 39 100% 55%;
 
   --sidebar-accent-foreground: 210 20% 10%;
 
-  --sidebar-ring: 210 100% 43%;
+  --sidebar-ring: 210 100% 55%;
 
   --popover: 210 20% 15%;
 
@@ -166,11 +166,11 @@
 
   --popover-border: 210 15% 30%;
 
-  --primary: 210 100% 43%;
+  --primary: 210 100% 55%;
 
   --primary-foreground: 210 20% 10%;
 
-  --secondary: 43 84% 55%;
+  --secondary: 39 100% 55%;
 
   --secondary-foreground: 210 20% 10%;
 
@@ -178,18 +178,18 @@
 
   --muted-foreground: 210 10% 50%;
 
-  --accent: 43 84% 55%;
+  --accent: 39 100% 55%;
 
   --accent-foreground: 210 20% 10%;
 
-  --destructive: 0 76% 56%;
+  --destructive: 0 100% 60%;
 
   --destructive-foreground: 210 20% 10%;
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
   --input: 210 15% 30%;
-  --ring: 210 100% 43%;
-  --chart-1: 210 100% 43%;
+  --ring: 210 100% 55%;
+  --chart-1: 210 100% 55%;
   --chart-2: 120 70% 55%;
   --chart-3: 35 100% 55%;
   --chart-4: 280 70% 55%;
