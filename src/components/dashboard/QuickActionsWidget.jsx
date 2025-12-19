@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, DollarSign, Users, TrendingUp, FileText, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import TransactionForm from '../transactions/TransactionForm';
 import BankStatementUpload from '../transactions/BankStatementUpload';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
+import { Transaction } from '@/api/entities';
 import { toast } from 'sonner';
 
 export default function QuickActionsWidget() {
@@ -49,31 +48,31 @@ export default function QuickActionsWidget() {
       label: 'Ver Transações',
       icon: DollarSign,
       color: 'bg-blue-600 hover:bg-blue-700',
-      link: createPageUrl('transactions')
+      link: '/transactions'
     },
     {
       label: 'Clientes',
       icon: Users,
       color: 'bg-purple-600 hover:bg-purple-700',
-      link: createPageUrl('customers')
+      link: '/customers'
     },
     {
       label: 'Fluxo de Caixa',
       icon: TrendingUp,
       color: 'bg-amber-600 hover:bg-amber-700',
-      link: createPageUrl('cashflowforecast')
+      link: '/cashflowforecast'
     },
     {
       label: 'IA Analista',
       icon: FileText,
       color: 'bg-rose-600 hover:bg-rose-700',
-      link: createPageUrl('reports')
+      link: '/reports'
     },
     {
       label: 'Calc. Preços',
       icon: Calculator,
       color: 'bg-teal-600 hover:bg-teal-700',
-      link: createPageUrl('pricingcalculator')
+      link: '/pricingcalculator'
     }
   ];
 

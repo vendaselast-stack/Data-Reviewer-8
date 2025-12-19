@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { LayoutDashboard, Receipt, Users, Settings, Menu, X, Brain, Building2, TrendingUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -33,7 +32,7 @@ export default function Layout({ children }) {
         {navigation.map((item) => {
             const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
             return (
-                <Link key={item.name} to={createPageUrl(item.path.replace('/', ''))}>
+                <Link key={item.name} to={item.path}>
                 <div
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
                     isActive 

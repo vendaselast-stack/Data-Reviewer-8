@@ -5,7 +5,6 @@ import { GripVertical, X, Eye, EyeOff } from 'lucide-react';
 
 export default function WidgetWrapper({ 
   title, 
-  icon: Icon, 
   children, 
   onRemove, 
   onToggle,
@@ -21,7 +20,6 @@ export default function WidgetWrapper({
               <GripVertical className="w-4 h-4" />
             </div>
           )}
-          {Icon && <Icon className="w-5 h-5 text-indigo-600" />}
           <CardTitle className="text-base font-semibold text-slate-900">{title}</CardTitle>
         </div>
         <div className="flex items-center gap-1">
