@@ -1,6 +1,6 @@
 import { InvokeLLM, UploadFile, ExtractDataFromUploadedFile } from '@/api/integrations';
 import React, { useState } from 'react';
-
+import { Transaction, Customer, Category, Installment, PurchaseInstallment, Purchase } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -56,13 +56,13 @@ export default function ReportsPage() {
 
   const { data: purchaseInstallments } = useQuery({
     queryKey: ['purchaseInstallments'],
-    queryFn: () => entities.PurchaseInstallment.list(),
+    queryFn: () => PurchaseInstallment.list(),
     initialData: []
   });
 
   const { data: purchases } = useQuery({
     queryKey: ['purchases'],
-    queryFn: () => entities.Purchase.list(),
+    queryFn: () => Purchase.list(),
     initialData: []
   });
 

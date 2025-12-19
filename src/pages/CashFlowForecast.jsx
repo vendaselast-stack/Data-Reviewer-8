@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { Transaction, Installment, PurchaseInstallment, Sale, Purchase } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ export default function CashFlowForecastPage() {
 
   const { data: purchaseInstallments } = useQuery({
     queryKey: ['purchaseInstallments'],
-    queryFn: () => entities.PurchaseInstallment.list(),
+    queryFn: () => PurchaseInstallment.list(),
     initialData: []
   });
 
@@ -44,7 +44,7 @@ export default function CashFlowForecastPage() {
 
   const { data: purchases } = useQuery({
     queryKey: ['purchases'],
-    queryFn: () => entities.Purchase.list(),
+    queryFn: () => Purchase.list(),
     initialData: []
   });
 
