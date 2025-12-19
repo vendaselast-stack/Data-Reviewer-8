@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { Supplier, Purchase } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,7 @@ export default function SuppliersPage() {
 
   const { data: purchases } = useQuery({
     queryKey: ['purchases'],
-    queryFn: () => entities.Purchase.list(),
+    queryFn: () => Purchase.list(),
     initialData: []
   });
 
