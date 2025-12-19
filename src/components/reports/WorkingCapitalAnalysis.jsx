@@ -65,25 +65,21 @@ export default function WorkingCapitalAnalysis({ transactions, saleInstallments,
 
 Forneça recomendações específicas para melhorar a gestão do capital de giro.`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            assessment: { type: "string" },
-            recommendations: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  action: { type: "string" },
-                  impact: { type: "string" },
-                  priority: { type: "string", enum: ["high", "medium", "low"] }
-                }
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          assessment: { type: "string" },
+          recommendations: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                action: { type: "string" },
+                impact: { type: "string" },
+                priority: { type: "string", enum: ["high", "medium", "low"] }
               }
-            },
-            risk_level: { type: "string", enum: ["low", "medium", "high"] }
-          }
+            }
+          },
+          risk_level: { type: "string", enum: ["low", "medium", "high"] }
         }
       });
 

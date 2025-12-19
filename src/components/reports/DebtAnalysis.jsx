@@ -93,26 +93,22 @@ export default function DebtAnalysis({ transactions, purchases, purchaseInstallm
 
 Forneça uma análise detalhada e recomendações para gestão de endividamento.`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            overall_assessment: { type: "string" },
-            health_score: { type: "string", enum: ["excellent", "good", "fair", "poor", "critical"] },
-            key_concerns: {
-              type: "array",
-              items: { type: "string" }
-            },
-            recommendations: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  strategy: { type: "string" },
-                  timeline: { type: "string" },
-                  expected_impact: { type: "string" }
-                }
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          overall_assessment: { type: "string" },
+          health_score: { type: "string", enum: ["excellent", "good", "fair", "poor", "critical"] },
+          key_concerns: {
+            type: "array",
+            items: { type: "string" }
+          },
+          recommendations: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                strategy: { type: "string" },
+                timeline: { type: "string" },
+                expected_impact: { type: "string" }
               }
             }
           }

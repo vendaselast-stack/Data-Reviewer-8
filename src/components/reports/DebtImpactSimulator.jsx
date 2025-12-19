@@ -82,44 +82,40 @@ Novo Índice de Cobertura: ${((currentMetrics.monthlyDebtPayment + monthlyPaymen
 
 Forneça análise detalhada do impacto e recomendações.`;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            viability_assessment: {
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          viability_assessment: {
+            type: "object",
+            properties: {
+              recommendation: { type: "string", enum: ["recommended", "caution", "not_recommended"] },
+              reasoning: { type: "string" },
+              score: { type: "number", description: "0-100" }
+            }
+          },
+          financial_impact: {
+            type: "object",
+            properties: {
+              cash_flow_impact: { type: "string" },
+              liquidity_impact: { type: "string" },
+              leverage_impact: { type: "string" }
+            }
+          },
+          risk_analysis: {
+            type: "array",
+            items: {
               type: "object",
               properties: {
-                recommendation: { type: "string", enum: ["recommended", "caution", "not_recommended"] },
-                reasoning: { type: "string" },
-                score: { type: "number", description: "0-100" }
+                risk_factor: { type: "string" },
+                severity: { type: "string", enum: ["high", "medium", "low"] },
+                mitigation: { type: "string" }
               }
-            },
-            financial_impact: {
-              type: "object",
-              properties: {
-                cash_flow_impact: { type: "string" },
-                liquidity_impact: { type: "string" },
-                leverage_impact: { type: "string" }
-              }
-            },
-            risk_analysis: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  risk_factor: { type: "string" },
-                  severity: { type: "string", enum: ["high", "medium", "low"] },
-                  mitigation: { type: "string" }
-                }
-              }
-            },
-            alternative_suggestions: {
-              type: "array",
-              items: { type: "string" }
-            },
-            break_even_analysis: { type: "string" }
-          }
+            }
+          },
+          alternative_suggestions: {
+            type: "array",
+            items: { type: "string" }
+          },
+          break_even_analysis: { type: "string" }
         }
       });
 

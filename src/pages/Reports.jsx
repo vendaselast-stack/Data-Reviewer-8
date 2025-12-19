@@ -139,55 +139,51 @@ export default function ReportsPage() {
         5. Alertas de anomalias se houver.
       `;
 
-      const response = await InvokeLLM({
-        prompt: prompt,
-        
-          type: "object",
-          properties: {
-            executive_summary: { type: "string" },
-            cash_flow_forecast: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  month: { type: "string", description: "Nome do mês futuro" },
-                  predicted_revenue: { type: "number" },
-                  predicted_expense: { type: "number" },
-                  reasoning: { type: "string" }
-                }
+      const response = await InvokeLLM(prompt, {
+        properties: {
+          executive_summary: { type: "string" },
+          cash_flow_forecast: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                month: { type: "string", description: "Nome do mês futuro" },
+                predicted_revenue: { type: "number" },
+                predicted_expense: { type: "number" },
+                reasoning: { type: "string" }
               }
-            },
-            expense_reduction_opportunities: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  category: { type: "string" },
-                  suggestion: { type: "string" },
-                  potential_savings: { type: "string" }
-                }
+            }
+          },
+          expense_reduction_opportunities: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                category: { type: "string" },
+                suggestion: { type: "string" },
+                potential_savings: { type: "string" }
               }
-            },
-            revenue_growth_suggestions: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  strategy: { type: "string" },
-                  rationale: { type: "string" },
-                  target_customer_segment: { type: "string" }
-                }
+            }
+          },
+          revenue_growth_suggestions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                strategy: { type: "string" },
+                rationale: { type: "string" },
+                target_customer_segment: { type: "string" }
               }
-            },
-            anomalies: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  severity: { type: "string", enum: ["high", "medium", "low"] },
-                }
+            }
+          },
+          anomalies: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                description: { type: "string" },
+                severity: { type: "string", enum: ["high", "medium", "low"] },
               }
             }
           }
