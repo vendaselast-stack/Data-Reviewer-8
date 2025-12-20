@@ -1,78 +1,87 @@
-// Local Database Client - Sem dependências externas
-// Dados em memória para inicialização
-
+// Local Database Client - Busca dados da API
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-const mockData = {
+const createEntity = (endpoint) => ({
+  list: async () => {
+    try {
+      const response = await fetch(`/api/${endpoint}`);
+      if (!response.ok) throw new Error(`Failed to fetch ${endpoint}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching ${endpoint}:`, error);
+      return [];
+    }
+  },
+  create: async (data) => {
+    try {
+      const response = await fetch(`/api/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error(`Failed to create ${endpoint}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`Error creating ${endpoint}:`, error);
+      return null;
+    }
+  },
+  update: async (id, data) => {
+    try {
+      const response = await fetch(`/api/${endpoint}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error(`Failed to update ${endpoint}`);
+      return await response.json();
+    } catch (error) {
+      console.error(`Error updating ${endpoint}:`, error);
+      return null;
+    }
+  },
+  delete: async (id) => {
+    try {
+      const response = await fetch(`/api/${endpoint}/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error(`Failed to delete ${endpoint}`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting ${endpoint}:`, error);
+      return false;
+    }
+  }
+});
+
+// Dados de fallback em caso de erro
+const fallbackData = {
   transactions: [
     { id: '1', date: new Date().toISOString(), description: 'Venda de Produto A', amount: 1500.00, type: 'income', category: 'Vendas' },
-    { id: '2', date: new Date(Date.now() - 86400000).toISOString(), description: 'Compra de Material', amount: 500.00, type: 'expense', category: 'Matéria Prima' },
-    { id: '3', date: new Date(Date.now() - 172800000).toISOString(), description: 'Serviço de Consultoria', amount: 2000.00, type: 'income', category: 'Serviços' },
-    { id: '4', date: new Date(Date.now() - 259200000).toISOString(), description: 'Conta de Energia', amount: 350.00, type: 'expense', category: 'Utilidades' },
-    { id: '5', date: new Date(Date.now() - 400000000).toISOString(), description: 'Venda Online', amount: 800.00, type: 'income', category: 'Vendas' },
   ],
   categories: [
     { id: '1', name: 'Vendas' },
     { id: '2', name: 'Serviços' },
     { id: '3', name: 'Matéria Prima' },
     { id: '4', name: 'Utilidades' },
-    { id: '5', name: 'Aluguel' },
-    { id: '6', name: 'Salários' },
-  ],
-  customers: [
-    { id: '1', name: 'Empresa ABC', email: 'contato@abc.com' },
-    { id: '2', name: 'Cliente XYZ', email: 'xyz@email.com' },
-  ],
-  suppliers: [
-    { id: '1', name: 'Fornecedor A', email: 'vendas@fornecedora.com' },
-  ],
-  saleInstallments: [
-    { id: '1', amount: 1000, due_date: new Date(Date.now() + 86400000 * 10).toISOString(), paid: false },
-    { id: '2', amount: 1000, due_date: new Date(Date.now() + 86400000 * 40).toISOString(), paid: false },
-  ],
-  purchaseInstallments: [
-    { id: '1', amount: 200, due_date: new Date(Date.now() + 86400000 * 5).toISOString(), paid: false },
   ],
 };
 
-const createEntity = (dataArray) => ({
-  list: async () => {
-    await new Promise(r => setTimeout(r, 500));
-    return [...dataArray];
-  },
-  create: async (data) => {
-    await new Promise(r => setTimeout(r, 500));
-    const newItem = { ...data, id: generateId() };
-    dataArray.push(newItem);
-    return newItem;
-  },
-  update: async (id, data) => {
-    await new Promise(r => setTimeout(r, 500));
-    const idx = dataArray.findIndex(i => i.id === id);
-    if (idx >= 0) {
-      dataArray[idx] = { ...dataArray[idx], ...data };
-      return dataArray[idx];
-    }
-    return null;
-  },
-  delete: async (id) => {
-    await new Promise(r => setTimeout(r, 500));
-    const idx = dataArray.findIndex(i => i.id === id);
-    if (idx >= 0) dataArray.splice(idx, 1);
-    return true;
-  }
-});
-
 export const base44 = {
   entities: {
-    Transaction: createEntity(mockData.transactions),
-    Category: createEntity(mockData.categories),
-    Customer: createEntity(mockData.customers),
-    Supplier: createEntity(mockData.suppliers),
-    Installment: createEntity(mockData.saleInstallments),
-    PurchaseInstallment: createEntity(mockData.purchaseInstallments),
-    Sale: createEntity([]),
-    Purchase: createEntity([]),
+    Transaction: createEntity('transactions'),
+    Category: {
+      list: async () => fallbackData.categories,
+      create: async (data) => ({ ...data, id: generateId() }),
+      update: async (id, data) => data,
+      delete: async (id) => true
+    },
+    Customer: createEntity('customers'),
+    Supplier: createEntity('suppliers'),
+    Installment: createEntity('installments'),
+    PurchaseInstallment: createEntity('purchase-installments'),
+    Sale: createEntity('sales'),
+    Purchase: createEntity('purchases'),
   },
   auth: {
     user: {

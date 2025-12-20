@@ -12,6 +12,14 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Middleware to prevent Vite from intercepting API routes
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      return next();
+    }
+    next();
+  });
+
   // Customer routes
   app.get("/api/customers", async (req, res) => {
     try {
@@ -158,6 +166,11 @@ export async function registerRoutes(
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch cash flows" });
     }
+  });
+
+  // Fallback for 404 API routes
+  app.all("/api/*", (req, res) => {
+    res.status(404).json({ error: "API route not found" });
   });
 
   return httpServer;
