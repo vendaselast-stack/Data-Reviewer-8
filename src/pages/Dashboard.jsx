@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, Wallet, Users, Plus, ChevronRight } from 'lucide-react';
 import { subMonths, startOfMonth, format, isAfter, isBefore } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import KPIWidget from '../components/dashboard/KPIWidget';
 import RevenueChart from '../components/dashboard/RevenueChart';
 import QuickActionsFAB from '../components/dashboard/QuickActionsFAB';
@@ -213,10 +214,7 @@ export default function DashboardPage() {
                         <div className="min-w-0">
                           <p className="font-medium text-foreground truncate text-xs">{t.description}</p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(t.date).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: 'short'
-                            }).replace('.', '')}
+                            {format(new Date(t.date), 'dd MMM', { locale: ptBR })}
                           </p>
                         </div>
                       </div>
