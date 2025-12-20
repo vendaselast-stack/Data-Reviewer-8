@@ -241,7 +241,7 @@ export default function CashFlowForecastPage() {
                 R$ {finalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </div>
-            <Wallet className="w-8 h-8 text-indigo-400" />
+            <Wallet className="w-8 h-8 text-blue-400" />
           </CardContent>
         </Card>
       </div>

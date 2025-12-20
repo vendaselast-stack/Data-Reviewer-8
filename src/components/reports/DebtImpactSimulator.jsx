@@ -332,12 +332,12 @@ Forneça análise detalhada do impacto e recomendações.`;
 
             {/* Alternative Suggestions */}
             {simulation.analysis.alternative_suggestions?.length > 0 && (
-              <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                <h4 className="font-semibold text-indigo-900 mb-2">Alternativas Sugeridas</h4>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">Alternativas Sugeridas</h4>
                 <ul className="space-y-1">
                   {simulation.analysis.alternative_suggestions.map((suggestion, idx) => (
-                    <li key={idx} className="text-sm text-indigo-700 flex items-start gap-2">
-                      <span className="text-indigo-600 font-bold mt-0.5">•</span>
+                    <li key={idx} className="text-sm text-blue-700 flex items-start gap-2">
+                      <span className="text-blue-600 font-bold mt-0.5">•</span>
                       {suggestion}
                     </li>
                   ))}
