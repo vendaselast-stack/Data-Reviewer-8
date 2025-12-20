@@ -98,7 +98,7 @@ export default function CustomersPage() {
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-primary hover:bg-primary">
                     <Plus className="w-4 h-4 mr-2" /> Novo Cliente
                 </Button>
             </DialogTrigger>
@@ -131,7 +131,7 @@ export default function CustomersPage() {
                         />
                     </div>
                     <div className="flex justify-end pt-4">
-                        <Button type="submit" className="bg-blue-600">Salvar Cliente</Button>
+                        <Button type="submit" className="bg-primary">Salvar Cliente</Button>
                     </div>
                 </form>
             </DialogContent>

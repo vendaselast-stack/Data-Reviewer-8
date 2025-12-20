@@ -226,7 +226,7 @@ export default function ReportsPage() {
           <Button 
             onClick={generateAnalysis} 
             disabled={isAnalyzing}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+            className="bg-primary hover:bg-primary text-white px-6"
             size="lg"
           >
             {isAnalyzing ? (
