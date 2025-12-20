@@ -204,7 +204,7 @@ export default function BankReconciliation({ open, onOpenChange, statementData, 
                 <div className="mb-4">
                   <Button
                     onClick={handleCreateAllMissing}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700"
+                    className="w-full bg-blue-600 hover:bg-blue-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Criar Todas as {matched.unmatched.length} Transações
@@ -236,7 +236,7 @@ export default function BankReconciliation({ open, onOpenChange, statementData, 
                   <Button
                     size="sm"
                     onClick={() => handleCreateMissing(item)}
-                    className="bg-indigo-600 hover:bg-indigo-700"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Criar

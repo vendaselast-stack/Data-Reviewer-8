@@ -161,7 +161,7 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
             <Button
               onClick={analyzeWithAI}
               disabled={isAnalyzing}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {isAnalyzing ? (
                 <>
@@ -224,12 +224,12 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
               </p>
             </div>
 
-            <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
-                <BarChart3 className="w-4 h-4 text-indigo-600" />
-                <p className="text-sm font-medium text-indigo-700">Pagamento Mensal</p>
+                <BarChart3 className="w-4 h-4 text-blue-600" />
+                <p className="text-sm font-medium text-blue-700">Pagamento Mensal</p>
               </div>
-              <p className="text-2xl font-bold text-indigo-700">
+              <p className="text-2xl font-bold text-blue-700">
                 R$ {metrics.monthlyDebtPayment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </div>

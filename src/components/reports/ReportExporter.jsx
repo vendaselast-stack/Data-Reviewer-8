@@ -18,7 +18,7 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
 
       // Header
       pdf.setFontSize(20);
-      pdf.setTextColor(79, 70, 229); // indigo-600
+      pdf.setTextColor(79, 70, 229); // blue-600
       pdf.text('FinançasPro', 20, yPosition);
       
       yPosition += 10;

@@ -110,7 +110,7 @@ Forneça recomendações específicas para melhorar a gestão do capital de giro
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-indigo-600" />
+                <Wallet className="w-5 h-5 text-blue-600" />
                 Análise de Capital de Giro
               </CardTitle>
               <CardDescription>
@@ -120,7 +120,7 @@ Forneça recomendações específicas para melhorar a gestão do capital de giro
             <Button
               onClick={analyzeWithAI}
               disabled={isAnalyzing}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {isAnalyzing ? (
                 <>
@@ -183,12 +183,12 @@ Forneça recomendações específicas para melhorar a gestão do capital de giro
               </p>
             </div>
 
-            <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
-                <Wallet className="w-4 h-4 text-indigo-600" />
-                <p className="text-sm font-medium text-indigo-700">Despesa Mensal Média</p>
+                <Wallet className="w-4 h-4 text-blue-600" />
+                <p className="text-sm font-medium text-blue-700">Despesa Mensal Média</p>
               </div>
-              <p className="text-2xl font-bold text-indigo-700">
+              <p className="text-2xl font-bold text-blue-700">
                 R$ {wc.avgMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </div>

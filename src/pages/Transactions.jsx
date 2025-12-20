@@ -178,12 +178,12 @@ export default function TransactionsPage() {
             <Button 
               onClick={() => setUploadOpen(true)} 
               variant="outline"
-              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              className="border-blue-200 text-blue-700 hover:bg-blue-50"
             >
               <Upload className="w-4 h-4 mr-2" />
               Importar Extrato
             </Button>
-            <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" /> Nova Transação
             </Button>
         </div>
@@ -230,7 +230,7 @@ export default function TransactionsPage() {
                     <p className="text-sm font-medium text-slate-400">Saldo Final</p>
                     <h3 className="text-xl font-bold text-white">R$ {balances.closing.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                 </div>
-                <div className="p-2 bg-indigo-500 rounded-lg text-white">
+                <div className="p-2 bg-blue-500 rounded-lg text-white">
                     <Wallet className="w-5 h-5" />
                 </div>
             </CardContent>
@@ -352,7 +352,7 @@ export default function TransactionsPage() {
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600" onClick={() => handleEdit(t)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => handleEdit(t)}>
                                             <Pencil className="w-4 h-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => handleDelete(t.id)}>
