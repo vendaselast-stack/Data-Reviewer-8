@@ -66,11 +66,27 @@ Sistema de dashboard financeiro completo com interface moderna, dark mode e comp
 - ✅ Indicadores de desempenho financeiro
 - ✅ Widgets de ações rápidas (FAB)
 - ✅ Filtro de data customizável
+- ✅ Botão "Nova Transação" com modal integrado
 
-### Gestão
+### Gestão de Transações
+- ✅ Registro e rastreamento de transações com categorias
+- ✅ Categorização com tipos (Entrada/Saída)
+- ✅ Valores automáticos (negativo para despesa, positivo para receita)
+- ✅ Criação de categorias dentro do formulário
+- ✅ Edição e deleção de transações
+- ✅ Filtro por categoria, tipo e período
+- ✅ Paginação e busca avançada
+- ✅ Modal de importação de extrato bancário
+
+### Gestão de Categorias
+- ✅ Página dedicada para gerenciar categorias
+- ✅ Configuração de tipo (Entrada/Saída) com badges coloridas
+- ✅ Criar, editar e deletar categorias
+- ✅ Validação de nome e tipo
+
+### Gestão de Clientes e Fornecedores
 - ✅ Gerenciamento de clientes com histórico de vendas
 - ✅ Gerenciamento de fornecedores com histórico de compras
-- ✅ Registro e rastreamento de transações
 
 ### Relatórios Avançados
 - ✅ Análise DRE (Demonstração de Resultado)
@@ -145,25 +161,54 @@ src/components/
 
 ## 📝 Atualizações Recentes (20/Dez/2025)
 
-### Alterações de UI/UX
-- ✅ **Padronização de Cores**: Toda paleta atualizada para azul primário
-- ✅ **Remoção de Ícones $**: Símbolos de dólar removidos de displays financeiros
-- ✅ **Botões Padronizados**: Todos os botões com cor azul e texto branco
-- ✅ **Valores Financeiros**: Formatados apenas como números em Real (R$)
+### 🎯 Sistema de Categorias e Transações - IMPLEMENTADO
+**Data**: 20 de Dezembro de 2025
 
-### Formatação Brasileira
-- ✅ `formatCurrency()` - Converte valores para R$ com separadores corretos
-- ✅ `formatDate()` - Datas formatadas com fuso horário SP
-- ✅ `getBrazilianTimezone()` - Timestamp com timezone São Paulo
-- ✅ Arquivo: `src/utils/formatters.ts`
+#### Funcionalidades Principais
+1. **Página de Categorias Completa**
+   - ✅ Nova página em `src/pages/Categories.jsx`
+   - ✅ Tabela de categorias com coluna "Tipo" (Entrada/Saída)
+   - ✅ Badges coloridas: 🟢 Verde para Entrada, 🔴 Vermelho para Saída
+   - ✅ Modal de criar/editar categorias com seleção de tipo
+   - ✅ Validação e mensagens de sucesso/erro
 
-### Commits Principais
+2. **Categorização de Transações**
+   - ✅ Cada categoria tem tipo definido: "entrada" ou "saida"
+   - ✅ Automaticamente determina se é receita (+) ou despesa (-)
+   - ✅ Valores negativos para despesas, positivos para receitas
+   - ✅ Edição de transações com amount absoluto
+
+3. **Modal de Nova Categoria**
+   - ✅ Componente dedicado: `src/components/transactions/CreateCategoryModal.jsx`
+   - ✅ Criação de categoria sem sair do formulário de transação
+   - ✅ Seleção de tipo com radio buttons e cores visuais
+   - ✅ Auto-seleção da categoria após criação
+
+4. **Formulário de Transação Melhorado**
+   - ✅ Tipo (Receita/Despesa) agora é automático via categoria
+   - ✅ Campo tipo exibido como badge (não editável, apenas informativo)
+   - ✅ Data e Status lado a lado (grid 2 colunas)
+   - ✅ Suporta edição de transações existentes
+
+#### Arquivos Criados/Modificados
+- **Criado**: `src/components/transactions/CreateCategoryModal.jsx` (novo componente)
+- **Modificado**: `src/pages/Categories.jsx` (adicionado tipo com badges)
+- **Modificado**: `src/components/transactions/TransactionForm.jsx` (integração categoria/tipo)
+
+#### Commits Associados
 ```
-9a400fc - Remove dollar sign icons from financial value displays
-5a1e258 - Update button color to match primary blue
-19f9649 - Standardize button colors across application
-da7ab65 - Add Brazilian currency and São Paulo time formatting
+3bf271a - Arrange transaction date and status fields side by side
+90d15b5 - Update category badges to use green for income and red for expenses
+5282f35 - Update categories page to include income and expense types
+a0505e1 - Add ability to categorize income and expenses on a dedicated page
+b7ea275 - Add a separate modal for creating new categories within transactions
+8669a63 - Make transaction amounts reflect category type automatically
 ```
+
+#### Fluxo de Uso
+1. Acesse "Categorias" → Crie/edite categorias definindo tipo
+2. Crie transação → Selecione categoria → Tipo aparece automático
+3. Salve → Valor é negativo (despesa) ou positivo (receita) conforme tipo
 
 ### Anterior (19/Dez/2025) - Limpeza Realizada
 - ✅ Removidos configs duplicados (vite.config.js único)
@@ -189,5 +234,6 @@ Gerenciada via Tailwind CSS com variáveis CSS customizadas em `src/index.css`
 
 ---
 
-**Última atualização**: 19/Dez/2025  
-**Sistema**: 🟢 Pronto para desenvolvimento
+**Última atualização**: 20/Dez/2025 (14h30)  
+**Sistema**: 🟢 Pronto para desenvolvimento  
+**Status do Sistema de Transações**: ✅ Completo e Funcional
