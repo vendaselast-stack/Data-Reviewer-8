@@ -31,11 +31,8 @@ export default function SuppliersPage() {
     initialData: []
   });
 
-  const { data: purchases } = useQuery({
-    queryKey: ['purchases'],
-    queryFn: () => Purchase.list(),
-    initialData: []
-  });
+  // purchases query removed
+  const purchases = [];
 
   const createMutation = useMutation({
     mutationFn: (data) => Supplier.create(data),

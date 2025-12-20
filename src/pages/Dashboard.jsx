@@ -24,17 +24,9 @@ export default function DashboardPage() {
     initialData: []
   });
 
-  const { data: saleInstallments } = useQuery({
-    queryKey: ['installments'],
-    queryFn: () => Installment.list(),
-    initialData: []
-  });
-
-  const { data: purchaseInstallments } = useQuery({
-    queryKey: ['purchaseInstallments'],
-    queryFn: () => PurchaseInstallment.list(),
-    initialData: []
-  });
+  // installments removed - use transactions instead
+  const saleInstallments = [];
+  const purchaseInstallments = [];
 
   // Calculate metrics based on date range
   const calculateMetrics = () => {
@@ -44,12 +36,12 @@ export default function DashboardPage() {
     });
 
     const totalRevenue = filteredTransactions
-      .filter(t => t.type === 'income')
-      .reduce((acc, curr) => acc + (curr.amount || 0), 0);
+      .filter(t => t.type === 'venda')
+      .reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
     
     const totalExpenses = filteredTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((acc, curr) => acc + (curr.amount || 0), 0);
+      .filter(t => t.type === 'compra')
+      .reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
 
     const netProfit = totalRevenue - totalExpenses;
 
@@ -69,10 +61,13 @@ export default function DashboardPage() {
     for (let i = 5; i >= 0; i--) {
       const date = subMonths(new Date(), i);
       const monthKey = date.toISOString().slice(0, 7);
-      const monthTrans = transactions.filter(t => t.date.startsWith(monthKey));
+      const monthTrans = transactions.filter(t => {
+        const tDate = typeof t.date === 'string' ? t.date : new Date(t.date).toISOString();
+        return tDate.startsWith(monthKey);
+      });
       
-      const income = monthTrans.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-      const expense = monthTrans.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+      const income = monthTrans.filter(t => t.type === 'venda').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+      const expense = monthTrans.filter(t => t.type === 'compra').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
 
       chartData.push({
         name: date.toLocaleString('pt-BR', { month: 'short' }).toUpperCase(),

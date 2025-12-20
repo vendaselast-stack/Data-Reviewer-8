@@ -32,12 +32,14 @@ export default function TransactionsPage() {
   const [reconciliationOpen, setReconciliationOpen] = useState(false);
   const [statementData, setStatementData] = useState(null);
 
-  // Fetch Categories
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => Category.list(),
-    initialData: []
-  });
+  // Categories not implemented, use static list
+  const categories = [
+    { id: 'venda', name: 'Venda' },
+    { id: 'compra', name: 'Compra' },
+    { id: 'devolucao', name: 'Devolução' },
+    { id: 'ajuste', name: 'Ajuste' },
+    { id: 'pagamento', name: 'Pagamento' }
+  ];
   
   const queryClient = useQueryClient();
 
