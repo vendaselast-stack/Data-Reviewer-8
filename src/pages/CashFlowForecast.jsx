@@ -24,29 +24,11 @@ export default function CashFlowForecastPage() {
     initialData: []
   });
 
-  const { data: saleInstallments } = useQuery({
-    queryKey: ['installments'],
-    queryFn: () => Installment.list(),
-    initialData: []
-  });
-
-  const { data: purchaseInstallments } = useQuery({
-    queryKey: ['purchaseInstallments'],
-    queryFn: () => PurchaseInstallment.list(),
-    initialData: []
-  });
-
-  const { data: sales } = useQuery({
-    queryKey: ['sales'],
-    queryFn: () => Sale.list(),
-    initialData: []
-  });
-
-  const { data: purchases } = useQuery({
-    queryKey: ['purchases'],
-    queryFn: () => Purchase.list(),
-    initialData: []
-  });
+  // Installments/Sales/Purchases queries removed - use transactions instead
+  const saleInstallments = [];
+  const purchaseInstallments = [];
+  const sales = [];
+  const purchases = [];
 
   const calculateCashFlow = () => {
     if (!dateRange.from || !dateRange.to) return [];
@@ -69,21 +51,21 @@ export default function CashFlowForecastPage() {
         transactions.forEach(t => {
           const tDate = parseISO(t.date);
           if (isWithinInterval(tDate, { start: monthStart, end: monthEnd })) {
-            if (t.type === 'income') {
-              revenue += t.amount;
+            if (t.type === 'venda') {
+              revenue += parseFloat(t.amount || 0);
               revenueDetails.push({
                 description: t.description,
                 amount: t.amount,
                 date: t.date,
-                category: t.category
+                category: t.type
               });
-            } else {
-              expense += t.amount;
+            } else if (t.type === 'compra') {
+              expense += parseFloat(t.amount || 0);
               expenseDetails.push({
                 description: t.description,
                 amount: t.amount,
                 date: t.date,
-                category: t.category
+                category: t.type
               });
             }
           }

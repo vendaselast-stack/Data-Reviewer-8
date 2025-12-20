@@ -62,15 +62,6 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
-  // Protect API routes from being served by Vite
-  app.use((req, res, next) => {
-    if (req.path.startsWith("/api/")) {
-      // If we got here, the API route wasn't handled
-      return res.status(404).json({ error: "API route not found" });
-    }
-    next();
-  });
-
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -85,6 +76,14 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
+    // Add API protection middleware BEFORE setting up Vite
+    // This ensures API routes are never served by Vite
+    const apiProtection = express.Router();
+    apiProtection.use((req, res) => {
+      res.status(404).json({ error: "API route not found" });
+    });
+    app.use("/api", apiProtection);
+
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }

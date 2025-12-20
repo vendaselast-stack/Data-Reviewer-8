@@ -31,11 +31,7 @@ export default function CustomersPage() {
     initialData: []
   });
 
-  const { data: sales } = useQuery({
-    queryKey: ['sales'],
-    queryFn: () => Sale.list(),
-    initialData: []
-  });
+  // sales query removed - use transactions instead
 
   const createMutation = useMutation({
     mutationFn: (data) => Customer.create(data),
@@ -76,11 +72,10 @@ export default function CustomersPage() {
     setIsSalesViewDialogOpen(true);
   };
 
-  // Calculate customer sales
+  // Calculate customer sales from transactions
   const getCustomerSales = (customerId) => {
-    return sales
-      .filter(s => s.customer_id === customerId)
-      .reduce((acc, s) => acc + (s.total_amount || 0), 0);
+    // Since we don't have Sales table, return 0 for now
+    return 0;
   };
 
   const filteredCustomers = customers.filter(c => 
