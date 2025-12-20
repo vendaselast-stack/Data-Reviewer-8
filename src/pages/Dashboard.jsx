@@ -24,10 +24,6 @@ export default function DashboardPage() {
     initialData: []
   });
 
-  // installments removed - use transactions instead
-  const saleInstallments = [];
-  const purchaseInstallments = [];
-
   // Calculate metrics based on date range
   const calculateMetrics = () => {
     const filteredTransactions = transactions.filter(t => {
@@ -47,14 +43,24 @@ export default function DashboardPage() {
 
     // Future Cash Flow (próximos 30 dias)
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
     const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const futureRevenue = saleInstallments
-      .filter(i => !i.paid && new Date(i.due_date) >= now && new Date(i.due_date) <= next30Days)
-      .reduce((sum, i) => sum + i.amount, 0);
     
-    const futureExpenses = purchaseInstallments
-      .filter(i => !i.paid && new Date(i.due_date) >= now && new Date(i.due_date) <= next30Days)
-      .reduce((sum, i) => sum + i.amount, 0);
+    const futureRevenue = transactions
+      .filter(t => {
+        const tDate = new Date(t.date);
+        tDate.setHours(0, 0, 0, 0);
+        return t.type === 'venda' && tDate >= now && tDate <= next30Days;
+      })
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+    
+    const futureExpenses = transactions
+      .filter(t => {
+        const tDate = new Date(t.date);
+        tDate.setHours(0, 0, 0, 0);
+        return t.type === 'compra' && tDate >= now && tDate <= next30Days;
+      })
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
 
     // Chart data - últimos 6 meses
     const chartData = [];
