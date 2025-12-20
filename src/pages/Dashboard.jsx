@@ -230,14 +230,12 @@ export default function DashboardPage() {
                       </span>
                     </div>
                   ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.location.href = '/transactions'}
-                  className="w-full mt-2 text-xs"
+                <a
+                  href="/transactions"
+                  className="text-primary hover:underline text-xs font-medium flex items-center justify-center mt-3 cursor-pointer"
                 >
                   Ver tudo <ChevronRight className="w-3 h-3 ml-1" />
-                </Button>
+                </a>
               </>
             ) : (
               <p className="text-center text-muted-foreground text-xs py-4">
