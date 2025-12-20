@@ -78,20 +78,21 @@ export default function QuickActionsWidget() {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {actions.map((action) => {
           const ButtonContent = (
-            <>
-              <action.icon className="w-5 h-5 mb-2" />
-              <span className="text-sm font-medium">{action.label}</span>
-            </>
+            <div className="flex flex-col items-center gap-2 w-full">
+              <action.icon className="w-6 h-6" />
+              <span className="text-sm font-medium text-center">{action.label}</span>
+            </div>
           );
 
           if (action.link) {
             return (
               <Link key={action.label} to={action.link}>
                 <Button
-                  className={`w-full h-24 flex flex-col items-center justify-center ${action.className}`}
+                  variant="outline"
+                  className="w-full h-20 flex items-center justify-center hover-elevate"
                 >
                   {ButtonContent}
                 </Button>
@@ -103,7 +104,8 @@ export default function QuickActionsWidget() {
             <Button
               key={action.label}
               onClick={action.onClick}
-              className={`w-full h-24 flex flex-col items-center justify-center ${action.className}`}
+              variant="outline"
+              className="w-full h-20 flex items-center justify-center hover-elevate"
             >
               {ButtonContent}
             </Button>
