@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Download, Search, Trash2, Pencil, Wallet, TrendingUp, TrendingDown, Upload } from 'lucide-react';
+import { Plus, Download, Search, Trash2, Pencil, Wallet, TrendingUp, TrendingDown, Upload, ChevronRight } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isBefore, parse, subDays, startOfDay, endOfDay, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TransactionForm from '../components/transactions/TransactionForm';
@@ -195,10 +195,9 @@ export default function TransactionsPage() {
             <Button 
               onClick={() => setUploadOpen(true)} 
               variant="outline"
-              className="border-blue-200 text-primary hover:bg-indigo-50"
+              size="sm"
             >
-              <Upload className="w-4 h-4 mr-2" />
-              Importar Extrato
+              Importar Extrato <ChevronRight className="w-3 h-3 ml-1" />
             </Button>
             <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }} className="bg-primary hover:bg-primary">
                 <Plus className="w-4 h-4 mr-2" /> Nova Transação
@@ -294,10 +293,10 @@ export default function TransactionsPage() {
         </div>
 
         <div className="overflow-x-auto">
-            <Table>
+            <Table className="pl-6">
                 <TableHeader className="bg-slate-50">
                     <TableRow>
-                        <TableHead>Data</TableHead>
+                        <TableHead className="pl-6">Data</TableHead>
                         <TableHead>Descrição</TableHead>
                         <TableHead>Categoria</TableHead>
                         <TableHead>Status</TableHead>
