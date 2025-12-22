@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, TrendingUp, TrendingDown, Wallet, ChevronDown, ChevronRight } from 'lucide-react';
-import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay, endOfDay, subDays } from 'date-fns';
+import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay, endOfDay, subDays, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import CashFlowPeriodFilter from '../components/dashboard/CashFlowPeriodFilter';
@@ -53,6 +53,49 @@ export default function CashFlowForecastPage() {
 
     const start = startOfDay(dateRange.startDate);
     const end = endOfDay(dateRange.endDate);
+    
+    // If range is <= 60 days, use daily granularity for smoother charts
+    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 60) {
+      const days = eachDayOfInterval({ start, end });
+      return days.map(day => {
+        const dStart = startOfDay(day);
+        const dEnd = endOfDay(day);
+        const isHistorical = dEnd < new Date();
+
+        let revenue = 0;
+        let expense = 0;
+        const revenueDetails = [];
+        const expenseDetails = [];
+
+        transactions.forEach(t => {
+          const tDate = parseISO(t.date);
+          if (isWithinInterval(tDate, { start: dStart, end: dEnd })) {
+            const amount = parseFloat(t.amount) || 0;
+            if (t.type === 'venda') {
+              revenue += amount;
+              revenueDetails.push({ description: t.description, amount, date: t.date, category: t.type });
+            } else if (t.type === 'compra') {
+              expense += amount;
+              expenseDetails.push({ description: t.description, amount, date: t.date, category: t.type });
+            }
+          }
+        });
+
+        return {
+          month: format(day, 'dd/MM', { locale: ptBR }),
+          monthKey: format(day, 'yyyy-MM-dd'),
+          receita: revenue,
+          despesa: expense,
+          saldo: revenue - expense,
+          isHistorical,
+          revenueDetails,
+          expenseDetails
+        };
+      });
+    }
+
     const months = eachMonthOfInterval({ start, end });
     
     return months.map(month => {
