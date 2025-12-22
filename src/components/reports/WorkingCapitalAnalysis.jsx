@@ -229,13 +229,13 @@ Forneça recomendações específicas para melhorar a gestão do capital de giro
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 rounded-lg border">
                 <h4 className="font-semibold text-slate-900 mb-2">Avaliação</h4>
-                <p className="text-sm text-slate-700">{analysis.assessment}</p>
+                <p className="text-sm text-slate-700">{analysis.assessment || 'Análise concluída'}</p>
               </div>
 
               <div>
                 <h4 className="font-semibold text-slate-900 mb-3">Recomendações</h4>
                 <div className="space-y-3">
-                  {analysis.recommendations.map((rec, idx) => (
+                  {Array.isArray(analysis.recommendations) && analysis.recommendations.map((rec, idx) => (
                     <div key={idx} className="p-3 bg-white rounded-lg border">
                       <div className="flex items-start justify-between mb-2">
                         <p className="font-medium text-slate-900">{rec.action}</p>
