@@ -14,87 +14,125 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
       pdf.setLanguage('pt-BR');
-      // Set default font to support UTF-8 characters
       pdf.setFont('helvetica');
       
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      let yPosition = 20;
+      const margin = 15;
+      const contentWidth = pageWidth - (margin * 2);
+      let yPosition = margin;
 
-      // Header
-      pdf.setFontSize(20);
-      pdf.setTextColor(79, 70, 229); // indigo-600
-      pdf.text('FinançasPro', 20, yPosition);
+      // Title and metadata
+      pdf.setFontSize(18);
+      pdf.setTextColor(79, 70, 229);
+      pdf.text('Relatório Financeiro Completo', margin, yPosition);
       
-      yPosition += 10;
-      pdf.setFontSize(16);
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(`Relatório ${reportType === 'dre' ? 'DRE' : 'Financeiro'}`, 20, yPosition);
-      
-      yPosition += 5;
-      pdf.setFontSize(10);
+      yPosition += 8;
+      pdf.setFontSize(9);
       pdf.setTextColor(100, 100, 100);
-      pdf.text(`Gerado em: ${formatDateTimeUTC3()}`, 20, yPosition);
+      pdf.text(`Gerado em: ${formatDateTimeUTC3()}`, margin, yPosition);
       
-      yPosition += 15;
+      yPosition += 12;
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 8;
 
-      // Capture charts from DOM
-      const chartElements = document.querySelectorAll('[data-export-chart]');
+      // Capture all visible sections from the page
+      const tabContainers = document.querySelectorAll('[role="tabpanel"]');
       
-      for (const element of chartElements) {
-        if (yPosition > pageHeight - 80) {
-          pdf.addPage();
-          yPosition = 20;
+      for (const container of tabContainers) {
+        // Check if container has visible content
+        if (container.style.display === 'none') continue;
+        
+        // Add section title
+        const tabName = container.getAttribute('aria-labelledby');
+        if (tabName) {
+          if (yPosition > pageHeight - 50) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+          
+          pdf.setFontSize(13);
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`${tabName.replace(/[_-]/g, ' ')}`, margin, yPosition);
+          yPosition += 8;
+          pdf.setFont('helvetica', 'normal');
         }
 
-        try {
-          const canvas = await html2canvas(element, {
-            scale: 2,
-            backgroundColor: '#ffffff'
-          });
-          
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = pageWidth - 40;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          pdf.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
-          yPosition += imgHeight + 10;
-        } catch (error) {
+        // Capture all charts and tables in this section
+        const elements = container.querySelectorAll('.recharts-wrapper, [data-export-chart], table');
+        
+        for (const element of elements) {
+          if (yPosition > pageHeight - 50) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+
+          try {
+            const canvas = await html2canvas(element, {
+              scale: 2,
+              backgroundColor: '#ffffff',
+              logging: false,
+              useCORS: true,
+              allowTaint: true
+            });
+            
+            const imgData = canvas.toDataURL('image/png');
+            const imgHeight = (canvas.height * contentWidth) / canvas.width;
+            
+            // Check if image fits on current page
+            if (yPosition + imgHeight > pageHeight - margin) {
+              pdf.addPage();
+              yPosition = margin;
+            }
+            
+            pdf.addImage(imgData, 'PNG', margin, yPosition, contentWidth, imgHeight);
+            yPosition += imgHeight + 8;
+          } catch (error) {
+            // Skip elements that can't be captured
+          }
         }
+
+        // Add spacing between sections
+        yPosition += 5;
       }
 
-      // Add data table if available
+      // Add summary data if available
       if (reportData?.summary) {
-        if (yPosition > pageHeight - 80) {
+        if (yPosition > pageHeight - 50) {
           pdf.addPage();
-          yPosition = 20;
+          yPosition = margin;
         }
 
-        pdf.setFontSize(14);
+        pdf.setFontSize(12);
         pdf.setTextColor(0, 0, 0);
-        pdf.text('Resumo Financeiro', 20, yPosition);
-        yPosition += 10;
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Resumo Executivo', margin, yPosition);
+        yPosition += 8;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
 
-        pdf.setFontSize(10);
         Object.entries(reportData.summary).forEach(([key, value]) => {
-          if (yPosition > pageHeight - 20) {
+          if (yPosition > pageHeight - 15) {
             pdf.addPage();
-            yPosition = 20;
+            yPosition = margin;
           }
           
           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
           const valueStr = typeof value === 'number' 
-            ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-            : value;
+            ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : String(value);
           
-          pdf.text(`${label}: ${valueStr}`, 20, yPosition);
-          yPosition += 7;
+          pdf.text(`${label}: ${valueStr}`, margin, yPosition);
+          yPosition += 6;
         });
       }
 
-      pdf.save(`relatorio-${reportType}-${formatDateUTC3()}.pdf`);
+      pdf.save(`relatorio-completo-${formatDateUTC3()}.pdf`);
       toast.success('PDF exportado com sucesso!');
     } catch (error) {
+      console.error('PDF export error:', error);
       toast.error('Erro ao exportar PDF');
     } finally {
       setIsExporting(false);
@@ -113,7 +151,7 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
         Object.entries(reportData.summary).forEach(([key, value]) => {
           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
           const valueStr = typeof value === 'number' 
-            ? value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+            ? value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : value;
           csvContent += `${label},${valueStr}\n`;
         });
@@ -136,10 +174,15 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
         });
       }
 
-      // Create blob with UTF-8 encoding (BOM marker ensures UTF-8)
+      // Create blob with UTF-8 encoding + BOM (Byte Order Mark) for Excel compatibility
       const encoder = new TextEncoder();
       const uint8Array = encoder.encode(csvContent);
-      const blob = new Blob([uint8Array], { type: 'text/csv;charset=utf-8' });
+      const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blobData = new Uint8Array(BOM.length + uint8Array.length);
+      blobData.set(BOM, 0);
+      blobData.set(uint8Array, BOM.length);
+      
+      const blob = new Blob([blobData], { type: 'text/csv;charset=utf-8' });
       
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
