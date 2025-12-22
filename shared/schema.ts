@@ -30,6 +30,7 @@ export const customers = pgTable("customers", {
   contact: text("contact"),
   email: text("email"),
   phone: text("phone"),
+  category: text("category"),
   status: text("status").notNull().default("ativo"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
@@ -40,6 +41,8 @@ export const suppliers = pgTable("suppliers", {
   contact: text("contact"),
   email: text("email"),
   phone: text("phone"),
+  cnpj: text("cnpj"),
+  category: text("category"),
   paymentTerms: text("payment_terms"),
   status: text("status").notNull().default("ativo"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
