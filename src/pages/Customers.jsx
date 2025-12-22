@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import CustomerSalesDialog from '../components/customers/CustomerSalesDialog';
 import NewSaleDialog from '../components/customers/NewSaleDialog';
 import Pagination from '../components/Pagination';
+import { formatPhoneNumber } from '@/utils/masks';
 
 export default function CustomersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -122,14 +123,17 @@ export default function CustomersPage() {
                         <Input 
                             type="email" 
                             value={newCustomer.email} 
-                            onChange={e => setNewCustomer({...newCustomer, email: e.target.value})} 
+                            onChange={e => setNewCustomer({...newCustomer, email: e.target.value})}
+                            placeholder="exemplo@email.com"
                         />
                     </div>
                     <div className="space-y-2">
                         <Label>Telefone</Label>
                         <Input 
                             value={newCustomer.phone} 
-                            onChange={e => setNewCustomer({...newCustomer, phone: e.target.value})} 
+                            onChange={e => setNewCustomer({...newCustomer, phone: formatPhoneNumber(e.target.value)})}
+                            maxLength="15"
+                            placeholder="(XX) XXXXX-XXXX"
                         />
                     </div>
                     <div className="flex justify-end pt-4">
