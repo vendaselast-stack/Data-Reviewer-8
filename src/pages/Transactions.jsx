@@ -112,17 +112,10 @@ export default function TransactionsPage() {
   const handleExport = () => {
     if (!transactions.length) return;
     
-    const categoryMap = {};
-    categories.forEach(cat => {
-      categoryMap[cat.id] = cat.name || 'Sem Categoria';
-    });
-    
-    const headers = ['Data', 'Descrição', 'Tipo', 'Categoria', 'Valor'];
+    const headers = ['Data', 'Descrição', 'Tipo', 'Valor'];
     const csvContent = [
       headers.join(','),
       ...filteredTransactions.map(t => {
-        const categoryName = t.categoryId ? (categoryMap[t.categoryId] || 'Sem Categoria') : 'Sem Categoria';
-        
         // Format date as DD/MM/YYYY (extract from ISO format YYYY-MM-DD)
         const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
         
@@ -134,7 +127,7 @@ export default function TransactionsPage() {
         const description = t.description || '';
         const type = t.type || '';
         
-        return `${dateStr},"${description}",${type},${categoryName},${formattedAmount}`;
+        return `${dateStr},"${description}",${type},${formattedAmount}`;
       })
     ].join('\n');
 
