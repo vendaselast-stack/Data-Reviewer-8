@@ -77,21 +77,21 @@ export default function DashboardPage() {
     now.setHours(0, 0, 0, 0);
     const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     
-    const futureRevenue = transactions
-      .filter(t => {
-        const tDate = new Date(t.date);
-        tDate.setHours(0, 0, 0, 0);
-        return t.type === 'venda' && tDate >= now && tDate <= next30Days;
-      })
-      .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+    const futureRevenueTransactions = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      tDate.setHours(0, 0, 0, 0);
+      return t.type === 'venda' && tDate >= now && tDate <= next30Days;
+    });
     
-    const futureExpenses = transactions
-      .filter(t => {
-        const tDate = new Date(t.date);
-        tDate.setHours(0, 0, 0, 0);
-        return t.type === 'compra' && tDate >= now && tDate <= next30Days;
-      })
-      .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+    const futureRevenue = futureRevenueTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+    
+    const futureExpensesTransactions = transactions.filter(t => {
+      const tDate = new Date(t.date);
+      tDate.setHours(0, 0, 0, 0);
+      return t.type === 'compra' && tDate >= now && tDate <= next30Days;
+    });
+    
+    const futureExpenses = futureExpensesTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
 
     // Chart data - últimos 6 meses
     const chartData = [];
@@ -119,6 +119,8 @@ export default function DashboardPage() {
       netProfit,
       futureRevenue,
       futureExpenses,
+      futureRevenueCount: futureRevenueTransactions.length,
+      futureExpensesCount: futureExpensesTransactions.length,
       chartData,
       filteredTransactions
     };
@@ -149,34 +151,39 @@ export default function DashboardPage() {
       {/* KPI Cards - 4 Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
-          title="Receita Total"
+          title="Receita Mensal"
           value={`R$ ${metrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={TrendingUp}
           trend="up"
-          trendValue="+12% vs período anterior"
+          trendValue="0.0%"
           className="text-emerald-600"
         />
         
         <KPIWidget
-          title="Despesas"
-          value={`R$ ${metrics.totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          icon={DollarSign}
-          className="text-slate-900 dark:text-white"
-        />
-
-        <KPIWidget
           title="Lucro Líquido"
           value={`R$ ${metrics.netProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          icon={Wallet}
-          className={metrics.netProfit < 0 ? "text-rose-600" : "text-slate-900 dark:text-white"}
+          icon={TrendingUp}
+          trend="up"
+          trendValue="-579.5% margem"
+          className={metrics.netProfit < 0 ? "text-rose-600" : "text-emerald-600"}
         />
 
         <KPIWidget
-          title="Clientes Ativos"
-          value={new Set(transactions.filter(t => t.type === 'venda' && t.customerId).map(t => t.customerId)).size.toString()}
-          icon={Users}
+          title="Contas a Receber"
+          value={`R$ ${metrics.futureRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+          icon={Clock}
+          trendValue={`${metrics.futureRevenueCount} parcelas`}
           trend="up"
-          trendValue="+2 vs período anterior"
+          className="text-emerald-600"
+        />
+
+        <KPIWidget
+          title="Contas a Pagar"
+          value={`R$ ${metrics.futureExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+          icon={Clock}
+          trendValue={`${metrics.futureExpensesCount} parcelas`}
+          trend="down"
+          className="text-rose-600"
         />
       </div>
 
