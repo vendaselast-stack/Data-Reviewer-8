@@ -181,7 +181,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Nova Venda - {customer?.name}</DialogTitle>
         </DialogHeader>
@@ -262,7 +262,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
                   Usar valor padrão
                 </Button>
               </div>
-              <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3 bg-slate-50">
+              <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-3 bg-slate-50 pr-2">
                 {customInstallments.map((inst, idx) => (
                   <div key={idx} className="grid grid-cols-2 gap-2 items-center bg-white p-2 rounded border">
                     <div className="space-y-2">
