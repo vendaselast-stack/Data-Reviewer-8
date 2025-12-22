@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar, ChevronDown } from 'lucide-react';
 import {
@@ -17,6 +17,7 @@ export default function CashFlowPeriodFilter({ onPeriodChange }) {
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState(null);
   const [customEnd, setCustomEnd] = useState(null);
+  const [initialized, setInitialized] = useState(false);
 
   const periodOptions = {
     today: {
@@ -84,6 +85,15 @@ export default function CashFlowPeriodFilter({ onPeriodChange }) {
       setCustomOpen(false);
     }
   };
+
+  // Initialize with last 6 months on first render
+  useEffect(() => {
+    if (!initialized) {
+      const periodData = periodOptions.last6Months.getValue();
+      onPeriodChange(periodData);
+      setInitialized(true);
+    }
+  }, [initialized, onPeriodChange]);
 
   return (
     <div className="flex items-center gap-2">

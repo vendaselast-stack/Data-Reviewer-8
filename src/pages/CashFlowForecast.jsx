@@ -28,11 +28,18 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function CashFlowForecastPage() {
-  const [dateRange, setDateRange] = useState({
-    startDate: startOfMonth(new Date()),
-    endDate: endOfMonth(new Date()),
-    label: 'Últimos 6 Meses'
-  });
+  // Initialize with last 6 months
+  const getLast6Months = () => {
+    const end = endOfMonth(new Date());
+    const start = startOfMonth(addMonths(new Date(), -5));
+    return {
+      startDate: start,
+      endDate: end,
+      label: 'Últimos 6 meses'
+    };
+  };
+
+  const [dateRange, setDateRange] = useState(getLast6Months());
   const [expandedMonths, setExpandedMonths] = useState({});
 
   const { data: transactions } = useQuery({
