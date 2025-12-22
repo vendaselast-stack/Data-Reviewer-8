@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
 import {
   customers,
   suppliers,
@@ -76,7 +76,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomers(): Promise<Customer[]> {
-    return await db.select().from(customers).orderBy(sql`${customers.createdAt} DESC`);
+    return await db.select().from(customers).orderBy(desc(customers.createdAt));
   }
 
   async getCustomer(id: string): Promise<Customer | undefined> {
@@ -112,7 +112,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSuppliers(): Promise<Supplier[]> {
-    return await db.select().from(suppliers).orderBy(sql`${suppliers.createdAt} DESC`);
+    return await db.select().from(suppliers).orderBy(desc(suppliers.createdAt));
   }
 
   async getSupplier(id: string): Promise<Supplier | undefined> {
