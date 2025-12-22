@@ -69,40 +69,36 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
 
   const createPurchaseMutation = useMutation({
     mutationFn: async (data) => {
-      const purchase = await Purchase.create({
-        supplier_id: supplier.id,
+      const categories = await Category.list();
+      const cat = categories.find(c => c.name === data.category);
+
+      const payload = {
+        supplierId: supplier.id,
+        categoryId: cat?.id,
+        type: 'compra',
+        date: new Date(data.purchase_date).toISOString(),
+        shift: 'manhã',
+        amount: String(data.total_amount),
         description: data.description,
-        total_amount: parseFloat(data.total_amount),
-        category: data.category,
-        purchase_date: data.purchase_date,
-        installments: parseInt(data.installments),
-        status: 'pending'
+        status: 'pendente'
+      };
+
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      const installmentAmount = data.installment_amount 
-        ? parseFloat(data.installment_amount) 
-        : parseFloat(data.total_amount) / parseInt(data.installments);
-
-      const installmentPromises = [];
-      for (let i = 0; i < parseInt(data.installments); i++) {
-        const dueDate = addMonths(parseISO(data.purchase_date), i);
-        installmentPromises.push(
-          PurchaseInstallment.create({
-            purchase_id: purchase.id,
-            installment_number: i + 1,
-            amount: installmentAmount,
-            due_date: format(dueDate, 'yyyy-MM-dd'),
-            paid: false
-          })
-        );
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || `HTTP ${response.status}`);
       }
 
-      await Promise.all(installmentPromises);
-      return purchase;
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchases'] });
-      queryClient.invalidateQueries({ queryKey: ['purchaseInstallments'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       toast.success('Compra registrada com sucesso!');
       setFormData({
         description: '',
