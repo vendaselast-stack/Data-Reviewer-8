@@ -154,18 +154,21 @@ export default function DashboardPage() {
           icon={TrendingUp}
           trend="up"
           trendValue="+12% vs período anterior"
+          className="text-emerald-600"
         />
         
         <KPIWidget
           title="Despesas"
           value={`R$ ${metrics.totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={DollarSign}
+          className="text-slate-900 dark:text-white"
         />
 
         <KPIWidget
           title="Lucro Líquido"
           value={`R$ ${metrics.netProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={Wallet}
+          className={metrics.netProfit < 0 ? "text-rose-600" : "text-slate-900 dark:text-white"}
         />
 
         <KPIWidget
