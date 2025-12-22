@@ -112,10 +112,17 @@ export default function TransactionsPage() {
   const handleExport = () => {
     if (!transactions.length) return;
     
-    const headers = ['Data', 'Descrição', 'Tipo', 'Valor'];
+    const categoryMap = {};
+    categories.forEach(cat => {
+      categoryMap[cat.id] = cat.name || 'Sem Categoria';
+    });
+    
+    const headers = ['Data', 'Descrição', 'Tipo', 'Categoria', 'Valor'];
     const csvContent = [
       headers.join(','),
       ...filteredTransactions.map(t => {
+        const categoryName = t.categoryId ? (categoryMap[t.categoryId] || 'Sem Categoria') : 'Sem Categoria';
+        
         // Format date as DD/MM/YYYY (extract from ISO format YYYY-MM-DD)
         const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
         
@@ -123,11 +130,13 @@ export default function TransactionsPage() {
         const amount = parseFloat(t.amount || 0);
         const formattedAmount = amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         
+        // Map transaction type to Receita/Despesa
+        const typeLabel = t.type === 'venda' ? 'Receita' : t.type === 'compra' ? 'Despesa' : t.type;
+        
         // Ensure no undefined values
         const description = t.description || '';
-        const type = t.type || '';
         
-        return `${dateStr},"${description}",${type},${formattedAmount}`;
+        return `${dateStr},"${description}",${typeLabel},${categoryName},${formattedAmount}`;
       })
     ].join('\n');
 
