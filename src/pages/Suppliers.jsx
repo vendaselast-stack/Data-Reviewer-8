@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import NewPurchaseDialog from '../components/suppliers/NewPurchaseDialog';
 import SupplierPurchasesDialog from '../components/suppliers/SupplierPurchasesDialog';
 import Pagination from '../components/Pagination';
+import { formatPhoneNumber, formatCNPJ } from '@/utils/masks';
 
 export default function SuppliersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -116,7 +117,9 @@ export default function SuppliersPage() {
                 <Label>CNPJ</Label>
                 <Input 
                   value={newSupplier.cnpj} 
-                  onChange={e => setNewSupplier({...newSupplier, cnpj: e.target.value})} 
+                  onChange={e => setNewSupplier({...newSupplier, cnpj: formatCNPJ(e.target.value)})}
+                  maxLength="18"
+                  placeholder="XX.XXX.XXX/XXXX-XX"
                 />
               </div>
               <div className="space-y-2">
@@ -125,13 +128,16 @@ export default function SuppliersPage() {
                   type="email" 
                   value={newSupplier.email} 
                   onChange={e => setNewSupplier({...newSupplier, email: e.target.value})} 
+                  placeholder="exemplo@email.com"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
                 <Input 
                   value={newSupplier.phone} 
-                  onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})} 
+                  onChange={e => setNewSupplier({...newSupplier, phone: formatPhoneNumber(e.target.value)})}
+                  maxLength="15"
+                  placeholder="(XX) XXXXX-XXXX"
                 />
               </div>
               <div className="flex justify-end pt-4">
