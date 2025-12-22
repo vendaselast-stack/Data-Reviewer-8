@@ -95,6 +95,20 @@ export default function SuppliersPage() {
       .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
   };
 
+  const getSupplierJoinDate = (supplier) => {
+    if (supplier.join_date) {
+      return format(parseISO(supplier.join_date), "MMM yyyy", { locale: ptBR });
+    }
+    
+    const supplierTransactions = transactions.filter(t => t.supplierId === supplier.id);
+    if (supplierTransactions.length > 0) {
+      const earliestDate = new Date(Math.min(...supplierTransactions.map(t => new Date(t.date))));
+      return format(earliestDate, "MMM yyyy", { locale: ptBR });
+    }
+    
+    return '-';
+  };
+
   const filteredSuppliers = suppliers.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     s.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -139,6 +153,7 @@ export default function SuppliersPage() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Contato</TableHead>
+                <TableHead>Desde</TableHead>
                 <TableHead className="text-right">Total em Compras</TableHead>
                 <TableHead className="text-right pr-6">Ações</TableHead>
               </TableRow>
@@ -163,6 +178,9 @@ export default function SuppliersPage() {
                         {s.email && <div className="flex items-center gap-2"><Mail className="w-3 h-3" /> {s.email}</div>}
                         {s.phone && <div className="flex items-center gap-2"><Phone className="w-3 h-3" /> {s.phone}</div>}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-slate-500 text-sm">
+                      {getSupplierJoinDate(s)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="text-primary600 font-semibold">
@@ -210,7 +228,7 @@ export default function SuppliersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10 text-slate-500">
+                  <TableCell colSpan={5} className="text-center py-10 text-slate-500">
                     Nenhum fornecedor encontrado.
                   </TableCell>
                 </TableRow>
