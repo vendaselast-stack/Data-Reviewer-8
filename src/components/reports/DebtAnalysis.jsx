@@ -22,18 +22,27 @@ export default function DebtAnalysis({ transactions, purchases, purchaseInstallm
     if (purchaseInstallments && purchaseInstallments.length > 0) {
       totalDebt = purchaseInstallments
         .filter(i => !i.paid)
-        .reduce((sum, i) => sum + i.amount, 0);
+        .reduce((sum, i) => {
+          const amount = typeof i.amount === 'string' ? parseFloat(i.amount) : i.amount;
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
     } else {
       // Fallback: calculate from pending purchase transactions
       totalDebt = transactions
         .filter(t => t.type === 'compra' && t.status === 'pendente')
-        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+        .reduce((sum, t) => {
+          const amount = parseFloat(t.amount || 0);
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
     }
 
     // Revenue (last 3 months)
     const revenue = transactions
       .filter(t => (t.type === 'venda' || t.type === 'income') && new Date(t.date) >= threeMonthsAgo)
-      .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+      .reduce((sum, t) => {
+        const amount = Math.abs(parseFloat(t.amount || 0));
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
 
     // Average monthly revenue
     const avgMonthlyRevenue = revenue / 3;
@@ -47,23 +56,32 @@ export default function DebtAnalysis({ transactions, purchases, purchaseInstallm
     if (purchaseInstallments && purchaseInstallments.length > 0) {
       shortTermDebt = purchaseInstallments
         .filter(i => !i.paid && new Date(i.due_date) <= threeMonthsLater)
-        .reduce((sum, i) => sum + i.amount, 0);
+        .reduce((sum, i) => {
+          const amount = typeof i.amount === 'string' ? parseFloat(i.amount) : i.amount;
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
     } else {
       // Fallback: calculate from recent pending purchases
       shortTermDebt = transactions
         .filter(t => t.type === 'compra' && t.status === 'pendente' && new Date(t.date) >= now)
-        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+        .reduce((sum, t) => {
+          const amount = parseFloat(t.amount || 0);
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
     }
 
     // Long-term debt (due after 3 months)
-    const longTermDebt = totalDebt - shortTermDebt;
+    const longTermDebt = Math.max(0, totalDebt - shortTermDebt);
 
     // Monthly debt payment
     let monthlyDebtPayment = 0;
     if (purchaseInstallments && purchaseInstallments.length > 0) {
       monthlyDebtPayment = purchaseInstallments
         .filter(i => !i.paid && new Date(i.due_date) <= addMonths(now, 1))
-        .reduce((sum, i) => sum + i.amount, 0);
+        .reduce((sum, i) => {
+          const amount = typeof i.amount === 'string' ? parseFloat(i.amount) : i.amount;
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
     } else {
       // Fallback: use portion of total debt divided by 3 months average
       monthlyDebtPayment = totalDebt > 0 ? totalDebt / 3 : 0;
@@ -78,7 +96,10 @@ export default function DebtAnalysis({ transactions, purchases, purchaseInstallm
       purchases.forEach(p => {
         const purchaseDebt = purchaseInstallments
           .filter(i => i.purchase_id === p.id && !i.paid)
-          .reduce((sum, i) => sum + i.amount, 0);
+          .reduce((sum, i) => {
+            const amount = typeof i.amount === 'string' ? parseFloat(i.amount) : i.amount;
+            return sum + (isNaN(amount) ? 0 : amount);
+          }, 0);
         
         if (purchaseDebt > 0) {
           if (!debtByCategory[p.category || 'Outros']) {
@@ -92,21 +113,24 @@ export default function DebtAnalysis({ transactions, purchases, purchaseInstallm
       const compras = transactions.filter(t => t.type === 'compra' && t.status === 'pendente');
       compras.forEach(t => {
         const category = t.category || 'Outros';
-        if (!debtByCategory[category]) {
-          debtByCategory[category] = 0;
+        const amount = parseFloat(t.amount || 0);
+        if (!isNaN(amount)) {
+          if (!debtByCategory[category]) {
+            debtByCategory[category] = 0;
+          }
+          debtByCategory[category] += amount;
         }
-        debtByCategory[category] += parseFloat(t.amount || 0);
       });
     }
 
     return {
-      totalDebt,
-      shortTermDebt,
-      longTermDebt,
-      avgMonthlyRevenue,
-      debtToRevenueRatio,
-      monthlyDebtPayment,
-      debtServiceRatio,
+      totalDebt: Math.max(0, totalDebt),
+      shortTermDebt: Math.max(0, shortTermDebt),
+      longTermDebt: Math.max(0, longTermDebt),
+      avgMonthlyRevenue: Math.max(0, avgMonthlyRevenue),
+      debtToRevenueRatio: isNaN(debtToRevenueRatio) ? 0 : debtToRevenueRatio,
+      monthlyDebtPayment: Math.max(0, monthlyDebtPayment),
+      debtServiceRatio: isNaN(debtServiceRatio) ? 0 : debtServiceRatio,
       debtByCategory
     };
   };
@@ -223,13 +247,13 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
               <div>
                 <p className="text-sm font-medium mb-1">Dívida Total</p>
                 <p className="text-3xl font-bold">
-                  R$ {metrics.totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {isNaN(metrics.totalDebt) ? '0,00' : metrics.totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
               <div>
                 <p className="text-sm font-medium mb-1">Índice de Cobertura</p>
                 <p className="text-3xl font-bold">
-                  {metrics.debtServiceRatio.toFixed(1)}%
+                  {isNaN(metrics.debtServiceRatio) ? '0,0' : metrics.debtServiceRatio.toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -243,7 +267,7 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
                 <p className="text-sm font-medium text-rose-700">Curto Prazo (3m)</p>
               </div>
               <p className="text-2xl font-bold text-rose-700">
-                R$ {metrics.shortTermDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {isNaN(metrics.shortTermDebt) ? '0,00' : metrics.shortTermDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
 
@@ -253,7 +277,7 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
                 <p className="text-sm font-medium text-amber-700">Longo Prazo</p>
               </div>
               <p className="text-2xl font-bold text-amber-700">
-                R$ {metrics.longTermDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {isNaN(metrics.longTermDebt) ? '0,00' : metrics.longTermDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
 
@@ -263,7 +287,7 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
                 <p className="text-sm font-medium text-primary">Pagamento Mensal</p>
               </div>
               <p className="text-2xl font-bold text-primary">
-                R$ {metrics.monthlyDebtPayment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {isNaN(metrics.monthlyDebtPayment) ? '0,00' : metrics.monthlyDebtPayment.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </div>
@@ -303,10 +327,11 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
             <div className="p-4 bg-white rounded-lg border">
               <p className="text-sm font-medium text-slate-600 mb-2">Índice Dívida/Receita Anual</p>
               <p className="text-3xl font-bold text-slate-900 mb-1">
-                {metrics.debtToRevenueRatio.toFixed(1)}%
+                {isNaN(metrics.debtToRevenueRatio) ? '0,0' : metrics.debtToRevenueRatio.toFixed(1)}%
               </p>
               <p className="text-xs text-slate-500">
-                {metrics.debtToRevenueRatio < 30 ? 'Excelente' :
+                {isNaN(metrics.debtToRevenueRatio) ? 'Excelente' :
+                 metrics.debtToRevenueRatio < 30 ? 'Excelente' :
                  metrics.debtToRevenueRatio < 50 ? 'Bom' :
                  metrics.debtToRevenueRatio < 70 ? 'Razoável' : 'Alto'}
               </p>
@@ -315,10 +340,11 @@ Forneça uma análise detalhada e recomendações para gestão de endividamento.
             <div className="p-4 bg-white rounded-lg border">
               <p className="text-sm font-medium text-slate-600 mb-2">Índice de Cobertura de Dívida</p>
               <p className="text-3xl font-bold text-slate-900 mb-1">
-                {metrics.debtServiceRatio.toFixed(1)}%
+                {isNaN(metrics.debtServiceRatio) ? '0,0' : metrics.debtServiceRatio.toFixed(1)}%
               </p>
               <p className="text-xs text-slate-500">
-                {metrics.debtServiceRatio < 30 ? 'Saudável (< 30%)' :
+                {isNaN(metrics.debtServiceRatio) ? 'Saudável (< 30%)' :
+                 metrics.debtServiceRatio < 30 ? 'Saudável (< 30%)' :
                  metrics.debtServiceRatio < 50 ? 'Moderado (30-50%)' : 'Alto (> 50%)'}
               </p>
             </div>
