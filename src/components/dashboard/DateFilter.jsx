@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar, ChevronDown } from 'lucide-react';
 import {
@@ -14,13 +14,14 @@ import { ptBR } from 'date-fns/locale';
 
 export default function DateFilter({ onDateRangeChange }) {
   const [dateRange, setDateRange] = useState({
-    startDate: startOfDay(new Date()),
+    startDate: startOfDay(subDays(new Date(), 29)),
     endDate: endOfDay(new Date()),
-    label: 'Hoje'
+    label: 'Últimos 30 dias'
   });
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState(null);
   const [customEnd, setCustomEnd] = useState(null);
+  const [initialized, setInitialized] = useState(false);
 
   const handlePreset = (days, label) => {
     const end = endOfDay(new Date());
@@ -42,6 +43,14 @@ export default function DateFilter({ onDateRangeChange }) {
       setCustomOpen(false);
     }
   };
+
+  // Initialize with default on first render
+  useEffect(() => {
+    if (!initialized) {
+      onDateRangeChange(dateRange);
+      setInitialized(true);
+    }
+  }, [initialized, onDateRangeChange, dateRange]);
 
   return (
     <div className="flex items-center gap-2">

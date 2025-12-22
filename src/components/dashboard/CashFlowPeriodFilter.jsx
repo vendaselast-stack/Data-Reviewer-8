@@ -13,7 +13,7 @@ import { format, subDays, subMonths, startOfDay, endOfDay, startOfMonth, endOfMo
 import { ptBR } from 'date-fns/locale';
 
 export default function CashFlowPeriodFilter({ onPeriodChange }) {
-  const [period, setPeriod] = useState('last6Months');
+  const [period, setPeriod] = useState('last30Days');
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState(null);
   const [customEnd, setCustomEnd] = useState(null);
@@ -86,10 +86,10 @@ export default function CashFlowPeriodFilter({ onPeriodChange }) {
     }
   };
 
-  // Initialize with last 6 months on first render
+  // Initialize with last 30 days on first render
   useEffect(() => {
     if (!initialized) {
-      const periodData = periodOptions.last6Months.getValue();
+      const periodData = periodOptions.last30Days.getValue();
       onPeriodChange(periodData);
       setInitialized(true);
     }
