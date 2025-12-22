@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Supplier, Purchase } from '@/api/entities';
+import { Supplier, Purchase, Category } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Mail, Phone, Building2, MoreHorizontal, Trash2, ShoppingCart, Eye } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import NewPurchaseDialog from '../components/suppliers/NewPurchaseDialog';
 import SupplierPurchasesDialog from '../components/suppliers/SupplierPurchasesDialog';
+import CreateCategoryModal from '../components/transactions/CreateCategoryModal';
 import Pagination from '../components/Pagination';
 import { formatPhoneNumber, formatCNPJ } from '@/utils/masks';
 
@@ -21,9 +23,10 @@ export default function SuppliersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewPurchaseDialogOpen, setIsNewPurchaseDialogOpen] = useState(false);
   const [isPurchasesViewDialogOpen, setIsPurchasesViewDialogOpen] = useState(false);
+  const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newSupplier, setNewSupplier] = useState({ name: '', email: '', phone: '', cnpj: '', status: 'active' });
+  const [newSupplier, setNewSupplier] = useState({ name: '', email: '', phone: '', cnpj: '', category: '', status: 'active' });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   
@@ -35,6 +38,12 @@ export default function SuppliersPage() {
     initialData: []
   });
 
+  const { data: expenseCategories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => Category.list(),
+    initialData: []
+  });
+
   // purchases query removed
   const purchases = [];
 
@@ -43,7 +52,7 @@ export default function SuppliersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       setIsDialogOpen(false);
-      setNewSupplier({ name: '', email: '', phone: '', cnpj: '', status: 'active' });
+      setNewSupplier({ name: '', email: '', phone: '', cnpj: '', category: '', status: 'active' });
       toast.success('Fornecedor adicionado!');
     }
   });
@@ -140,6 +149,46 @@ export default function SuppliersPage() {
                   placeholder="(XX) XXXXX-XXXX"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Categoria</Label>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={newSupplier.category} 
+                      onValueChange={(v) => setNewSupplier({...newSupplier, category: v})}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {expenseCategories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.name}>
+                            {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      variant="outline" 
+                      onClick={() => setIsCreateCategoryModalOpen(true)}
+                      title="Nova Categoria"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <div className={`px-3 py-2 rounded-md border border-slate-200 text-sm font-medium flex items-center bg-rose-50 text-rose-700`}>
+                    - Despesa
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" className="bg-primary">Salvar Fornecedor</Button>
               </div>
@@ -272,6 +321,12 @@ export default function SuppliersPage() {
         supplier={selectedSupplier}
         open={isPurchasesViewDialogOpen}
         onOpenChange={setIsPurchasesViewDialogOpen}
+      />
+
+      <CreateCategoryModal
+        open={isCreateCategoryModalOpen}
+        onOpenChange={setIsCreateCategoryModalOpen}
+        onSubmit={() => queryClient.invalidateQueries({ queryKey: ['categories'] })}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Customer, Sale } from '@/api/entities';
+import { Customer, Sale, Category } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Mail, Phone, User, MoreHorizontal, Trash2, TrendingUp, Eye } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import CustomerSalesDialog from '../components/customers/CustomerSalesDialog';
 import NewSaleDialog from '../components/customers/NewSaleDialog';
+import CreateCategoryModal from '../components/transactions/CreateCategoryModal';
 import Pagination from '../components/Pagination';
 import { formatPhoneNumber } from '@/utils/masks';
 
@@ -21,9 +23,10 @@ export default function CustomersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNewSaleDialogOpen, setIsNewSaleDialogOpen] = useState(false);
   const [isSalesViewDialogOpen, setIsSalesViewDialogOpen] = useState(false);
+  const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '', status: 'active' });
+  const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '', category: '', status: 'active' });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   
@@ -35,6 +38,12 @@ export default function CustomersPage() {
     initialData: []
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => Category.list(),
+    initialData: []
+  });
+
   // sales query removed - use transactions instead
 
   const createMutation = useMutation({
@@ -42,7 +51,7 @@ export default function CustomersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       setIsDialogOpen(false);
-      setNewCustomer({ name: '', email: '', phone: '', status: 'active' });
+      setNewCustomer({ name: '', email: '', phone: '', category: '', status: 'active' });
       toast.success('Cliente adicionado!');
     }
   });
@@ -136,6 +145,46 @@ export default function CustomersPage() {
                             placeholder="(XX) XXXXX-XXXX"
                         />
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Categoria</Label>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={newCustomer.category} 
+                            onValueChange={(v) => setNewCustomer({...newCustomer, category: v})}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Selecione..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.name}>
+                                  {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            type="button" 
+                            size="icon" 
+                            variant="outline" 
+                            onClick={() => setIsCreateCategoryModalOpen(true)}
+                            title="Nova Categoria"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Tipo</Label>
+                        <div className={`px-3 py-2 rounded-md border border-slate-200 text-sm font-medium flex items-center bg-emerald-50 text-emerald-700`}>
+                          + Receita
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex justify-end pt-4">
                         <Button type="submit" className="bg-primary">Salvar Cliente</Button>
                     </div>
@@ -268,6 +317,12 @@ export default function CustomersPage() {
         customer={selectedCustomer}
         open={isSalesViewDialogOpen}
         onOpenChange={setIsSalesViewDialogOpen}
+      />
+
+      <CreateCategoryModal
+        open={isCreateCategoryModalOpen}
+        onOpenChange={setIsCreateCategoryModalOpen}
+        onSubmit={() => queryClient.invalidateQueries({ queryKey: ['categories'] })}
       />
     </div>
   );
