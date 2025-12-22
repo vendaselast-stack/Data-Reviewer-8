@@ -207,23 +207,23 @@ export default function TransactionsPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Transações</h1>
             <p className="text-xs sm:text-sm text-slate-500">Gerencie suas receitas e despesas.</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <PeriodFilter 
               onPeriodChange={setDateRange}
               mode="days"
               defaultPeriod="last30Days"
             />
-            <Button variant="outline" onClick={handleExport} className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExport} className="flex items-center gap-2 flex-1 sm:flex-none">
                 <Download className="w-4 h-4" /> Exportar CSV
             </Button>
             <Button 
               onClick={() => setUploadOpen(true)} 
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 flex-1 sm:flex-none"
             >
               <Upload className="w-4 h-4" /> Importar Extrato
             </Button>
-            <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }} className="bg-primary hover:bg-primary">
+            <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }} className="bg-primary hover:bg-primary w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" /> Nova Transação
             </Button>
         </div>
