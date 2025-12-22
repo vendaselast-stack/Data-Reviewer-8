@@ -320,62 +320,61 @@ export default function CashFlowForecastPage() {
       </div>
 
       {/* Monthly Details Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalhamento Mensal</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">Mês</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Receitas</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Despesas</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Saldo</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Saldo Acumulado</th>
-                  <th className="text-center py-3 px-4 text-sm font-semibold text-slate-600">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cashFlowWithBalance.map((item, idx) => {
-                  const isExpanded = expandedMonths[item.monthKey];
-                  const hasDetails = item.revenueDetails.length > 0 || item.expenseDetails.length > 0;
-                  
-                  return (
-                    <React.Fragment key={idx}>
-                      <tr className="border-b hover:bg-slate-50 cursor-pointer" onClick={() => hasDetails && setExpandedMonths(prev => ({ ...prev, [item.monthKey]: !prev[item.monthKey] }))}>
-                        <td className="py-3 px-4 font-medium text-slate-900">
-                          <div className="flex items-center gap-2">
-                            {hasDetails && (
-                              isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
-                            )}
-                            {item.month}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-right text-emerald-600 font-semibold">
-                          R$ {item.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-right text-rose-600 font-semibold">
-                          R$ {item.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className={`py-3 px-4 text-right font-bold ${item.saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {item.saldo >= 0 ? '+' : ''} R$ {item.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className={`py-3 px-4 text-right font-bold ${item.saldoAcumulado >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
-                          R$ {item.saldoAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                            item.isHistorical ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {item.isHistorical ? 'Realizado' : 'Projetado'}
-                          </span>
-                        </td>
-                      </tr>
-                      {isExpanded && (
-                        <tr className="bg-slate-50">
-                          <td colSpan={6} className="py-4 px-6">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+          <h3 className="font-semibold text-slate-900">Detalhamento Mensal</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-50">
+              <tr className="border-b border-slate-100">
+                <th className="text-left py-3 pl-6 text-sm font-semibold text-slate-600">Mês</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Receitas</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Despesas</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Saldo</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">Saldo Acumulado</th>
+                <th className="text-center py-3 pr-6 text-sm font-semibold text-slate-600">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cashFlowWithBalance.map((item, idx) => {
+                const isExpanded = expandedMonths[item.monthKey];
+                const hasDetails = item.revenueDetails.length > 0 || item.expenseDetails.length > 0;
+                
+                return (
+                  <React.Fragment key={idx}>
+                    <tr className="border-b border-slate-100 hover:bg-slate-50/50 cursor-pointer group" onClick={() => hasDetails && setExpandedMonths(prev => ({ ...prev, [item.monthKey]: !prev[item.monthKey] }))}>
+                      <td className="py-3 pl-6 font-medium text-slate-900">
+                        <div className="flex items-center gap-2">
+                          {hasDetails && (
+                            isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />
+                          )}
+                          {item.month}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right text-emerald-600 font-semibold">
+                        R$ {item.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-4 text-right text-rose-600 font-semibold">
+                        R$ {item.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className={`py-3 px-4 text-right font-bold ${item.saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {item.saldo >= 0 ? '+' : ''} R$ {item.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className={`py-3 px-4 text-right font-bold ${item.saldoAcumulado >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
+                        R$ {item.saldoAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 pr-6 text-center">
+                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                          item.isHistorical ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {item.isHistorical ? 'Realizado' : 'Projetado'}
+                        </span>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-slate-50 border-b border-slate-100">
+                        <td colSpan={6} className="py-4 px-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               {/* Receitas */}
                               <div>
@@ -441,11 +440,10 @@ export default function CashFlowForecastPage() {
                     </React.Fragment>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
