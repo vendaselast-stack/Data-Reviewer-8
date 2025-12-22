@@ -334,57 +334,57 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
       yPosition = margin;
 
       if (analysisResult?.cash_flow_forecast && analysisResult.cash_flow_forecast.length > 0) {
-        // Prepare data for bar chart
-        const cashFlowData = analysisResult.cash_flow_forecast.slice(0, 6).map(forecast => ({
-          label: forecast.month || 'Mês',
-          value: parseFloat(forecast.revenue || 0),
-          color: [76, 175, 80]
-        }));
-        
-        yPosition = drawBarChart(pdf, 'Previsao Mensal de Receita (R$)', cashFlowData, yPosition, margin, pageWidth, pageHeight);
+        pdf.setFontSize(13);
+        pdf.setTextColor(79, 70, 229);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('PREVISAO DE FLUXO DE CAIXA', margin, yPosition);
+        yPosition += 10;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(0, 0, 0);
 
-        // Expense bar chart
-        const expenseData = analysisResult.cash_flow_forecast.slice(0, 6).map(forecast => ({
-          label: forecast.month || 'Mês',
-          value: parseFloat(forecast.expense || 0),
-          color: [244, 67, 54]
-        }));
-        
-        yPosition = drawBarChart(pdf, 'Previsao Mensal de Despesa (R$)', expenseData, yPosition, margin, pageWidth, pageHeight);
+        analysisResult.cash_flow_forecast.slice(0, 6).forEach(forecast => {
+          if (yPosition > pageHeight - 20) {
+            pdf.addPage();
+            yPosition = margin;
+          }
 
-        // Profit line chart
-        const profitData = analysisResult.cash_flow_forecast.slice(0, 6).map(forecast => ({
-          label: forecast.month || 'Mês',
-          value: (parseFloat(forecast.revenue || 0) - parseFloat(forecast.expense || 0))
-        }));
-        
-        yPosition = drawLineChart(pdf, 'Tendencia de Lucro (R$)', profitData, yPosition, margin, pageWidth, pageHeight);
+          const month = forecast.month || 'Mês';
+          const revenue = parseFloat(forecast.predicted_revenue || forecast.revenue || 0);
+          const expense = parseFloat(forecast.predicted_expense || forecast.expense || 0);
+          const profit = revenue - expense;
+          const formattedRevenue = revenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          const formattedExpense = expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          const formattedProfit = profit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+          pdf.text(`${month}`, margin, yPosition);
+          pdf.setTextColor(76, 175, 80);
+          pdf.text(`Receita: ${formattedRevenue}`, margin + 50, yPosition);
+          pdf.setTextColor(244, 67, 54);
+          pdf.text(`Despesa: ${formattedExpense}`, margin + 100, yPosition);
+          yPosition += 6;
+          pdf.setTextColor(33, 150, 243);
+          pdf.text(`Lucro: ${formattedProfit}`, margin + 50, yPosition);
+          pdf.setTextColor(0, 0, 0);
+          yPosition += 8;
+        });
+        yPosition += 8;
       }
 
       // Expense Reduction
       yPosition = addSectionDivider(pdf, margin, pageWidth, yPosition, pageHeight);
 
       if (analysisResult?.expense_reduction_opportunities && analysisResult.expense_reduction_opportunities.length > 0) {
-        // Pie chart for expense categories
-        const expensePieData = analysisResult.expense_reduction_opportunities.slice(0, 5).map(opp => ({
-          label: opp.category || 'Categoria',
-          value: parseFloat(opp.potential_savings?.replace('%', '') || 10)
-        }));
-        
-        if (expensePieData.length > 0) {
-          yPosition = drawPieChart(pdf, 'Distribuicao de Oportunidades de Reducao', expensePieData, yPosition, margin, pageWidth);
-        }
-
         pdf.setFontSize(13);
         pdf.setTextColor(79, 70, 229);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('DETALHES DAS OPORTUNIDADES', margin, yPosition);
+        pdf.text('OPORTUNIDADES DE REDUCAO DE CUSTOS', margin, yPosition);
         yPosition += 10;
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(9);
         pdf.setTextColor(0, 0, 0);
 
-        analysisResult.expense_reduction_opportunities.slice(0, 3).forEach(opp => {
+        analysisResult.expense_reduction_opportunities.slice(0, 5).forEach(opp => {
           if (yPosition > pageHeight - 20) {
             pdf.addPage();
             yPosition = margin;
@@ -402,9 +402,9 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
           pdf.text(`${suggestion}`, margin + 5, yPosition);
           yPosition += 4;
           pdf.setTextColor(76, 175, 80);
-          pdf.text(`Economia: ${savings}`, margin + 5, yPosition);
+          pdf.text(`Economia Potencial: ${savings}`, margin + 5, yPosition);
           pdf.setTextColor(0, 0, 0);
-          yPosition += 7;
+          yPosition += 8;
         });
       }
 
