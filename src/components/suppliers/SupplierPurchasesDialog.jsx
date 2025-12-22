@@ -28,26 +28,35 @@ export default function SupplierPurchasesDialog({ supplier, open, onOpenChange }
   const groupedPurchases = React.useMemo(() => {
     const groups = {};
     purchases.forEach(p => {
-      // Key: description + base date
-      const groupKey = p.installmentGroup || p.description || `purchase-${p.date}`;
+      // Use installmentGroup if available, otherwise extract base description (remove (X/Y) suffix)
+      let groupKey = p.installmentGroup;
+      if (!groupKey) {
+        // Remove installment number suffix like "(1/5)" from description to group properly
+        const baseDescription = (p.description || '').replace(/\s*\(\d+\/\d+\)\s*$/, '').trim();
+        groupKey = baseDescription || `purchase-${p.id}`;
+      }
       if (!groups[groupKey]) {
         groups[groupKey] = [];
       }
       groups[groupKey].push(p);
     });
     return Object.values(groups).map(group => {
-      const main = group[0];
-      const installments = group.sort((a, b) => (a.installmentNumber || 0) - (b.installmentNumber || 0));
-      const totalAmount = installments.reduce((acc, p) => acc + parseFloat(p.amount || 0), 0);
-      const isPaid = installments.every(p => p.status === 'completed' || p.status === 'pago');
+      const sortedInstallments = group.sort((a, b) => (a.installmentNumber || 0) - (b.installmentNumber || 0));
+      const main = sortedInstallments[0];
+      const totalAmount = sortedInstallments.reduce((acc, p) => acc + parseFloat(p.amount || 0), 0);
+      const isPaid = sortedInstallments.every(p => p.status === 'completed' || p.status === 'pago');
+      // Get base description without installment number
+      const baseDescription = (main.description || '').replace(/\s*\(\d+\/\d+\)\s*$/, '').trim() || 'Compra';
 
       return {
         main: {
           ...main,
+          description: baseDescription,
           totalAmount,
-          isPaid
+          isPaid,
+          installmentTotal: sortedInstallments.length
         },
-        installments
+        installments: sortedInstallments
       };
     }).sort((a, b) => new Date(b.main.date).getTime() - new Date(a.main.date).getTime());
   }, [purchases]);
