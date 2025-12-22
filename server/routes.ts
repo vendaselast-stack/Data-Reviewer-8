@@ -103,8 +103,9 @@ export function registerRoutes(
     try {
       const customers = await storage.getCustomers();
       res.json(customers);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch customers" });
+    } catch (error: any) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ error: "Failed to fetch customers", details: error.message });
     }
   });
 
@@ -226,8 +227,9 @@ export function registerRoutes(
     try {
       const suppliers = await storage.getSuppliers();
       res.json(suppliers);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch suppliers" });
+    } catch (error: any) {
+      console.error("Error fetching suppliers:", error);
+      res.status(500).json({ error: "Failed to fetch suppliers", details: error.message });
     }
   });
 
