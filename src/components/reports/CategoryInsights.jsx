@@ -43,11 +43,11 @@ export default function CategoryInsights({ transactions, categories }) {
             transactions: []
           };
         }
-        categoryStats[t.category].total += t.amount;
+        categoryStats[t.category].total += parseFloat(t.amount || 0);
         categoryStats[t.category].count += 1;
         categoryStats[t.category].transactions.push({
           description: t.description,
-          amount: t.amount,
+          amount: parseFloat(t.amount || 0),
           date: t.date
         });
       });
@@ -55,7 +55,7 @@ export default function CategoryInsights({ transactions, categories }) {
       const prompt = `Analise os seguintes dados de transações dos últimos 3 meses agrupadas por categoria:
 
 ${Object.entries(categoryStats).map(([cat, data]) => 
-  `Categoria: ${cat} (${data.type === 'expense' ? 'Despesa' : 'Receita'})
+  `Categoria: ${cat} (${data.type === 'compra' || data.type === 'saida' ? 'Despesa' : 'Receita'})
   Total: R$ ${data.total.toFixed(2)}
   Número de transações: ${data.count}
   Média por transação: R$ ${(data.total / data.count).toFixed(2)}`
