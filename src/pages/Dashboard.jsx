@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { DollarSign, TrendingUp, Wallet, Users, Plus, ChevronRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Wallet, Users, Plus, ChevronRight, CheckCircle2, Clock, Check } from 'lucide-react';
 import { subMonths, startOfMonth, format, isAfter, isBefore, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import KPIWidget from '../components/dashboard/KPIWidget';
@@ -35,6 +35,18 @@ export default function DashboardPage() {
   const handleSubmit = (data) => {
     createMutation.mutate(data);
   };
+
+  const handleComplete = (id) => {
+    updateMutation.mutate({ id, data: { status: 'concluído' } });
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => Transaction.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast.success('Transação concluída!');
+    }
+  });
 
   // Fetch data
   const { data: transactions } = useQuery({
@@ -233,20 +245,40 @@ export default function DashboardPage() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-foreground truncate text-xs">{t.description}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-foreground truncate text-xs">{t.description}</p>
+                            {(t.status === 'completed' || t.status === 'pago' || t.status === 'concluído') ? (
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            ) : (
+                              <Clock className="w-3 h-3 text-amber-500" />
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(t.date), 'dd MMM', { locale: ptBR })}
                           </p>
                         </div>
                       </div>
-                      <span
-                        className={`font-semibold text-xs flex-shrink-0 ml-1 whitespace-nowrap ${
-                          t.type === 'venda' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
-                        }`}
-                      >
-                        {t.type === 'venda' ? '+' : '-'} R${' '}
-                        {Math.abs(parseFloat(t.amount || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {!(t.status === 'completed' || t.status === 'pago' || t.status === 'concluído') && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" 
+                            onClick={() => handleComplete(t.id)}
+                            title="Concluir"
+                          >
+                            <Check className="w-3 h-3" />
+                          </Button>
+                        )}
+                        <span
+                          className={`font-semibold text-xs flex-shrink-0 whitespace-nowrap ${
+                            t.type === 'venda' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {t.type === 'venda' ? '+' : '-'} R${' '}
+                          {Math.abs(parseFloat(t.amount || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 <a
