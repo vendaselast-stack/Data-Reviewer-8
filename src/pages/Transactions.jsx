@@ -126,7 +126,15 @@ export default function TransactionsPage() {
       })
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // UTF-8 with BOM (Byte Order Mark) for proper Excel compatibility
+    const encoder = new TextEncoder();
+    const uint8Array = encoder.encode(csvContent);
+    const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blobData = new Uint8Array(BOM.length + uint8Array.length);
+    blobData.set(BOM, 0);
+    blobData.set(uint8Array, BOM.length);
+    
+    const blob = new Blob([blobData], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
