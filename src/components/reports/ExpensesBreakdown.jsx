@@ -7,13 +7,12 @@ import { Badge } from '@/components/ui/badge';
 const COLORS = ['#ef4444', '#f59e0b', '#f97316', '#ec4899', '#0065BA', '#0065BA', '#3b82f6'];
 
 export default function ExpensesBreakdown({ opportunities, transactions }) {
-  if (!opportunities || opportunities.length === 0) return null;
-
   // Calculate expenses by category
   const expensesByCategory = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'compra' || t.type === 'expense')
     .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      const category = t.category || 'Sem Categoria';
+      acc[category] = (acc[category] || 0) + Math.abs(parseFloat(t.amount || 0));
       return acc;
     }, {});
 
@@ -24,6 +23,7 @@ export default function ExpensesBreakdown({ opportunities, transactions }) {
 
   const totalExpenses = chartData.reduce((acc, item) => acc + item.value, 0);
 
+  // Renderize mesmo sem opportunities
   return (
     <Card className="border-slate-200 shadow-sm">
       <CardHeader>
@@ -34,6 +34,11 @@ export default function ExpensesBreakdown({ opportunities, transactions }) {
         <CardDescription>Identificação de oportunidades de redução de custos</CardDescription>
       </CardHeader>
       <CardContent>
+        {chartData.length === 0 ? (
+          <div className="text-center py-8 text-slate-500">
+            <p>Nenhuma despesa encontrada no período</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Pie Chart */}
           <div className="flex flex-col">
@@ -117,6 +122,7 @@ export default function ExpensesBreakdown({ opportunities, transactions }) {
             )}
           </div>
         </div>
+        )}
       </CardContent>
     </Card>
   );
