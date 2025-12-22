@@ -7,8 +7,6 @@ import { format, subMonths, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function RevenueGrowthReport({ strategies, transactions, customers }) {
-  if (!strategies || strategies.length === 0) return null;
-
   // Calculate revenue trend (last 6 months)
   const revenueByMonth = [];
   for (let i = 5; i >= 0; i--) {
@@ -17,16 +15,16 @@ export default function RevenueGrowthReport({ strategies, transactions, customer
     const monthLabel = format(date, 'MMM', { locale: ptBR }).toUpperCase();
     
     const monthRevenue = transactions
-      .filter(t => t.type === 'income' && t.date.startsWith(monthKey))
-      .reduce((acc, t) => acc + t.amount, 0);
+      .filter(t => (t.type === 'venda' || t.type === 'income') && typeof t.date === 'string' && t.date.startsWith(monthKey))
+      .reduce((acc, t) => acc + Math.abs(parseFloat(t.amount || 0)), 0);
     
     revenueByMonth.push({ name: monthLabel, receita: monthRevenue });
   }
 
   // Calculate KPIs
   const totalRevenue = transactions
-    .filter(t => t.type === 'income')
-    .reduce((acc, t) => acc + t.amount, 0);
+    .filter(t => t.type === 'venda' || t.type === 'income')
+    .reduce((acc, t) => acc + Math.abs(parseFloat(t.amount || 0)), 0);
 
   const last3MonthsRevenue = revenueByMonth.slice(-3).reduce((acc, m) => acc + m.receita, 0);
   const previous3MonthsRevenue = revenueByMonth.slice(0, 3).reduce((acc, m) => acc + m.receita, 0);
@@ -34,14 +32,15 @@ export default function RevenueGrowthReport({ strategies, transactions, customer
     ? ((last3MonthsRevenue - previous3MonthsRevenue) / previous3MonthsRevenue) * 100 
     : 0;
 
-  const avgTicket = totalRevenue / (transactions.filter(t => t.type === 'income').length || 1);
-  const activeCustomers = customers.filter(c => c.status === 'active').length;
+  const revenueTransactionCount = transactions.filter(t => t.type === 'venda' || t.type === 'income').length;
+  const avgTicket = revenueTransactionCount > 0 ? totalRevenue / revenueTransactionCount : 0;
+  const activeCustomers = customers && customers.length > 0 ? customers.filter(c => c.status === 'active').length : 0;
 
   // Customer segmentation
   const customerRevenue = transactions
-    .filter(t => t.type === 'income' && t.customer_id)
+    .filter(t => (t.type === 'venda' || t.type === 'income') && t.customer_id)
     .reduce((acc, t) => {
-      acc[t.customer_id] = (acc[t.customer_id] || 0) + t.amount;
+      acc[t.customer_id] = (acc[t.customer_id] || 0) + Math.abs(parseFloat(t.amount || 0));
       return acc;
     }, {});
 
@@ -171,6 +170,7 @@ export default function RevenueGrowthReport({ strategies, transactions, customer
         </div>
 
         {/* Growth Strategies */}
+        {strategies && strategies.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
             <Lightbulb className="w-5 h-5 text-emerald-600" />
@@ -189,6 +189,7 @@ export default function RevenueGrowthReport({ strategies, transactions, customer
             ))}
           </div>
         </div>
+        )}
       </CardContent>
     </Card>
   );
