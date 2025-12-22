@@ -16,6 +16,7 @@ import BankReconciliation from '../components/transactions/BankReconciliation';
 import PeriodFilter from '../components/dashboard/PeriodFilter';
 import Pagination from '../components/Pagination';
 import { toast } from 'sonner';
+import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function TransactionsPage() {
