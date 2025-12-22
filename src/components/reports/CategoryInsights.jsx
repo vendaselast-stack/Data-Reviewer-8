@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { AlertTriangle, TrendingUp, TrendingDown, Sparkles, Loader2, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, subMonths } from 'date-fns';
@@ -11,6 +11,51 @@ import { format, subMonths } from 'date-fns';
 export default function CategoryInsights({ transactions, categories }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [insights, setInsights] = useState(null);
+
+  // Calcular dados para gráfico SEMPRE
+  const calculateChartData = () => {
+    const threeMonthsAgo = subMonths(new Date(), 3);
+    const recentTransactions = transactions
+      .filter(t => new Date(t.date) >= threeMonthsAgo)
+      .map(t => ({
+        description: t.description,
+        amount: Math.abs(parseFloat(t.amount) || 0), // sempre positivo para gráfico
+        type: t.type,
+        category: t.category || 'Sem categoria',
+        date: t.date
+      }));
+
+    // Group by category
+    const categoryStats = {};
+    recentTransactions.forEach(t => {
+      if (!categoryStats[t.category]) {
+        categoryStats[t.category] = {
+          total: 0,
+          count: 0,
+          type: t.type,
+          transactions: []
+        };
+      }
+      categoryStats[t.category].total += parseFloat(t.amount || 0);
+      categoryStats[t.category].count += 1;
+      categoryStats[t.category].transactions.push({
+        description: t.description,
+        amount: parseFloat(t.amount || 0),
+        date: t.date
+      });
+    });
+
+    return Object.entries(categoryStats)
+      .map(([name, data]) => ({
+        name: name || 'Sem categoria',
+        value: Math.round(data.total * 100) / 100,
+        count: data.count,
+        type: data.type
+      }))
+      .sort((a, b) => b.value - a.value);
+  };
+
+  const chartData = calculateChartData();
 
   const analyzeCategories = async () => {
     if (transactions.length === 0) {
@@ -148,11 +193,11 @@ Identifique:
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-primary">
-              <Sparkles className="w-5 h-5" />
-              Insights Inteligentes por Categoria
+              <TrendingDown className="w-5 h-5" />
+              Análise de Despesas por Categoria
             </CardTitle>
             <CardDescription>
-              Análise automática de anomalias, tendências e oportunidades de otimização
+              Identificação de oportunidades de redução de custos
             </CardDescription>
           </div>
           <Button
@@ -175,170 +220,201 @@ Identifique:
         </div>
       </CardHeader>
 
-      {insights && (
-        <CardContent className="space-y-6">
-          {/* Anomalies */}
-          {insights.anomalies?.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-rose-600">
-                <AlertTriangle className="w-5 h-5" />
-                Anomalias Detectadas
-              </h3>
-              <div className="space-y-3">
-                {insights.anomalies.map((anomaly, idx) => {
-                  const colors = severityColors[anomaly.severity] || severityColors.medium;
-                  return (
-                    <div key={idx} className={`p-4 rounded-lg border ${colors.border} ${colors.bg}`}>
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <Badge variant="outline" className={`${colors.text} border-current mb-2`}>
-                            {anomaly.category}
+      <CardContent className="space-y-6">
+        {/* Gráfico de Despesas por Categoria */}
+        {chartData.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-lg text-slate-900">Despesas por Categoria</h3>
+            <div className="w-full h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 12 }} />
+                  <YAxis />
+                  <Tooltip 
+                    formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {chartData.slice(0, 3).map((cat, idx) => (
+                <div key={idx} className="p-3 bg-slate-50 rounded-lg border">
+                  <p className="text-sm font-semibold text-slate-700">{cat.name}</p>
+                  <p className="text-lg font-bold text-primary">R$ {cat.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-xs text-slate-500">{cat.count} transações</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Seção de IA - Insights Após Análise */}
+        {insights && (
+          <div className="space-y-6">
+            {/* Anomalies */}
+            {insights.anomalies?.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-rose-600">
+                  <AlertTriangle className="w-5 h-5" />
+                  Onde Cortar Custos
+                </h3>
+                <div className="space-y-3">
+                  {insights.anomalies.map((anomaly, idx) => {
+                    const colors = severityColors[anomaly.severity] || severityColors.medium;
+                    return (
+                      <div key={idx} className={`p-4 rounded-lg border ${colors.border} ${colors.bg}`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <Badge variant="outline" className={`${colors.text} border-current mb-2`}>
+                              {anomaly.category}
+                            </Badge>
+                            <p className="font-medium text-slate-900">{anomaly.description}</p>
+                          </div>
+                          <Badge className={colors.bg}>
+                            {anomaly.severity === 'high' ? 'Alta' : anomaly.severity === 'medium' ? 'Média' : 'Baixa'}
                           </Badge>
-                          <p className="font-medium text-slate-900">{anomaly.description}</p>
                         </div>
-                        <Badge className={colors.bg}>
-                          {anomaly.severity === 'high' ? 'Alta' : anomaly.severity === 'medium' ? 'Média' : 'Baixa'}
+                        <p className="text-sm text-slate-700 mt-2">
+                          <strong>Recomendação:</strong> {anomaly.recommendation}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Trends */}
+            {insights.trends?.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-primary">
+                  <TrendingUp className="w-5 h-5" />
+                  Tendências Identificadas
+                </h3>
+                <div className="space-y-3">
+                  {insights.trends.map((trend, idx) => {
+                    const colors = trendColors[trend.trend_type] || trendColors.neutral;
+                    const Icon = colors.icon;
+                    return (
+                      <div key={idx} className={`p-4 rounded-lg border ${colors.bg}`}>
+                        <div className="flex items-start gap-3">
+                          <Icon className={`w-5 h-5 mt-0.5 ${colors.text}`} />
+                          <div className="flex-1">
+                            <Badge variant="outline" className="mb-2">
+                              {trend.category}
+                            </Badge>
+                            <p className="font-medium text-slate-900">{trend.description}</p>
+                            <p className="text-sm text-slate-600 mt-2">{trend.impact}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Optimization Opportunities */}
+            {insights.optimization_opportunities?.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-emerald-600">
+                  <Target className="w-5 h-5" />
+                  Oportunidades de Otimização
+                </h3>
+                <div className="space-y-3">
+                  {insights.optimization_opportunities.map((opp, idx) => (
+                    <div key={idx} className="p-4 rounded-lg border bg-emerald-50 border-emerald-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <Badge variant="outline" className="text-emerald-700 border-emerald-300">
+                          {opp.category}
+                        </Badge>
+                        <Badge className="bg-emerald-600 text-white">
+                          {opp.potential_savings}
                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-700 mt-2">
-                        <strong>Recomendação:</strong> {anomaly.recommendation}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Trends */}
-          {insights.trends?.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-primary">
-                <TrendingUp className="w-5 h-5" />
-                Tendências Identificadas
-              </h3>
-              <div className="space-y-3">
-                {insights.trends.map((trend, idx) => {
-                  const colors = trendColors[trend.trend_type] || trendColors.neutral;
-                  const Icon = colors.icon;
-                  return (
-                    <div key={idx} className={`p-4 rounded-lg border ${colors.bg}`}>
-                      <div className="flex items-start gap-3">
-                        <Icon className={`w-5 h-5 mt-0.5 ${colors.text}`} />
-                        <div className="flex-1">
-                          <Badge variant="outline" className="mb-2">
-                            {trend.category}
-                          </Badge>
-                          <p className="font-medium text-slate-900">{trend.description}</p>
-                          <p className="text-sm text-slate-600 mt-2">{trend.impact}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Optimization Opportunities */}
-          {insights.optimization_opportunities?.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-emerald-600">
-                <Target className="w-5 h-5" />
-                Oportunidades de Otimização
-              </h3>
-              <div className="space-y-3">
-                {insights.optimization_opportunities.map((opp, idx) => (
-                  <div key={idx} className="p-4 rounded-lg border bg-emerald-50 border-emerald-200">
-                    <div className="flex items-start justify-between mb-2">
-                      <Badge variant="outline" className="text-emerald-700 border-emerald-300">
-                        {opp.category}
-                      </Badge>
-                      <Badge className="bg-emerald-600 text-white">
-                        {opp.potential_savings}
-                      </Badge>
-                    </div>
-                    <p className="font-medium text-slate-900 mb-3">{opp.opportunity}</p>
-                    <div className="space-y-1">
-                      <p className="text-xs font-semibold text-slate-600 uppercase">Ações Sugeridas:</p>
-                      <ul className="space-y-1">
-                        {opp.action_items.map((action, aIdx) => (
-                          <li key={aIdx} className="text-sm text-slate-700 flex items-start gap-2">
-                            <span className="text-emerald-600 font-bold">•</span>
-                            {action}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Categorization Rules */}
-          {insights.categorization_rules?.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-primary">
-                <Sparkles className="w-5 h-5" />
-                Regras Inteligentes de Categorização
-              </h3>
-              <p className="text-sm text-slate-600 mb-4">
-                Padrões detectados que podem ajudar a categorizar transações futuras automaticamente:
-              </p>
-              <div className="space-y-3">
-                {insights.categorization_rules.map((rule, idx) => (
-                  <div key={idx} className="p-4 rounded-lg border bg-indigo-50 border-blue-200">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <p className="font-medium text-slate-900 mb-1">
-                          <span className="text-primary">Padrão:</span> {rule.pattern}
-                        </p>
-                        <p className="text-sm text-slate-700 mb-2">
-                          <span className="font-semibold">→ Categoria Sugerida:</span>{' '}
-                          <Badge variant="outline" className="ml-1">
-                            {rule.suggested_category}
-                          </Badge>
-                        </p>
-                      </div>
-                      <Badge className={
-                        rule.confidence === 'high' ? 'bg-emerald-600' :
-                        rule.confidence === 'medium' ? 'bg-amber-500' :
-                        'bg-slate-400'
-                      }>
-                        {rule.confidence === 'high' ? 'Alta Confiança' :
-                         rule.confidence === 'medium' ? 'Média Confiança' :
-                         'Baixa Confiança'}
-                      </Badge>
-                    </div>
-                    {rule.examples?.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-blue-200">
-                        <p className="text-xs font-semibold text-slate-600 mb-1">Exemplos:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {rule.examples.map((ex, eIdx) => (
-                            <Badge key={eIdx} variant="secondary" className="text-xs">
-                              {ex}
-                            </Badge>
+                      <p className="font-medium text-slate-900 mb-3">{opp.opportunity}</p>
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-slate-600 uppercase">Ações Sugeridas:</p>
+                        <ul className="space-y-1">
+                          {Array.isArray(opp.action_items) && opp.action_items.map((action, aIdx) => (
+                            <li key={aIdx} className="text-sm text-slate-700 flex items-start gap-2">
+                              <span className="text-emerald-600 font-bold">•</span>
+                              {action}
+                            </li>
                           ))}
-                        </div>
+                        </ul>
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      )}
+            )}
 
-      {!insights && (
-        <CardContent>
+            {/* Categorization Rules */}
+            {insights.categorization_rules?.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-primary">
+                  <Sparkles className="w-5 h-5" />
+                  Regras Inteligentes de Categorização
+                </h3>
+                <p className="text-sm text-slate-600 mb-4">
+                  Padrões detectados que podem ajudar a categorizar transações futuras automaticamente:
+                </p>
+                <div className="space-y-3">
+                  {insights.categorization_rules.map((rule, idx) => (
+                    <div key={idx} className="p-4 rounded-lg border bg-indigo-50 border-blue-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="font-medium text-slate-900 mb-1">
+                            <span className="text-primary">Padrão:</span> {rule.pattern}
+                          </p>
+                          <p className="text-sm text-slate-700 mb-2">
+                            <span className="font-semibold">→ Categoria Sugerida:</span>{' '}
+                            <Badge variant="outline" className="ml-1">
+                              {rule.suggested_category}
+                            </Badge>
+                          </p>
+                        </div>
+                        <Badge className={
+                          rule.confidence === 'high' ? 'bg-emerald-600' :
+                          rule.confidence === 'medium' ? 'bg-amber-500' :
+                          'bg-slate-400'
+                        }>
+                          {rule.confidence === 'high' ? 'Alta Confiança' :
+                           rule.confidence === 'medium' ? 'Média Confiança' :
+                           'Baixa Confiança'}
+                        </Badge>
+                      </div>
+                      {rule.examples?.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-blue-200">
+                          <p className="text-xs font-semibold text-slate-600 mb-1">Exemplos:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {rule.examples.map((ex, eIdx) => (
+                              <Badge key={eIdx} variant="secondary" className="text-xs">
+                                {ex}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!insights && chartData.length === 0 && (
           <div className="text-center py-8 text-slate-500">
             <Sparkles className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-            <p>Clique no botão acima para gerar insights inteligentes</p>
+            <p>Sem transações para exibir</p>
           </div>
-        </CardContent>
-      )}
+        )}
+      </CardContent>
     </Card>
   );
 }
