@@ -87,12 +87,25 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     mutationFn: async ({ saleId, paidAmount, interest }) => {
       console.log('Confirming payment for:', saleId, { paidAmount, interest });
       
+      // Get the transaction first to check the amount
+      const getResponse = await fetch(`/api/transactions/${saleId}`);
+      const currentTransaction = await getResponse.json();
+      
+      // Determine status based on paid amount vs total amount
+      const totalAmount = parseFloat(currentTransaction.amount || 0);
+      const paidAmountValue = parseFloat(paidAmount || 0);
+      const interestValue = parseFloat(interest || 0);
+      const totalPaid = paidAmountValue + interestValue;
+      
+      // Status should be 'pago' only if fully paid
+      const status = totalPaid >= totalAmount ? 'pago' : 'parcial';
+      
       // First update the transaction
       const response = await fetch(`/api/transactions/${saleId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          status: 'pago',
+          status: status,
           paidAmount: paidAmount ? parseFloat(paidAmount).toString() : undefined,
           interest: interest ? parseFloat(interest).toString() : '0'
         })
