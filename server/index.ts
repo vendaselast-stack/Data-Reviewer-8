@@ -1,9 +1,5 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,38 +27,38 @@ const mockData = {
 };
 
 // API Endpoints
-app.get('/api/transactions', (_req, res) => res.json(mockData.transactions));
-app.get('/api/customers', (_req, res) => res.json(mockData.customers));
-app.get('/api/categories', (_req, res) => res.json(mockData.categories));
-app.get('/api/suppliers', (_req, res) => res.json(mockData.suppliers));
-app.get('/api/sales', (_req, res) => res.json([]));
-app.get('/api/purchases', (_req, res) => res.json([]));
-app.get('/api/installments', (_req, res) => res.json([]));
-app.get('/api/purchase-installments', (_req, res) => res.json([]));
+app.get('/api/transactions', (_req: any, res: any) => res.json(mockData.transactions));
+app.get('/api/customers', (_req: any, res: any) => res.json(mockData.customers));
+app.get('/api/categories', (_req: any, res: any) => res.json(mockData.categories));
+app.get('/api/suppliers', (_req: any, res: any) => res.json(mockData.suppliers));
+app.get('/api/sales', (_req: any, res: any) => res.json([]));
+app.get('/api/purchases', (_req: any, res: any) => res.json([]));
+app.get('/api/installments', (_req: any, res: any) => res.json([]));
+app.get('/api/purchase-installments', (_req: any, res: any) => res.json([]));
 
 // POST endpoints
-app.post('/api/transactions', (req, res) => {
+app.post('/api/transactions', (req: any, res: any) => {
   const id = Date.now().toString();
   const newTransaction = { id, ...req.body };
   mockData.transactions.push(newTransaction);
   res.json(newTransaction);
 });
 
-app.post('/api/customers', (req, res) => {
+app.post('/api/customers', (req: any, res: any) => {
   const id = Date.now().toString();
   const newCustomer = { id, ...req.body };
   mockData.customers.push(newCustomer);
   res.json(newCustomer);
 });
 
-app.post('/api/categories', (req, res) => {
+app.post('/api/categories', (req: any, res: any) => {
   const id = Date.now().toString();
   const newCategory = { id, ...req.body };
   mockData.categories.push(newCategory);
   res.json(newCategory);
 });
 
-app.post('/api/suppliers', (req, res) => {
+app.post('/api/suppliers', (req: any, res: any) => {
   const id = Date.now().toString();
   const newSupplier = { id, ...req.body };
   mockData.suppliers.push(newSupplier);
@@ -70,12 +66,10 @@ app.post('/api/suppliers', (req, res) => {
 });
 
 // SPA fallback - serve index.html for all other routes
-app.get('*', (_req, res) => {
+app.get('*', (_req: any, res: any) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✓ Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
-
-export {};
