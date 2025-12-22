@@ -190,17 +190,16 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
           <DialogTitle>Registrar Compra - {supplier?.name}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label>Descrição da Compra</Label>
-            <Input
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Ex: Matéria-prima, equipamento..."
-              required
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Descrição da Compra</Label>
+              <Input
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Ex: Matéria-prima..."
+                required
+              />
+            </div>
             <div className="space-y-2">
               <Label>Valor Total</Label>
               <div className="flex items-center gap-2">
@@ -214,6 +213,9 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
                 />
               </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Data da Compra</Label>
               <Input
@@ -223,16 +225,15 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
                 required
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Número de Parcelas</Label>
-            <Input
-              type="number"
-              min="1"
-              value={formData.installments}
-              onChange={(e) => handleInstallmentsChange(e.target.value)}
-            />
+            <div className="space-y-2">
+              <Label>Número de Parcelas</Label>
+              <Input
+                type="number"
+                min="1"
+                value={formData.installments}
+                onChange={(e) => handleInstallmentsChange(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
