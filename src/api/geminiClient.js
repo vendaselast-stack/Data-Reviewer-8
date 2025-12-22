@@ -109,6 +109,43 @@ const generateMockAnalysis = (responseJsonSchema) => {
     };
   }
   
+  if (responseJsonSchema.properties?.anomalies || responseJsonSchema.properties?.trends) {
+    return {
+      anomalies: [
+        {
+          category: "Alimentação",
+          severity: "medium",
+          description: "Gasto 30% acima da média histórica nos últimos 15 dias.",
+          recommendation: "Revisar notas fiscais e considerar redução em refeições fora de casa."
+        }
+      ],
+      trends: [
+        {
+          category: "Vendas",
+          trend_type: "positive",
+          description: "Crescimento constante de 10% ao mês no último trimestre.",
+          impact: "Aumento projetado de R$ 5.000 no faturamento do próximo mês."
+        }
+      ],
+      optimization_opportunities: [
+        {
+          category: "Assinaturas",
+          opportunity: "Serviços duplicados identificados.",
+          potential_savings: "R$ 150/mês",
+          action_items: ["Cancelar assinatura do Plano X", "Migrar para plano familiar"]
+        }
+      ],
+      categorization_rules: [
+        {
+          pattern: "Uber",
+          suggested_category: "Transporte",
+          confidence: "high",
+          examples: ["Uber *Trip", "Uber Pending"]
+        }
+      ]
+    };
+  }
+  
   // Fallback genérico
   return { result: "Análise gerada com sucesso" };
 };
