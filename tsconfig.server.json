@@ -5,18 +5,22 @@
     "moduleResolution": "node",
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "noImplicitAny": false,
     "strict": false,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noEmitOnError": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "noEmit": false,
     "outDir": "dist",
     "rootDir": ".",
-    "declaration": false,
-    "declarationMap": false,
-    "sourceMap": false
+    "declaration": false
   },
   "include": ["server/index.ts", "shared/schema.ts"],
-  "exclude": ["node_modules", "src"]
+  "exclude": ["node_modules", "src", "dist"]
 }
