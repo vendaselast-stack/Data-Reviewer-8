@@ -22,10 +22,10 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
       const contentWidth = pageWidth - (margin * 2);
       let yPosition = margin;
 
-      // Title and metadata
+      // Title
       pdf.setFontSize(18);
       pdf.setTextColor(79, 70, 229);
-      pdf.text('Relatório Financeiro Completo', margin, yPosition);
+      pdf.text('Relatório Financeiro', margin, yPosition);
       
       yPosition += 8;
       pdf.setFontSize(9);
@@ -35,76 +35,10 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
       yPosition += 12;
       pdf.setDrawColor(200, 200, 200);
       pdf.line(margin, yPosition, pageWidth - margin, yPosition);
-      yPosition += 8;
+      yPosition += 10;
 
-      // Capture all visible sections from the page
-      const tabContainers = document.querySelectorAll('[role="tabpanel"]');
-      
-      for (const container of tabContainers) {
-        // Check if container has visible content
-        if (container.style.display === 'none') continue;
-        
-        // Add section title
-        const tabName = container.getAttribute('aria-labelledby');
-        if (tabName) {
-          if (yPosition > pageHeight - 50) {
-            pdf.addPage();
-            yPosition = margin;
-          }
-          
-          pdf.setFontSize(13);
-          pdf.setTextColor(0, 0, 0);
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(`${tabName.replace(/[_-]/g, ' ')}`, margin, yPosition);
-          yPosition += 8;
-          pdf.setFont('helvetica', 'normal');
-        }
-
-        // Capture all charts and tables in this section
-        const elements = container.querySelectorAll('.recharts-wrapper, [data-export-chart], table');
-        
-        for (const element of elements) {
-          if (yPosition > pageHeight - 50) {
-            pdf.addPage();
-            yPosition = margin;
-          }
-
-          try {
-            const canvas = await html2canvas(element, {
-              scale: 2,
-              backgroundColor: '#ffffff',
-              logging: false,
-              useCORS: true,
-              allowTaint: true
-            });
-            
-            const imgData = canvas.toDataURL('image/png');
-            const imgHeight = (canvas.height * contentWidth) / canvas.width;
-            
-            // Check if image fits on current page
-            if (yPosition + imgHeight > pageHeight - margin) {
-              pdf.addPage();
-              yPosition = margin;
-            }
-            
-            pdf.addImage(imgData, 'PNG', margin, yPosition, contentWidth, imgHeight);
-            yPosition += imgHeight + 8;
-          } catch (error) {
-            // Skip elements that can't be captured
-          }
-        }
-
-        // Add spacing between sections
-        yPosition += 5;
-      }
-
-      // Add summary data if available
+      // Executive Summary
       if (reportData?.summary) {
-        if (yPosition > pageHeight - 50) {
-          pdf.addPage();
-          yPosition = margin;
-        }
-
         pdf.setFontSize(12);
         pdf.setTextColor(0, 0, 0);
         pdf.setFont('helvetica', 'bold');
@@ -114,26 +48,19 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
         pdf.setFontSize(9);
 
         Object.entries(reportData.summary).forEach(([key, value]) => {
-          // Skip undefined values
           if (value === undefined || value === null) return;
           
-          if (yPosition > pageHeight - 15) {
+          if (yPosition > pageHeight - 20) {
             pdf.addPage();
             yPosition = margin;
           }
           
           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-          let valueStr;
+          let valueStr = '';
           
           if (typeof value === 'number') {
-            // Format numbers as Brazilian currency (R$)
             valueStr = `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          } else if (typeof value === 'string' && !isNaN(Date.parse(value))) {
-            // Format dates as DD/MM/YYYY
-            const date = new Date(value);
-            valueStr = date.toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
           } else {
-            // Keep string values as is
             valueStr = String(value || '');
           }
           
@@ -142,9 +69,74 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
             yPosition += 6;
           }
         });
+        yPosition += 8;
       }
 
-      pdf.save(`relatorio-completo-${formatDateUTC3()}.pdf`);
+      // Transactions Table
+      if (reportData?.transactions && reportData.transactions.length > 0) {
+        if (yPosition > pageHeight - 50) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Transações Detalhadas', margin, yPosition);
+        yPosition += 8;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+
+        // Table header
+        const tableMargin = margin + 2;
+        const col1 = tableMargin;
+        const col2 = tableMargin + 20;
+        const col3 = tableMargin + 50;
+        const col4 = tableMargin + 85;
+        const col5 = tableMargin + 115;
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(col1 - 1, yPosition - 5, contentWidth, 6, 'F');
+        pdf.text('Data', col1, yPosition);
+        pdf.text('Descrição', col2, yPosition);
+        pdf.text('Tipo', col3, yPosition);
+        pdf.text('Categoria', col4, yPosition);
+        pdf.text('Valor', col5, yPosition);
+        yPosition += 8;
+
+        pdf.setFont('helvetica', 'normal');
+        
+        reportData.transactions.slice(0, 30).forEach((t, idx) => {
+          if (yPosition > pageHeight - 15) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+
+          const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
+          const amount = parseFloat(t.amount || 0);
+          const formattedAmount = amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          const typeLabel = t.type === 'venda' ? 'Receita' : t.type === 'compra' ? 'Despesa' : t.type;
+          const category = t.category || 'Sem Categoria';
+          const description = (t.description || '').substring(0, 20);
+
+          pdf.text(dateStr, col1, yPosition);
+          pdf.text(description, col2, yPosition);
+          pdf.text(typeLabel, col3, yPosition);
+          pdf.text(category.substring(0, 15), col4, yPosition);
+          pdf.text(formattedAmount, col5, yPosition);
+          yPosition += 6;
+        });
+
+        if (reportData.transactions.length > 30) {
+          yPosition += 4;
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 100, 100);
+          pdf.text(`... e mais ${reportData.transactions.length - 30} transações`, margin, yPosition);
+        }
+      }
+
+      pdf.save(`relatorio-financeiro-${formatDateUTC3()}.pdf`);
       toast.success('PDF exportado com sucesso!');
     } catch (error) {
       console.error('PDF export error:', error);
