@@ -100,6 +100,17 @@ export default function ReportsPage() {
 
   const filteredTransactions = getFilteredTransactions();
 
+  // Map category names to transactions for export
+  const transactionsWithCategories = filteredTransactions.map(t => {
+    const categoryName = t.categoryId 
+      ? (categories.find(c => c.id === t.categoryId)?.name || 'Sem Categoria')
+      : (t.category || 'Sem Categoria');
+    return {
+      ...t,
+      category: categoryName // Ensure category is the name, not ID
+    };
+  });
+
   const handleStartAnalysis = () => {
     setModalOpen(true);
   };
@@ -234,7 +245,7 @@ export default function ReportsPage() {
                 despesas_total: filteredTransactions.filter(t => t.type === 'compra').reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0),
                 periodo: dateRange.label
               } : null,
-              transactions: filteredTransactions,
+              transactions: transactionsWithCategories,
               forecast: analysisResult?.cash_flow_forecast
             }}
             reportType="general"
