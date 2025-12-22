@@ -3,7 +3,7 @@ import { Transaction, Installment, PurchaseInstallment, Sale, Purchase } from '@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { Calendar as CalendarIcon, TrendingUp, TrendingDown, Wallet, ChevronDown, ChevronRight } from 'lucide-react';
 import { format, parseISO, isWithinInterval, addMonths, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -13,7 +13,7 @@ import PeriodFilter from '../components/dashboard/PeriodFilter';
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border border-e2e8f0 rounded-lg shadow-lg">
+      <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
         <p className="text-sm font-semibold text-slate-900 mb-2">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
