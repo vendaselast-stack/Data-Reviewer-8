@@ -314,16 +314,17 @@ export function registerRoutes(
 
   app.patch("/api/transactions/:id", async (req, res) => {
     try {
+      const { id } = req.params;
       const body = req.body;
       if (typeof body.date === 'string') {
         body.date = new Date(body.date);
       }
       const data = insertTransactionSchema.partial().parse(body);
-      const transaction = await storage.updateTransaction(req.params.id, data);
+      const transaction = await storage.updateTransaction(id, data);
       res.json(transaction);
-    } catch (error) {
+    } catch (error: any) {
       console.error("[PATCH /api/transactions/:id] Error:", error);
-      res.status(400).json({ error: "Invalid transaction data", details: error instanceof Error ? error.message : "Unknown error" });
+      res.status(400).json({ error: "Invalid transaction data", details: error.message });
     }
   });
 
