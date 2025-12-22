@@ -75,7 +75,10 @@ export default function CustomerFormDialog({ open, onOpenChange, customer = null
                 <div className="flex gap-2">
                   <Select 
                     value={formData.category} 
-                    onValueChange={(v) => setFormData({...formData, category: v})}
+                    onValueChange={(v) => {
+                      console.log("Category selected:", v);
+                      setFormData({...formData, category: v});
+                    }}
                   >
                     <SelectTrigger className="flex-1">
                       <SelectValue placeholder="Selecione..." />
