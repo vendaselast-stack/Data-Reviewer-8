@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, TrendingUp, DollarSign, Percent, Sparkles, Loader2 } from 'lucide-react';
-
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { toast } from 'sonner';
 import PredictivePricingAnalysis from '../components/pricing/PredictivePricingAnalysis';
 
@@ -23,9 +23,18 @@ export default function PricingCalculatorPage() {
   const [aiSuggestion, setAiSuggestion] = useState(null);
 
   const calculatePrice = () => {
+    if (!formData.productName.trim()) {
+      toast.error('Nome do produto é obrigatório');
+      return;
+    }
     const directCost = parseFloat(formData.directCost) || 0;
     const operationalCost = parseFloat(formData.operationalCost) || 0;
     const desiredMargin = parseFloat(formData.desiredMargin) || 0;
+    
+    if (directCost <= 0 && operationalCost <= 0) {
+      toast.error('Informe ao menos um custo válido');
+      return;
+    }
 
     const totalCost = directCost + operationalCost;
     const markupMultiplier = 1 / (1 - (desiredMargin / 100));
@@ -117,20 +126,19 @@ Forneça recomendações estratégicas de precificação.`;
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Nome do Produto</Label>
+              <Label>Nome do Produto <span className="text-rose-600">*</span></Label>
               <Input
                 placeholder="Ex: Produto X"
                 value={formData.productName}
                 onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                required
               />
             </div>
 
             <div className="space-y-2">
               <Label>Custo Direto (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Matéria-prima, mão de obra direta"
+              <CurrencyInput
+                placeholder="0,00"
                 value={formData.directCost}
                 onChange={(e) => setFormData({ ...formData, directCost: e.target.value })}
               />
@@ -141,10 +149,8 @@ Forneça recomendações estratégicas de precificação.`;
 
             <div className="space-y-2">
               <Label>Custo Operacional (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Aluguel, energia, marketing, etc"
+              <CurrencyInput
+                placeholder="0,00"
                 value={formData.operationalCost}
                 onChange={(e) => setFormData({ ...formData, operationalCost: e.target.value })}
               />
@@ -272,22 +278,6 @@ Forneça recomendações estratégicas de precificação.`;
                 </Card>
               )}
 
-              <Button
-                onClick={getAISuggestion}
-                disabled={isAnalyzing}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analisando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Obter Sugestão com IA
-                  </>
-                )}
-              </Button>
             </>
           )}
 
