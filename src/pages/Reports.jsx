@@ -90,13 +90,8 @@ export default function ReportsPage() {
     setModalOpen(true);
   };
 
-  const generateAnalysis = async () => {
-    // Apply temporary filters to the actual state
-    setDateRange(tempDateRange);
-    setCategoryFilter(tempCategory);
-    setModalOpen(false);
-
-    if (getFilteredTransactions().length === 0) {
+  const generateAllAnalysesQuick = async () => {
+    if (filteredTransactions.length === 0) {
       toast.error("Não há dados suficientes para análise.");
       return;
     }
@@ -189,13 +184,23 @@ export default function ReportsPage() {
       });
 
       setAnalysisResult(response);
-      toast.success("Análise gerada com sucesso!");
+      toast.success("Análise completa gerada com sucesso! ✨");
     } catch (error) {
       console.error(error);
       toast.error("Erro ao gerar análise. Tente novamente.");
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const generateAnalysis = async () => {
+    // Apply temporary filters to the actual state
+    setDateRange(tempDateRange);
+    setCategoryFilter(tempCategory);
+    setModalOpen(false);
+    
+    // Call the quick analysis with new filters
+    setTimeout(() => generateAllAnalysesQuick(), 100);
   };
 
   return (
@@ -222,7 +227,7 @@ export default function ReportsPage() {
             reportType="general"
           />
           <Button 
-            onClick={handleStartAnalysis} 
+            onClick={generateAllAnalysesQuick} 
             disabled={isAnalyzing}
             className="bg-primary hover:bg-primary text-white px-6"
             size="lg"
@@ -238,6 +243,14 @@ export default function ReportsPage() {
                 Gerar Nova Análise
               </>
             )}
+          </Button>
+          <Button 
+            onClick={handleStartAnalysis} 
+            disabled={isAnalyzing}
+            variant="outline"
+            size="lg"
+          >
+            Configurar Filtros
           </Button>
         </div>
       </div>
