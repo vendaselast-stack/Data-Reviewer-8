@@ -111,6 +111,7 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Customer operations
   async createCustomer(data: InsertCustomer): Promise<Customer> {
+    // @ts-ignore - Drizzle type inference
     const result = await db.insert(customers).values(data).returning();
     return result[0];
   }
@@ -147,6 +148,7 @@ export class DatabaseStorage implements IStorage {
 
   // Supplier operations
   async createSupplier(data: InsertSupplier): Promise<Supplier> {
+    // @ts-ignore - Drizzle type inference
     const result = await db.insert(suppliers).values(data).returning();
     return result[0];
   }
@@ -185,6 +187,7 @@ export class DatabaseStorage implements IStorage {
   async createCategory(data: InsertCategory): Promise<Category> {
     try {
       console.log("Database Insert - Category Data:", data);
+      // @ts-ignore - Drizzle type inference
       const [newCategory] = await db.insert(categories).values(data).returning();
       if (!newCategory) {
         throw new Error("Falha ao inserir categoria: nenhum registro retornado");
@@ -228,6 +231,7 @@ export class DatabaseStorage implements IStorage {
 
   // Transaction operations
   async createTransaction(data: InsertTransaction): Promise<Transaction> {
+    // @ts-ignore - Drizzle type inference
     const result = await db.insert(transactions).values(data).returning();
     return result[0];
   }
@@ -281,6 +285,7 @@ export class DatabaseStorage implements IStorage {
 
   // Cash Flow operations
   async createCashFlow(data: InsertCashFlow): Promise<CashFlow> {
+    // @ts-ignore - Drizzle type inference
     const result = await db.insert(cashFlow).values(data).returning();
     return result[0];
   }

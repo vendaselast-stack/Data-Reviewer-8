@@ -21,7 +21,6 @@ PORT = "5000"
 deploymentTarget = "cloudrun"
 run = ["node", "./dist/index.cjs"]
 build = ["sh", "-c", "vite build && tsc --outDir dist --rootDir . --module commonjs --moduleResolution node --esModuleInterop server/index.ts && mv dist/server/index.js dist/index.cjs"]
-publicDir = "dist/public"
 
 [workflows]
 runButton = "Start application"
