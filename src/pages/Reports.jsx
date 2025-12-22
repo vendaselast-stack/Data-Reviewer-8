@@ -231,6 +231,7 @@ export default function ReportsPage() {
             disabled={isAnalyzing}
             className="bg-primary hover:bg-primary text-white px-6"
             size="lg"
+            data-testid="button-generate-analysis"
           >
             {isAnalyzing ? (
               <>
@@ -290,7 +291,7 @@ export default function ReportsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button onClick={generateAnalysis} className="bg-primary">
+            <Button onClick={generateAnalysis} className="bg-primary" data-testid="button-start-ia-analysis">
               Iniciar Análise IA
             </Button>
           </DialogFooter>
@@ -305,6 +306,7 @@ export default function ReportsPage() {
             saleInstallments={saleInstallments}
             purchaseInstallments={purchaseInstallments}
             onGenerateAnalysis={handleStartAnalysis}
+            autoGenerate={false}
           />
           <Card className="bg-slate-50 border-dashed border-2 border-slate-200">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
@@ -333,6 +335,7 @@ export default function ReportsPage() {
             saleInstallments={saleInstallments}
             purchaseInstallments={purchaseInstallments}
             onGenerateAnalysis={handleStartAnalysis}
+            autoGenerate={true}
           />
 
           <Tabs defaultValue="dre" className="w-full">
