@@ -8,6 +8,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Category, Sale, Installment } from '@/api/entities';
 import { format, addMonths } from 'date-fns';
 import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
+import CreateCategoryModal from '../transactions/CreateCategoryModal';
 
 export default function NewSaleDialog({ customer, open, onOpenChange }) {
   const [formData, setFormData] = useState({
@@ -19,6 +21,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     installment_amount: ''
   });
   const [customInstallments, setCustomInstallments] = useState([]);
+  const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -26,6 +29,19 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     queryKey: ['categories'],
     queryFn: () => Category.list(),
     initialData: []
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (data) => Category.create(data),
+    onSuccess: (newCat) => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      setFormData((prev) => ({ ...prev, category: newCat.name }));
+      setIsCreateCategoryModalOpen(false);
+      toast.success('Categoria criada!');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Erro ao criar categoria');
+    }
   });
 
   const createSaleMutation = useMutation({
@@ -266,7 +282,18 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Categoria</Label>
+              <div className="flex items-center justify-between">
+                <Label>Categoria</Label>
+                <Button 
+                  type="button" 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={() => setIsCreateCategoryModalOpen(true)}
+                  className="h-5 w-5"
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
               <Select 
                 value={formData.category} 
                 onValueChange={(v) => setFormData({...formData, category: v})}
@@ -305,6 +332,13 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
           </div>
         </form>
       </DialogContent>
+
+      <CreateCategoryModal 
+        open={isCreateCategoryModalOpen}
+        onOpenChange={setIsCreateCategoryModalOpen}
+        onSubmit={(data) => createCategoryMutation.mutate(data)}
+        isLoading={createCategoryMutation.isPending}
+      />
     </Dialog>
   );
 }
