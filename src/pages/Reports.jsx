@@ -15,7 +15,6 @@ import PeriodFilter from '../components/dashboard/PeriodFilter';
 import CashFlowForecastChart from '../components/reports/CashFlowForecastChart';
 import ExpensesBreakdown from '../components/reports/ExpensesBreakdown';
 import RevenueGrowthReport from '../components/reports/RevenueGrowthReport';
-import CategoryInsights from '../components/reports/CategoryInsights';
 import WorkingCapitalAnalysis from '../components/reports/WorkingCapitalAnalysis';
 import DebtAnalysis from '../components/reports/DebtAnalysis';
 import ExecutiveSummary from '../components/reports/ExecutiveSummary';
@@ -368,10 +367,6 @@ export default function ReportsPage() {
                 transactions={filteredTransactions}
                 saleInstallments={saleInstallments}
                 purchaseInstallments={purchaseInstallments}
-              />
-              <CategoryInsights 
-                transactions={filteredTransactions}
-                categories={categories}
               />
             </TabsContent>
 
