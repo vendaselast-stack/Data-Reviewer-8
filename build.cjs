@@ -2,22 +2,75 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-try {
-  console.log('🔨 Vite build...');
-  execSync('npx vite build', { stdio: 'pipe' });
-  console.log('✓ Done');
-} catch (e) {
-  console.log('✓ Vite done');
+function run(cmd, description) {
+  console.log(`\n[BUILD] ${description}...`);
+  try {
+    execSync(cmd, { stdio: 'inherit', cwd: __dirname });
+    console.log(`[OK] ${description} completed`);
+    return true;
+  } catch (error) {
+    console.error(`[ERROR] ${description} failed`);
+    return false;
+  }
 }
 
-try {
-  console.log('📦 TypeScript...');
-  execSync('npx tsc --outDir dist --module esnext server/index.ts 2>/dev/null || true', { stdio: 'pipe' });
-  console.log('✓ Done');
-} catch (e) {
-  console.log('✓ Skipped');
+console.log('='.repeat(50));
+console.log('Starting production build...');
+console.log('='.repeat(50));
+
+// Step 1: Build frontend with Vite
+if (!run('npx vite build', 'Building frontend with Vite')) {
+  process.exit(1);
 }
 
-const server = `const express=require('express'),p=require('path'),a=express(),PORT=process.env.PORT||5000;a.use(express.json());a.use(express.static(p.join(__dirname,'public')));const m={transactions:[{id:'1',date:new Date().toISOString(),description:'Venda',amount:1500,type:'venda'}],customers:[{id:'1',name:'Cliente A',email:'c@c.com'}],categories:[{id:'1',name:'Vendas',type:'entrada'}],suppliers:[{id:'1',name:'Fornecedor',email:'f@f.com'}]};a.get('/api/transactions',(r,s)=>s.json(m.transactions));a.get('/api/customers',(r,s)=>s.json(m.customers));a.get('/api/categories',(r,s)=>s.json(m.categories));a.get('/api/suppliers',(r,s)=>s.json(m.suppliers));a.get('/api/sales',(r,s)=>s.json([]));a.get('/api/purchases',(r,s)=>s.json([]));a.get('/api/installments',(r,s)=>s.json([]));a.get('*',(r,s)=>s.sendFile(p.join(__dirname,'public','index.html')));a.listen(PORT,'0.0.0.0',()=>console.log(\`✓ Ready on port \${PORT}\`));`;
-fs.writeFileSync(path.join(__dirname, 'dist', 'index.cjs'), server);
-console.log('✅ Build SUCCESS!');
+// Step 2: Compile server with TypeScript using tsconfig.server.json
+if (!run('npx tsc --project tsconfig.server.json', 'Compiling server TypeScript')) {
+  process.exit(1);
+}
+
+// Step 3: Move compiled server to dist/index.cjs
+const sourcePath = path.join(__dirname, 'dist', 'server', 'index.js');
+const destPath = path.join(__dirname, 'dist', 'index.cjs');
+
+try {
+  if (fs.existsSync(sourcePath)) {
+    fs.renameSync(sourcePath, destPath);
+    console.log('[OK] Moved server/index.js to index.cjs');
+  } else {
+    console.error('[ERROR] dist/server/index.js not found');
+    process.exit(1);
+  }
+} catch (error) {
+  console.error('[ERROR] Failed to move server file:', error.message);
+  process.exit(1);
+}
+
+// Step 4: Verify build output
+console.log('\n' + '='.repeat(50));
+console.log('Build verification:');
+
+const requiredFiles = [
+  'dist/index.cjs',
+  'dist/public/index.html'
+];
+
+let allGood = true;
+for (const file of requiredFiles) {
+  const filePath = path.join(__dirname, file);
+  if (fs.existsSync(filePath)) {
+    const stats = fs.statSync(filePath);
+    console.log(`[OK] ${file} (${Math.round(stats.size / 1024)}KB)`);
+  } else {
+    console.log(`[MISSING] ${file}`);
+    allGood = false;
+  }
+}
+
+if (allGood) {
+  console.log('\n' + '='.repeat(50));
+  console.log('BUILD SUCCESSFUL - Ready for deployment!');
+  console.log('='.repeat(50));
+} else {
+  console.log('\n[ERROR] Build incomplete - some files are missing');
+  process.exit(1);
+}
