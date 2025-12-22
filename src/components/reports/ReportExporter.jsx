@@ -13,6 +13,10 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
     setIsExporting(true);
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
+      pdf.setLanguage('pt-BR');
+      // Set default font to support UTF-8 characters
+      pdf.setFont('helvetica');
+      
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       let yPosition = 20;
@@ -30,7 +34,7 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
       yPosition += 5;
       pdf.setFontSize(10);
       pdf.setTextColor(100, 100, 100);
-      pdf.text(`Gerado em: ${formatDateTimeUTC3()} (UTC-3)`, 20, yPosition);
+      pdf.text(`Gerado em: ${formatDateTimeUTC3()}`, 20, yPosition);
       
       yPosition += 15;
 
@@ -102,9 +106,9 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
   const exportToExcel = () => {
     setIsExporting(true);
     try {
-      // Create CSV content
+      // Create CSV content with UTF-8 encoding
       let csvContent = `Relatório ${reportType === 'dre' ? 'DRE' : 'Financeiro'}\n`;
-      csvContent += `Gerado em: ${formatDateTimeUTC3()} (UTC-3)\n\n`;
+      csvContent += `Gerado em: ${formatDateTimeUTC3()}\n\n`;
 
       if (reportData?.summary) {
         csvContent += 'Resumo Financeiro\n';
@@ -134,7 +138,11 @@ export default function ReportExporter({ reportData, reportType = 'general' }) {
         });
       }
 
-      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      // Create blob with UTF-8 encoding (BOM marker ensures UTF-8)
+      const encoder = new TextEncoder();
+      const uint8Array = encoder.encode(csvContent);
+      const blob = new Blob([uint8Array], { type: 'text/csv;charset=utf-8' });
+      
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
