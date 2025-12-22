@@ -67,60 +67,37 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
 
   const createSaleMutation = useMutation({
     mutationFn: async (data) => {
-      // Create sale
-      const sale = await Sale.create({
-        customer_id: customer.id,
-        description: data.description,
-        total_amount: data.total_amount,
-        category: data.category,
-        sale_date: data.sale_date,
-        installments: data.installments,
-        status: 'pending'
-      });
-
-      // Create installments
-      const installmentPromises = [];
+      // Create sale transaction directly
+      const categories = await Category.list();
+      const cat = categories.find(c => c.name === data.category);
       
-      if (data.customInstallments && data.customInstallments.length > 0) {
-        // Use custom installments
-        data.customInstallments.forEach((inst, idx) => {
-          installmentPromises.push(
-            Installment.create({
-              sale_id: sale.id,
-              installment_number: idx + 1,
-              amount: parseFloat(inst.amount),
-              due_date: inst.due_date,
-              paid: false
-            })
-          );
-        });
-      } else {
-        // Use automatic calculation
-        const installmentAmount = data.installment_amount 
-          ? parseFloat(data.installment_amount) 
-          : data.total_amount / data.installments;
-        
-        for (let i = 1; i <= data.installments; i++) {
-          const dueDate = addMonths(new Date(data.sale_date), i - 1);
-          installmentPromises.push(
-            Installment.create({
-              sale_id: sale.id,
-              installment_number: i,
-              amount: installmentAmount,
-              due_date: format(dueDate, 'yyyy-MM-dd'),
-              paid: false
-            })
-          );
-        }
+      const payload = {
+        customerId: customer.id,
+        categoryId: cat?.id,
+        type: 'venda',
+        date: new Date(data.sale_date).toISOString(),
+        shift: 'manhã',
+        amount: String(data.total_amount),
+        description: data.description,
+        status: 'pendente'
+      };
+      
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || `HTTP ${response.status}`);
       }
-
-      await Promise.all(installmentPromises);
-      return sale;
+      
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      queryClient.invalidateQueries({ queryKey: ['installments'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
       onOpenChange(false);
       setFormData({
         description: '',
