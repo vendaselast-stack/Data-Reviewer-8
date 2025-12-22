@@ -76,7 +76,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomers(): Promise<Customer[]> {
-    return await db.select().from(customers);
+    return await db.select().from(customers).orderBy(sql`${customers.createdAt} DESC`);
   }
 
   async getCustomer(id: string): Promise<Customer | undefined> {
@@ -112,7 +112,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSuppliers(): Promise<Supplier[]> {
-    return await db.select().from(suppliers);
+    return await db.select().from(suppliers).orderBy(sql`${suppliers.createdAt} DESC`);
   }
 
   async getSupplier(id: string): Promise<Supplier | undefined> {
