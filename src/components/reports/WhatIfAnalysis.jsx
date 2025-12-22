@@ -323,27 +323,27 @@ Forneça análise detalhada e recomendações estratégicas.`;
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-50 rounded-lg border">
                   <h4 className="font-medium text-slate-900 mb-2">Cenário Base</h4>
-                  <p className="text-sm text-slate-700">{scenarios.analysis.scenario_analysis.base_case}</p>
+                  <p className="text-sm text-slate-700">{scenarios.analysis?.scenario_analysis?.base_case || "Análise indisponível"}</p>
                 </div>
                 
                 <div className="p-4 bg-indigo-50 rounded-lg border border-blue-200">
                   <h4 className="font-medium text-indigo-900 mb-2">Com Alterações</h4>
-                  <p className="text-sm text-primary">{scenarios.analysis.scenario_analysis.with_changes}</p>
+                  <p className="text-sm text-primary">{scenarios.analysis?.scenario_analysis?.with_changes || "Análise indisponível"}</p>
                 </div>
 
                 <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                   <h4 className="font-medium text-emerald-900 mb-2">Cenário Otimista</h4>
-                  <p className="text-sm text-emerald-700">{scenarios.analysis.scenario_analysis.optimistic}</p>
+                  <p className="text-sm text-emerald-700">{scenarios.analysis?.scenario_analysis?.optimistic || "Análise indisponível"}</p>
                 </div>
 
                 <div className="p-4 bg-rose-50 rounded-lg border border-rose-200">
                   <h4 className="font-medium text-rose-900 mb-2">Cenário Pessimista</h4>
-                  <p className="text-sm text-rose-700">{scenarios.analysis.scenario_analysis.pessimistic}</p>
+                  <p className="text-sm text-rose-700">{scenarios.analysis?.scenario_analysis?.pessimistic || "Análise indisponível"}</p>
                 </div>
               </div>
 
               {/* Key Risks */}
-              {scenarios.analysis.key_risks?.length > 0 && (
+              {scenarios.analysis?.key_risks?.length > 0 && (
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                   <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
@@ -369,7 +369,7 @@ Forneça análise detalhada e recomendações estratégicas.`;
               )}
 
               {/* Recommendations */}
-              {scenarios.analysis.recommendations?.length > 0 && (
+              {scenarios.analysis?.recommendations?.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-slate-900 mb-3">Recomendações Estratégicas</h4>
                   <div className="space-y-2">
@@ -394,10 +394,12 @@ Forneça análise detalhada e recomendações estratégicas.`;
               )}
 
               {/* Impact Summary */}
-              <div className="p-4 bg-indigo-50 rounded-lg border border-blue-200">
-                <h4 className="font-semibold text-indigo-900 mb-2">Impacto no Fluxo de Caixa</h4>
-                <p className="text-sm text-primary">{scenarios.analysis.cash_flow_impact}</p>
-              </div>
+              {scenarios.analysis?.cash_flow_impact && (
+                <div className="p-4 bg-indigo-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-indigo-900 mb-2">Impacto no Fluxo de Caixa</h4>
+                  <p className="text-sm text-primary">{scenarios.analysis.cash_flow_impact}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
