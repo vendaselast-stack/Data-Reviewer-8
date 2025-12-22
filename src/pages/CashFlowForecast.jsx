@@ -45,11 +45,29 @@ export default function CashFlowForecastPage() {
     initialData: []
   });
 
-  // Installments/Sales/Purchases queries removed - use transactions instead
-  const saleInstallments = [];
-  const purchaseInstallments = [];
-  const sales = [];
-  const purchases = [];
+  const { data: saleInstallments } = useQuery({
+    queryKey: ['sale-installments'],
+    queryFn: () => Installment.list(),
+    initialData: []
+  });
+
+  const { data: purchaseInstallments } = useQuery({
+    queryKey: ['purchase-installments'],
+    queryFn: () => PurchaseInstallment.list(),
+    initialData: []
+  });
+
+  const { data: sales } = useQuery({
+    queryKey: ['sales'],
+    queryFn: () => Sale.list(),
+    initialData: []
+  });
+
+  const { data: purchases } = useQuery({
+    queryKey: ['purchases'],
+    queryFn: () => Purchase.list(),
+    initialData: []
+  });
 
   const calculateCashFlow = () => {
     if (!dateRange.startDate || !dateRange.endDate) return [];
