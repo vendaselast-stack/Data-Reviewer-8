@@ -1,15 +1,18 @@
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'dist', 'public')));
+
+// Serve static files from dist/public in production, or client/src in development
+const cwd = process.cwd();
+const staticPath = process.env.NODE_ENV === 'production' 
+  ? path.join(cwd, 'dist', 'public')
+  : path.join(cwd, 'client', 'src');
+
+app.use(express.static(staticPath));
 
 // Mock data for API endpoints
 const mockData = {
@@ -71,9 +74,15 @@ app.post('/api/suppliers', (req: any, res: any) => {
 
 // SPA fallback - serve index.html for all other routes
 app.get('*', (_req: any, res: any) => {
-  res.sendFile(path.join(__dirname, '..', 'dist', 'public', 'index.html'));
+  const cwd = process.cwd();
+  const indexPath = process.env.NODE_ENV === 'production'
+    ? path.join(cwd, 'dist', 'public', 'index.html')
+    : path.join(cwd, 'client', 'index.html');
+  res.sendFile(indexPath);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+export default app;
