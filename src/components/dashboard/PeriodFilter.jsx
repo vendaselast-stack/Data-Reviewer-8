@@ -192,11 +192,14 @@ export default function PeriodFilter({
                       De: <span className="text-primary">{customStart ? format(customStart, 'dd/MM/yyyy') : 'Selecione'}</span>
                     </p>
                     <CalendarComponent
+                      key="start-calendar"
                       mode="single"
                       selected={customStart}
-                      onSelect={setCustomStart}
+                      onSelect={(date) => {
+                        setCustomStart(date);
+                      }}
+                      disabled={(date) => customEnd && date > customEnd}
                       className="rounded-md border"
-                      initialFocus
                     />
                   </div>
                   <div className="flex-1">
@@ -204,9 +207,13 @@ export default function PeriodFilter({
                       Até: <span className="text-primary">{customEnd ? format(customEnd, 'dd/MM/yyyy') : 'Selecione'}</span>
                     </p>
                     <CalendarComponent
+                      key="end-calendar"
                       mode="single"
                       selected={customEnd}
-                      onSelect={setCustomEnd}
+                      onSelect={(date) => {
+                        setCustomEnd(date);
+                      }}
+                      disabled={(date) => !customStart || date < customStart}
                       className="rounded-md border"
                     />
                   </div>
