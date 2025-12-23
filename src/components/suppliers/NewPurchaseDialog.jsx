@@ -171,9 +171,11 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
         ? parseFloat(formData.total_amount.replace(/\./g, '').replace(',', '.'))
         : parseFloat(formData.total_amount);
       const defaultAmount = totalAmount / numInstallments;
+      // Parse date at noon to avoid timezone offset issues (UTC-3 São Paulo)
+      const baseDate = new Date(formData.purchase_date + 'T12:00:00');
       const newCustomInstallments = Array.from({ length: numInstallments }, (_, i) => ({
         amount: defaultAmount,
-        due_date: format(addMonths(new Date(formData.purchase_date), i), 'yyyy-MM-dd')
+        due_date: format(addMonths(baseDate, i), 'yyyy-MM-dd')
       }));
       setCustomInstallments(newCustomInstallments);
     } else {
