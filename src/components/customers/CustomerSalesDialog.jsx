@@ -151,16 +151,12 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
       return transaction;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/cash-flow'] });
-      setPaymentEditOpen(false);
-      setSelectedTransaction(null);
       toast.success('Pagamento confirmado!', { duration: 5000 });
-      // Force refetch to update UI immediately
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ['transactions'] });
-      }, 100);
+      // Refetch immediately and wait for it to complete before closing
+      queryClient.refetchQueries({ queryKey: ['transactions'] }).then(() => {
+        setPaymentEditOpen(false);
+        setSelectedTransaction(null);
+      });
     },
     onError: (error) => {
       toast.error(error.message, { duration: 5000 });
