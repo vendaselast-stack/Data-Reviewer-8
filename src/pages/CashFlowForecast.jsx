@@ -29,21 +29,36 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function CashFlowForecastPage() {
-  // Initialize with last 30 days - will be set by CashFlowPeriodFilter
-  const [dateRange, setDateRange] = useState({
-    startDate: startOfDay(subDays(new Date(), 29)),
-    endDate: endOfDay(new Date()),
-    label: 'Últimos 30 dias'
-  });
-  const [expandedMonths, setExpandedMonths] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-
   const { data: transactions } = useQuery({
     queryKey: ['transactions'],
     queryFn: () => Transaction.list(),
     initialData: []
   });
+
+  // Calculate min and max dates from all transactions
+  const getDateRange = () => {
+    if (transactions.length === 0) {
+      return { minDate: new Date('2000-01-01'), maxDate: new Date('2099-12-31') };
+    }
+    
+    const dates = transactions.map(t => new Date(t.date.split('T')[0] + 'T00:00:00Z'));
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+    
+    return { minDate, maxDate };
+  };
+
+  const { minDate, maxDate } = getDateRange();
+
+  // Initialize with all time - will be set by CashFlowPeriodFilter
+  const [dateRange, setDateRange] = useState({
+    startDate: minDate,
+    endDate: maxDate,
+    label: 'Todo período'
+  });
+  const [expandedMonths, setExpandedMonths] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const { data: saleInstallments } = useQuery({
     queryKey: ['sale-installments'],
@@ -302,6 +317,8 @@ export default function CashFlowForecastPage() {
 
         <CashFlowPeriodFilter 
           onPeriodChange={setDateRange}
+          minDate={minDate}
+          maxDate={maxDate}
         />
       </div>
 
