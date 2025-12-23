@@ -25,7 +25,6 @@ export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [dateRange, setDateRange] = useState({
     startDate: startOfDay(subDays(new Date(), 29)),
     endDate: endOfDay(new Date()),
@@ -92,10 +91,6 @@ export default function TransactionsPage() {
     const transactionToEdit = { ...item };
     setEditingTransaction(transactionToEdit);
     setIsFormOpen(true);
-  };
-
-  const handleComplete = (id) => {
-    updateMutation.mutate({ id, data: { status: 'concluído' } });
   };
 
   const handleDelete = (id) => {
@@ -182,14 +177,8 @@ export default function TransactionsPage() {
       const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             (t.category && t.category.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesDate = tDate >= startDate && tDate <= endDate;
-      
-      // Match by status
-      const isPaid = (t.status === 'completed' || t.status === 'pago' || t.status === 'concluído');
-      const matchesStatus = statusFilter === 'all' || 
-                           (statusFilter === 'completed' && isPaid) || 
-                           (statusFilter === 'pending' && !isPaid);
 
-      return matchesType && matchesCategory && matchesSearch && matchesDate && matchesStatus;
+      return matchesType && matchesCategory && matchesSearch && matchesDate;
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -209,9 +198,6 @@ export default function TransactionsPage() {
       const tDateStr = t.date.split('T')[0]; // Get YYYY-MM-DD only
       const tDate = parseISO(tDateStr);
       const amount = parseFloat(t.amount) || 0;
-      const isPaid = (t.status === 'completed' || t.status === 'pago' || t.status === 'concluído');
-      
-      if (!isPaid) return; // Only count paid transactions for cash flow
 
       if (tDate < startDate) {
         // Transaction is before the selected period -> contributes to opening balance
@@ -351,17 +337,6 @@ export default function TransactionsPage() {
                         <SelectItem value="expense">Despesas</SelectItem>
                     </SelectContent>
                 </Select>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full md:w-[160px]">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="pending">Pendentes</SelectItem>
-                        <SelectItem value="completed">Concluídas</SelectItem>
-                    </SelectContent>
-                </Select>
             </div>
         </div>
 
@@ -372,7 +347,6 @@ export default function TransactionsPage() {
                         <TableHead className="pl-6 text-left">Data</TableHead>
                         <TableHead className="text-left">Descrição</TableHead>
                         <TableHead className="text-left">Categoria</TableHead>
-                        <TableHead className="text-left">Status</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
                         <TableHead className="text-right pr-6">Ações</TableHead>
                     </TableRow>
@@ -390,26 +364,6 @@ export default function TransactionsPage() {
                                         {categories.find(c => c.id === t.categoryId)?.name || t.category}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-left">
-                                    <span className={cn(
-                                        "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
-                                        (t.status === 'completed' || t.status === 'pago' || t.status === 'concluído') 
-                                            ? "bg-emerald-50 text-emerald-700" 
-                                            : "bg-amber-50 text-amber-700"
-                                    )}>
-                                        {(t.status === 'completed' || t.status === 'pago' || t.status === 'concluído') ? (
-                                            <>
-                                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                                Concluído
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Clock className="w-3.5 h-3.5" />
-                                                Pendente
-                                            </>
-                                        )}
-                                    </span>
-                                </TableCell>
                                 <TableCell className={`text-right font-bold ${t.type === 'venda' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                     {t.type === 'venda' ? '+' : '-'} R$ {Math.abs(parseFloat(t.amount || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </TableCell>
@@ -422,14 +376,6 @@ export default function TransactionsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-40">
-                                                {!(t.status === 'completed' || t.status === 'pago' || t.status === 'concluído') && (
-                                                    <DropdownMenuItem 
-                                                        className="text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50 cursor-pointer"
-                                                        onClick={() => handleComplete(t.id)}
-                                                    >
-                                                        <Check className="w-4 h-4 mr-2" /> Concluir
-                                                    </DropdownMenuItem>
-                                                )}
                                                 <DropdownMenuItem 
                                                     className="cursor-pointer"
                                                     onClick={() => handleEdit(t)}
@@ -450,7 +396,7 @@ export default function TransactionsPage() {
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center py-10 text-slate-500">
+                            <TableCell colSpan={5} className="text-center py-10 text-slate-500">
                                 Nenhuma transação encontrada.
                             </TableCell>
                         </TableRow>
