@@ -80,8 +80,10 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
       const installmentAmount = parseFloat(data.installment_amount) || (totalAmount / installmentCount);
       
       const installmentGroupId = `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      // Use UTC normalization to avoid timezone issues: YYYY-MM-DD -> YYYY-MM-DDTHH:MM:SSZ
-      const baseDate = new Date(data.purchase_date + 'T00:00:00Z');
+      // Convert YYYY-MM-DD to ISO date at noon UTC (avoids timezone issues)
+      // Parse the date string directly to ensure correct day
+      const [year, month, day] = data.purchase_date.split('-');
+      const baseDate = new Date(`${year}-${month}-${day}T12:00:00Z`);
       
       const promises = [];
       

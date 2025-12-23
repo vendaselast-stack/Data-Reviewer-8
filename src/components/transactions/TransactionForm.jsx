@@ -118,12 +118,21 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
       amount = Math.abs(Number(amount)).toFixed(2);
     }
     
+    // Convert date to ISO string using noon UTC to avoid timezone display issues
+    let isoDate;
+    if (formData.date && typeof formData.date === 'string') {
+      const [year, month, day] = formData.date.split('-');
+      isoDate = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+    } else {
+      isoDate = new Date(formData.date).toISOString();
+    }
+
     onSubmit({
       ...formData,
       categoryId: formData.categoryId,
       category: selectedCategory?.name || '',
       amount: amount,
-      date: formData.date && typeof formData.date === 'string' ? new Date(formData.date + 'T00:00:00Z').toISOString() : new Date(formData.date).toISOString(),
+      date: isoDate,
       shift: 'turno1'
     });
   };
