@@ -711,6 +711,131 @@ app.post("/api/admin/init-db", async (_req, res) => {
   }
 });
 
+// Seed comprehensive data from Dec 2025 to May 2026
+app.post("/api/admin/seed-data", async (_req, res) => {
+  try {
+    const isLocalhost = _req.hostname === 'localhost' || _req.hostname === '127.0.0.1';
+    if (isLocalhost && isDev) {
+      return res.status(400).json({ error: "This endpoint is for deployed instances only" });
+    }
+    
+    console.log("🌱 Seeding comprehensive data Dec 2025 - May 2026...");
+    
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    
+    // Get category IDs
+    const cats = await db.execute(sql`SELECT id, name, type FROM categories`);
+    const catMap: Record<string, number> = {};
+    (cats.rows as any[]).forEach((c: any) => { catMap[c.name] = c.id; });
+    
+    // Get customer IDs
+    const custs = await db.execute(sql`SELECT id, name FROM customers`);
+    const custIds = (custs.rows as any[]).map((c: any) => c.id);
+    
+    // Get supplier IDs
+    const supps = await db.execute(sql`SELECT id, name FROM suppliers`);
+    const suppIds = (supps.rows as any[]).map((s: any) => s.id);
+    
+    // Generate transactions from Dec 23, 2025 to May 31, 2026
+    const startDate = new Date('2025-12-23');
+    const endDate = new Date('2026-05-31');
+    
+    const transactionTemplates = [
+      // Daily income
+      { type: 'income', category: 'Vendas', minAmt: 800, maxAmt: 3500, freq: 'daily' },
+      { type: 'income', category: 'Serviços', minAmt: 200, maxAmt: 1200, freq: 'weekly' },
+      { type: 'income', category: 'Comissões', minAmt: 150, maxAmt: 600, freq: 'biweekly' },
+      // Regular expenses
+      { type: 'expense', category: 'Fornecedores', minAmt: 500, maxAmt: 2500, freq: 'weekly' },
+      { type: 'expense', category: 'Aluguel', minAmt: 2500, maxAmt: 2500, freq: 'monthly', day: 5 },
+      { type: 'expense', category: 'Salários', minAmt: 4500, maxAmt: 8000, freq: 'monthly', day: 5 },
+      { type: 'expense', category: 'Energia', minAmt: 350, maxAmt: 650, freq: 'monthly', day: 10 },
+      { type: 'expense', category: 'Água', minAmt: 120, maxAmt: 250, freq: 'monthly', day: 12 },
+      { type: 'expense', category: 'Internet', minAmt: 150, maxAmt: 200, freq: 'monthly', day: 15 },
+      { type: 'expense', category: 'Telefone', minAmt: 80, maxAmt: 180, freq: 'monthly', day: 15 },
+      { type: 'expense', category: 'Material de Escritório', minAmt: 100, maxAmt: 400, freq: 'monthly', day: 20 },
+      { type: 'expense', category: 'Manutenção', minAmt: 200, maxAmt: 800, freq: 'biweekly' },
+      { type: 'expense', category: 'Marketing', minAmt: 300, maxAmt: 1200, freq: 'monthly', day: 1 },
+      { type: 'expense', category: 'Transporte', minAmt: 150, maxAmt: 500, freq: 'weekly' },
+    ];
+    
+    const transactions: any[] = [];
+    let currentDate = new Date(startDate);
+    let weekCounter = 0;
+    let biweekCounter = 0;
+    
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const dayOfMonth = currentDate.getDate();
+      const dayOfWeek = currentDate.getDay();
+      const isPastDate = currentDate <= new Date();
+      
+      for (const template of transactionTemplates) {
+        let shouldAdd = false;
+        
+        if (template.freq === 'daily' && dayOfWeek !== 0) {
+          shouldAdd = Math.random() > 0.15; // 85% chance
+        } else if (template.freq === 'weekly' && dayOfWeek === 1) {
+          shouldAdd = true;
+        } else if (template.freq === 'biweekly' && dayOfWeek === 3 && biweekCounter % 2 === 0) {
+          shouldAdd = true;
+        } else if (template.freq === 'monthly' && dayOfMonth === template.day) {
+          shouldAdd = true;
+        }
+        
+        if (shouldAdd && catMap[template.category]) {
+          const amount = Math.round((Math.random() * (template.maxAmt - template.minAmt) + template.minAmt) * 100) / 100;
+          const finalAmount = template.type === 'expense' ? -Math.abs(amount) : Math.abs(amount);
+          
+          transactions.push({
+            category_id: catMap[template.category],
+            customer_id: template.type === 'income' && custIds.length > 0 ? custIds[Math.floor(Math.random() * custIds.length)] : null,
+            supplier_id: template.type === 'expense' && suppIds.length > 0 ? suppIds[Math.floor(Math.random() * suppIds.length)] : null,
+            type: template.type,
+            amount: finalAmount,
+            paid_amount: isPastDate ? Math.abs(finalAmount) : 0,
+            date: dateStr,
+            payment_date: isPastDate ? dateStr : null,
+            description: template.category,
+            status: isPastDate ? 'pago' : 'pendente',
+            shift: ['manha', 'tarde', 'noite'][Math.floor(Math.random() * 3)],
+          });
+        }
+      }
+      
+      if (dayOfWeek === 0) weekCounter++;
+      if (dayOfWeek === 3) biweekCounter++;
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // Insert transactions in batches
+    const batchSize = 50;
+    for (let i = 0; i < transactions.length; i += batchSize) {
+      const batch = transactions.slice(i, i + batchSize);
+      const values = batch.map(t => 
+        `(gen_random_uuid(), ${t.customer_id ? `'${t.customer_id}'` : 'NULL'}, ${t.supplier_id ? `'${t.supplier_id}'` : 'NULL'}, ${t.category_id}, '${t.type}', ${t.amount}, ${t.paid_amount}, '${t.date}', ${t.payment_date ? `'${t.payment_date}'` : 'NULL'}, '${t.description}', '${t.status}', '${t.shift}')`
+      ).join(',');
+      
+      await db.execute(sql.raw(`
+        INSERT INTO transactions (id, customer_id, supplier_id, category_id, type, amount, paid_amount, date, payment_date, description, status, shift)
+        VALUES ${values}
+        ON CONFLICT DO NOTHING
+      `));
+    }
+    
+    console.log(`✅ Seeded ${transactions.length} transactions from Dec 2025 to May 2026`);
+    res.json({ 
+      success: true, 
+      message: `Seeded ${transactions.length} transactions from Dec 2025 to May 2026`,
+      count: transactions.length
+    });
+  } catch (error) {
+    console.error("❌ Error seeding data:", error);
+    res.status(500).json({ error: String(error) });
+  }
+});
+
 // SPA fallback - serve index.html for all other routes (production only)
 if (!isDev) {
   app.get("*", (_req, res) => {
