@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { authMiddleware, requireRole, AuthenticatedRequest } from "./middleware";
+import { authMiddleware, requireRole, requireSuperAdmin, subscriptionCheckMiddleware, checkRateLimit, recordLoginAttempt, AuthenticatedRequest } from "./middleware";
 import {
   insertCustomerSchema,
   insertSupplierSchema,
@@ -10,6 +10,7 @@ import {
   insertCashFlowSchema,
   insertUserSchema,
   insertCompanySchema,
+  insertSubscriptionSchema,
   DEFAULT_CATEGORIES,
 } from "../shared/schema";
 import {
@@ -21,6 +22,7 @@ import {
   createSession,
   findUserById,
   findCompanyById,
+  createAuditLog,
 } from "./auth";
 import { setupVite } from "./vite";
 import { z } from "zod";
@@ -74,24 +76,33 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Login
+  // Login with rate limiting
   app.post("/api/auth/login", async (req, res) => {
     try {
+      const ip = req.headers['x-forwarded-for']?.toString().split(',')[0] || req.socket.remoteAddress || 'unknown';
       const { username, password, companyId } = req.body;
 
       if (!username || !password) {
         return res.status(400).json({ error: "Missing username or password" });
       }
 
+      // Check rate limiting
+      const rateLimitCheck = await checkRateLimit(ip);
+      if (!rateLimitCheck.allowed) {
+        return res.status(429).json({ error: "Too many login attempts. Please try again later." });
+      }
+
       // Find user
       const user = await findUserByUsername(username, companyId);
       if (!user) {
+        await recordLoginAttempt(ip, username, false);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
       // Verify password
       const isValid = await verifyPassword(password, user.password);
       if (!isValid) {
+        await recordLoginAttempt(ip, username, false);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
@@ -101,18 +112,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(404).json({ error: "Company not found" });
       }
 
+      // Record successful login
+      await recordLoginAttempt(ip, username, true);
+
       // Generate token
       const token = generateToken({
         userId: user.id,
         companyId: user.companyId,
         role: user.role,
+        isSuperAdmin: user.isSuperAdmin,
       });
 
       // Create session
       await createSession(user.id, user.companyId, token);
 
+      // Audit log
+      await createAuditLog(user.id, user.companyId, "LOGIN", "user", user.id, undefined, ip, req.headers['user-agent'] || 'unknown');
+
       res.json({
-        user: { id: user.id, username: user.username, email: user.email, role: user.role },
+        user: { id: user.id, username: user.username, email: user.email, role: user.role, isSuperAdmin: user.isSuperAdmin },
         company: { id: company.id, name: company.name },
         token,
       });
@@ -666,6 +684,121 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete purchase installment" });
+    }
+  });
+
+  // ========== SUPER ADMIN ROUTES (PROTECTED) ==========
+
+  // Get all companies (Super Admin only)
+  app.get("/api/super-admin/companies", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const companies = await storage.getCompanies();
+      const companiesWithSubs = await Promise.all(
+        companies.map(async (c) => ({
+          ...c,
+          subscription: await storage.getCompanySubscription(c.id),
+        }))
+      );
+      res.json(companiesWithSubs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch companies" });
+    }
+  });
+
+  // Block/unblock company subscription (Super Admin only)
+  app.patch("/api/super-admin/companies/:id/subscription", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { status } = req.body;
+      
+      if (!["active", "suspended", "cancelled"].includes(status)) {
+        return res.status(400).json({ error: "Invalid subscription status" });
+      }
+
+      const subscription = await storage.updateCompanySubscription(req.params.id, { status });
+      
+      // Audit log
+      if (req.user) {
+        await createAuditLog(
+          req.user.id,
+          req.user.companyId,
+          `UPDATE_COMPANY_SUBSCRIPTION_${status.toUpperCase()}`,
+          "company",
+          req.params.id,
+          JSON.stringify({ status }),
+          req.ip || 'unknown',
+          req.headers['user-agent'] || 'unknown'
+        );
+      }
+
+      res.json(subscription);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update subscription" });
+    }
+  });
+
+  // Get audit logs (Super Admin only)
+  app.get("/api/super-admin/audit-logs/:companyId", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const logs = await storage.getAuditLogs(req.params.companyId, 100);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch audit logs" });
+    }
+  });
+
+  // Get current user with Super Admin flag
+  app.get("/api/auth/me", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+      const user = await findUserById(req.user.id);
+      const company = await findCompanyById(req.user.companyId);
+
+      if (!user || !company) {
+        return res.status(404).json({ error: "User or company not found" });
+      }
+
+      res.json({
+        user: { id: user.id, username: user.username, email: user.email, role: user.role, isSuperAdmin: user.isSuperAdmin },
+        company: { id: company.id, name: company.name },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  // ========== PROTECTED ROUTES WITH SUBSCRIPTION CHECK ==========
+
+  // Apply subscription check to all data routes
+  const protectedRoutes = [
+    "/api/customers",
+    "/api/suppliers",
+    "/api/categories",
+    "/api/transactions",
+    "/api/cashflow",
+    "/api/sales",
+    "/api/purchases",
+    "/api/installments",
+  ];
+
+  // Logout
+  app.post("/api/auth/logout", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (req.user) {
+        await createAuditLog(
+          req.user.id,
+          req.user.companyId,
+          "LOGOUT",
+          "user",
+          req.user.id,
+          undefined,
+          req.ip || 'unknown',
+          req.headers['user-agent'] || 'unknown'
+        );
+      }
+      res.json({ message: "Logged out" });
+    } catch (error) {
+      res.status(500).json({ error: "Logout failed" });
     }
   });
 

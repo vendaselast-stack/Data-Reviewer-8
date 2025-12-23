@@ -30,7 +30,18 @@ export const companies = pgTable("companies", {
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
-// Users table with RBAC support
+// Subscriptions table - tracks company plans
+export const subscriptions = pgTable("subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  plan: text("plan").notNull().default("basic"), // basic, pro, enterprise
+  status: text("status").notNull().default("active"), // active, suspended, cancelled
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Users table with RBAC support and Super Admin flag
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
@@ -38,10 +49,26 @@ export const users = pgTable("users", {
   email: text("email"),
   password: text("password").notNull(),
   name: text("name"),
-  role: text("role").notNull().default("user"), // admin, manager, user
+  role: text("role").notNull().default("user"), // admin, manager, user, operational
+  isSuperAdmin: boolean("is_super_admin").notNull().default(false), // Flag for Super Admin
   status: text("status").notNull().default("active"), // active, inactive, suspended
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Audit logs for security tracking
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), // e.g., "CREATE_TRANSACTION", "DELETE_CUSTOMER"
+  resourceType: text("resource_type").notNull(), // e.g., "transaction", "customer"
+  resourceId: varchar("resource_id"),
+  details: text("details"), // JSON string with additional details
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  status: text("status").notNull().default("success"), // success, failure
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
 // Sessions for JWT tracking
@@ -51,6 +78,15 @@ export const sessions = pgTable("sessions", {
   companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+// Login attempts for rate limiting
+export const loginAttempts = pgTable("login_attempts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ipAddress: text("ip_address").notNull(),
+  username: text("username"),
+  success: boolean("success").notNull().default(false),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
@@ -171,6 +207,12 @@ export const insertCompanySchema = createInsertSchema(companies).omit({
   updatedAt: true,
 });
 
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -203,10 +245,18 @@ export const insertCashFlowSchema = createInsertSchema(cashFlow).omit({
   id: true,
 });
 
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // ========== TYPES ==========
 
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
+
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -227,6 +277,11 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type CashFlow = typeof cashFlow.$inferSelect;
 export type InsertCashFlow = z.infer<typeof insertCashFlowSchema>;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+export type LoginAttempt = typeof loginAttempts.$inferSelect;
 
 export type InsertSale = typeof sales.$inferInsert;
 export type Sale = typeof sales.$inferSelect;
@@ -251,6 +306,8 @@ export const ROLES = {
   ADMIN: "admin",
   MANAGER: "manager", 
   USER: "user",
+  OPERATIONAL: "operational",
+  SUPER_ADMIN: "super_admin",
 } as const;
 
 export type UserRole = typeof ROLES[keyof typeof ROLES];

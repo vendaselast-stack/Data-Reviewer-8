@@ -10,6 +10,9 @@ import {
   purchases,
   installments,
   purchaseInstallments,
+  companies,
+  subscriptions,
+  auditLogs,
   type InsertCustomer,
   type InsertSupplier,
   type InsertCategory,
@@ -28,6 +31,11 @@ import {
   type Purchase,
   type Installment,
   type PurchaseInstallment,
+  type Company,
+  type Subscription,
+  type AuditLog,
+  type InsertSubscription,
+  type InsertAuditLog,
 } from "../shared/schema";
 
 export interface IStorage {
@@ -97,6 +105,16 @@ export interface IStorage {
   getPurchaseInstallment(companyId: string, id: string): Promise<PurchaseInstallment | undefined>;
   updatePurchaseInstallment(companyId: string, id: string, data: Partial<InsertPurchaseInstallment>): Promise<PurchaseInstallment>;
   deletePurchaseInstallment(companyId: string, id: string): Promise<void>;
+
+  // Subscription operations
+  getCompanies(): Promise<Company[]>;
+  getCompany(id: string): Promise<Company | undefined>;
+  updateCompanySubscription(companyId: string, data: Partial<InsertSubscription>): Promise<Subscription>;
+  getCompanySubscription(companyId: string): Promise<Subscription | undefined>;
+  
+  // Audit log operations
+  createAuditLog(data: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(companyId: string, limit?: number): Promise<AuditLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -465,6 +483,48 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(purchaseInstallments)
       .where(and(eq(purchaseInstallments.companyId, companyId), eq(purchaseInstallments.id, id)));
+  }
+
+  // Subscription operations
+  async getCompanies(): Promise<Company[]> {
+    return await db.select().from(companies).orderBy(desc(companies.createdAt));
+  }
+
+  async getCompany(id: string): Promise<Company | undefined> {
+    const result = await db.select().from(companies).where(eq(companies.id, id));
+    return result[0];
+  }
+
+  async updateCompanySubscription(companyId: string, data: Partial<InsertSubscription>): Promise<Subscription> {
+    const result = await db
+      .update(subscriptions)
+      .set(data)
+      .where(eq(subscriptions.companyId, companyId))
+      .returning();
+    return result[0];
+  }
+
+  async getCompanySubscription(companyId: string): Promise<Subscription | undefined> {
+    const result = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.companyId, companyId));
+    return result[0];
+  }
+
+  // Audit log operations
+  async createAuditLog(data: InsertAuditLog): Promise<AuditLog> {
+    const result = await db.insert(auditLogs).values(data).returning();
+    return result[0];
+  }
+
+  async getAuditLogs(companyId: string, limit: number = 100): Promise<AuditLog[]> {
+    return await db
+      .select()
+      .from(auditLogs)
+      .where(eq(auditLogs.companyId, companyId))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit);
   }
 }
 

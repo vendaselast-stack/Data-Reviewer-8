@@ -1,5 +1,5 @@
 import { Switch, Route } from "wouter";
-import Layout from "./Layout.jsx";
+import Layout from "../components/Layout.jsx";
 import Dashboard from "./Dashboard";
 import Transactions from "./Transactions";
 import Customers from "./Customers";
@@ -8,8 +8,17 @@ import Suppliers from "./Suppliers";
 import CashFlowForecast from "./CashFlowForecast";
 import PricingCalculator from "./PricingCalculator";
 import Categories from "./Categories";
+import SuperAdmin from "./SuperAdmin";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Pages() {
+  const { user } = useAuth();
+
+  // Redirect Super Admin to their panel
+  if (user?.isSuperAdmin) {
+    return <SuperAdmin />;
+  }
+
   return (
     <Layout>
       <Switch>

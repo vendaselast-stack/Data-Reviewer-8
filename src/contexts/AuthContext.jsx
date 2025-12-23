@@ -91,6 +91,15 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("auth");
   };
 
+  const updateUser = (newUserData) => {
+    setUser(newUserData);
+    const authData = localStorage.getItem("auth");
+    if (authData) {
+      const current = JSON.parse(authData);
+      localStorage.setItem("auth", JSON.stringify({ ...current, user: newUserData }));
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -102,6 +111,7 @@ export function AuthProvider({ children }) {
         signup,
         login,
         logout,
+        updateUser,
         isAuthenticated: !!token,
       }}
     >
