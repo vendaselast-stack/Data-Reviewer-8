@@ -166,7 +166,54 @@ dist/
 
 ---
 
-## 📝 Atualizações Recentes (22/DEC/2025)
+## 🔄 Fluxo de Trabalho do Sistema
+
+O sistema funciona em **4 módulos integrados**:
+
+### 1️⃣ **Transações** (Fechamento de Caixa)
+- Registra **TODAS as receitas e despesas diárias**
+- Calcula automaticamente: **Saldo Inicial + Receitas - Despesas = Saldo Final**
+- Filtra por período (hoje, últimos 7/30 dias, etc.)
+- Apenas transações **PAGAS/RECEBIDAS** aparecem aqui
+
+### 2️⃣ **Clientes & Fornecedores** (Entrada de Vendas/Compras)
+- Registra **vendas para clientes** (crédito/parcelado)
+- Registra **compras de fornecedores** (débito/parcelado)
+- Ao confirmar pagamento/recebimento → **Aparece automaticamente em Transações**
+- Data de pagamento customizável para controle
+
+### 3️⃣ **Conciliação** (Validação de Banco)
+- Compara **extrato bancário** com **transações registradas**
+- Identifica discrepâncias e valores não reconciliados
+- Ferramenta para validar fechamento de caixa
+
+### 4️⃣ **Fluxo de Caixa** (Planejamento)
+- Mostra **entradas e saídas históricas** (passado)
+- Mostra **entradas e saídas futuras** (próximos 30 dias)
+- Permite análise de **saldo projetado**
+- Alimentado por Transações + Clientes/Fornecedores pendentes
+
+---
+
+## 📝 Atualizações Recentes (23/DEC/2025)
+
+### Correções Críticas Implementadas
+**Status**: ✅ TODAS RESOLVIDAS
+
+#### O que foi corrigido:
+1. ✅ **Lógica de Saldo** - Fórmula corrigida em Transações.jsx e Dashboard.jsx
+2. ✅ **Datas Futuras** - Sistema permite lançamentos futuros sem restrições
+3. ✅ **Integração Automática** - Pagamentos/Recebimentos criam registros em Transações com paymentDate correto
+4. ✅ **Interface Fornecedores** - Modais com scroll para muitas parcelas (max-h-[85vh])
+5. ✅ **Fluxo de Caixa** - Despesas aparecem corretamente no gráfico e tabela
+6. ✅ **Saldo Inicial** - Calculado dinamicamente a partir de transações anteriores ao período
+
+#### Verificação Final:
+- ✅ Dashboard mostra saldo inicial do período
+- ✅ Transações calcula: Saldo Inicial + Receitas - Despesas = Saldo Final
+- ✅ Clientes/Fornecedores pagos aparecem em Transações automaticamente
+- ✅ Fluxo de Caixa funciona com passado e futuro
+- ✅ Despesas sempre subtraem do saldo (nunca somam)
 
 ### Build System Completo
 **Status**: ✅ CORRIGIDO E FUNCIONANDO
@@ -232,8 +279,9 @@ Clique no botão **Publish** para colocar seu sistema no ar!
 
 ---
 
-**Última atualização**: 22/Dez/2025 (21h47)  
-**Sistema**: 🟢 **OPERACIONAL**  
+**Última atualização**: 23/Dez/2025 (16h30)  
+**Sistema**: 🟢 **OPERACIONAL - TODAS AS CORREÇÕES IMPLEMENTADAS**  
 **Build**: ✅ **SEM ERROS**  
-**Deploy**: ✅ **PRONTO**
+**Deploy**: ✅ **PRONTO PARA PUBLICAR**  
+**Fluxo**: ✅ **Transações → Clientes/Fornecedores → Fluxo de Caixa → Conciliação**
 
