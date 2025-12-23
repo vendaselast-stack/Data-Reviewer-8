@@ -104,7 +104,7 @@ export default function CustomersPage() {
     if (!Array.isArray(transactions)) return 0;
     return transactions
       .filter(t => t.customerId === customerId && t.type === 'venda')
-      .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+      .reduce((acc, t) => acc + (parseFloat(t.amount || 0) + parseFloat(t.interest || 0)), 0);
   };
 
   // Get customer join date - use join_date if available, otherwise use first transaction date
