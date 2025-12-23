@@ -44,6 +44,7 @@ export default function Pages() {
         <Route path="/cashflowforecast">{() => <ProtectedRoute component={CashFlowForecast} permission="view_reports" />}</Route>
         <Route path="/pricingcalculator" component={PricingCalculator} />
         <Route path="/categories" component={Categories} />
+        <Route path="/settings/users">{() => <ProtectedRoute component={UserManagement} permission="manage_users" />}</Route>
         <Route path="/users">{() => <ProtectedRoute component={UserManagement} permission="manage_users" />}</Route>
         <Route path="/permissions">{() => <ProtectedRoute component={UserPermissions} permission="manage_users" />}</Route>
         <Route path="/access-denied" component={AccessDenied} />

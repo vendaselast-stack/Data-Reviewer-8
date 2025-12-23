@@ -117,7 +117,10 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user ? {
+          ...user,
+          permissions: typeof user.permissions === 'string' ? JSON.parse(user.permissions) : (user.permissions || {})
+        } : null,
         company,
         token,
         loading,
