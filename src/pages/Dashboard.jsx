@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, Wallet, Users, Plus, ChevronRight, CheckCircle2, Clock, Check } from 'lucide-react';
-import { subMonths, startOfMonth, format, isAfter, isBefore, subDays, startOfDay, endOfDay } from 'date-fns';
+import { subMonths, startOfMonth, format, isAfter, isBefore, subDays, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import KPIWidget from '../components/dashboard/KPIWidget';
 import RevenueChart from '../components/dashboard/RevenueChart';
