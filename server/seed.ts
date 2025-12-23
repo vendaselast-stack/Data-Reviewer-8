@@ -131,14 +131,15 @@ async function seed() {
     // Future transactions (next 60 days) - pending installments
     console.log('📅 Creating future installments...');
     
-    // Create installments for multiple customers
+    // Create installments for multiple customers (starting today)
     for (const customer of insertedCustomers.slice(0, 3)) {
       const baseAmount = (Math.random() * 3000 + 1000).toFixed(2);
       const installmentCount = Math.floor(Math.random() * 5) + 2; // 2-6 installments
       const installmentAmount = (parseFloat(baseAmount) / installmentCount).toFixed(2);
       
       for (let k = 0; k < installmentCount; k++) {
-        const dueDate = createDate(30 * (k + 1)); // Monthly installments
+        // First installment is today, then monthly thereafter
+        const dueDate = createDate(30 * k); // 0, 30, 60, 90 days from today
         transactionData.push({
           customerId: customer.id,
           categoryId: vendasCat?.id,
@@ -154,14 +155,15 @@ async function seed() {
       }
     }
 
-    // Future supplier payments
+    // Future supplier payments (starting today)
     for (const supplier of insertedSuppliers.slice(0, 2)) {
       const baseAmount = (Math.random() * 5000 + 2000).toFixed(2);
       const installmentCount = Math.floor(Math.random() * 4) + 2; // 2-5 installments
       const installmentAmount = (parseFloat(baseAmount) / installmentCount).toFixed(2);
       
       for (let k = 0; k < installmentCount; k++) {
-        const dueDate = createDate(30 * (k + 1)); // Monthly installments
+        // First installment is today, then monthly thereafter
+        const dueDate = createDate(30 * k); // 0, 30, 60, 90 days from today
         transactionData.push({
           supplierId: supplier.id,
           categoryId: comprasCat?.id,
