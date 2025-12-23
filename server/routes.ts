@@ -61,7 +61,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       await createSession(user.id, company.id, token);
 
       res.status(201).json({
-        user: { id: user.id, username: user.username, email: user.email, role: user.role },
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          role: user.role,
+          isSuperAdmin: user.isSuperAdmin,
+          companyId: company.id,
+          permissions: {}
+        },
         company: { id: company.id, name: company.name },
         token,
       });
@@ -125,7 +133,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       await createAuditLog(user.id, user.companyId, "LOGIN", "user", user.id, undefined, ip, req.headers['user-agent'] || 'unknown');
 
       res.json({
-        user: { id: user.id, username: user.username, email: user.email, role: user.role, isSuperAdmin: user.isSuperAdmin },
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          role: user.role, 
+          isSuperAdmin: user.isSuperAdmin,
+          companyId: user.companyId,
+          permissions: user.permissions ? JSON.parse(user.permissions) : {}
+        },
         company: { id: company.id, name: company.name },
         token,
       });
@@ -148,7 +164,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       res.json({
-        user: { id: user.id, username: user.username, email: user.email, role: user.role },
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          role: user.role,
+          isSuperAdmin: user.isSuperAdmin,
+          companyId: user.companyId,
+          permissions: user.permissions ? JSON.parse(user.permissions) : {}
+        },
         company: { id: company.id, name: company.name },
       });
     } catch (error) {
