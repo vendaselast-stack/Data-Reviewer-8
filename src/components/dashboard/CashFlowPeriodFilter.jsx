@@ -13,13 +13,23 @@ import { format, subDays, subMonths, startOfDay, endOfDay, startOfMonth, endOfMo
 import { ptBR } from 'date-fns/locale';
 
 export default function CashFlowPeriodFilter({ onPeriodChange }) {
-  const [period, setPeriod] = useState('last30Days');
+  const [period, setPeriod] = useState('allTime');
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState(null);
   const [customEnd, setCustomEnd] = useState(null);
   const [initialized, setInitialized] = useState(false);
 
   const periodOptions = {
+    allTime: {
+      label: 'Todo período',
+      getValue: () => {
+        return { 
+          startDate: new Date('2000-01-01'), 
+          endDate: new Date('2099-12-31'),
+          label: 'Todo período' 
+        };
+      }
+    },
     today: {
       label: 'Hoje',
       getValue: () => {
@@ -86,10 +96,10 @@ export default function CashFlowPeriodFilter({ onPeriodChange }) {
     }
   };
 
-  // Initialize with last 30 days on first render
+  // Initialize with all time on first render
   useEffect(() => {
     if (!initialized) {
-      const periodData = periodOptions.last30Days.getValue();
+      const periodData = periodOptions.allTime.getValue();
       onPeriodChange(periodData);
       setInitialized(true);
     }
