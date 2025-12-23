@@ -167,9 +167,11 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     if (numInstallments > 1) {
       const totalAmount = parseFloat(formData.total_amount) || 0;
       const defaultAmount = totalAmount > 0 ? totalAmount / numInstallments : '';
+      // Parse date at noon to avoid timezone offset issues (UTC-3 São Paulo)
+      const baseDate = new Date(formData.sale_date + 'T12:00:00');
       const newCustomInstallments = Array.from({ length: numInstallments }, (_, i) => ({
         amount: defaultAmount,
-        due_date: format(addMonths(new Date(formData.sale_date), i), 'yyyy-MM-dd')
+        due_date: format(addMonths(baseDate, i), 'yyyy-MM-dd')
       }));
       setCustomInstallments(newCustomInstallments);
     } else {
