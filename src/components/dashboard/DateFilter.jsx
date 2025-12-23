@@ -13,19 +13,28 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function DateFilter({ onDateRangeChange }) {
-  const [dateRange, setDateRange] = useState({
-    startDate: startOfDay(subDays(new Date(), 29)),
-    endDate: endOfDay(new Date()),
-    label: 'Últimos 30 dias'
-  });
+  // Initialize with "Hoje" using UTC normalization for São Paulo timezone
+  const getInitialDateRange = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return {
+      startDate: new Date(todayStr + 'T00:00:00Z'),
+      endDate: new Date(todayStr + 'T23:59:59Z'),
+      label: 'Hoje'
+    };
+  };
+
+  const [dateRange, setDateRange] = useState(getInitialDateRange());
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState(null);
   const [customEnd, setCustomEnd] = useState(null);
   const [initialized, setInitialized] = useState(false);
 
   const handlePreset = (days, label) => {
-    const end = endOfDay(new Date());
-    const start = startOfDay(subDays(new Date(), days));
+    // Use UTC normalization to avoid timezone issues
+    const todayStr = new Date().toISOString().split('T')[0];
+    const startDaysAgoStr = days === 0 ? todayStr : new Date(new Date().setDate(new Date().getDate() - days)).toISOString().split('T')[0];
+    const end = new Date(todayStr + 'T23:59:59Z');
+    const start = new Date(startDaysAgoStr + 'T00:00:00Z');
     const newRange = { startDate: start, endDate: end, label };
     setDateRange(newRange);
     onDateRangeChange(newRange);
@@ -33,9 +42,11 @@ export default function DateFilter({ onDateRangeChange }) {
 
   const handleCustom = () => {
     if (customStart && customEnd) {
+      const startStr = customStart.toISOString().split('T')[0];
+      const endStr = customEnd.toISOString().split('T')[0];
       const newRange = {
-        startDate: startOfDay(customStart),
-        endDate: endOfDay(customEnd),
+        startDate: new Date(startStr + 'T00:00:00Z'),
+        endDate: new Date(endStr + 'T23:59:59Z'),
         label: `${format(customStart, 'dd/MM/yyyy', { locale: ptBR })} - ${format(customEnd, 'dd/MM/yyyy', { locale: ptBR })}`
       };
       setDateRange(newRange);
