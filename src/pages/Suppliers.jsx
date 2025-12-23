@@ -92,7 +92,7 @@ export default function SuppliersPage() {
   const getSupplierPurchases = (supplierId) => {
     return transactions
       .filter(t => t.supplierId === supplierId && t.type === 'compra')
-      .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+      .reduce((acc, t) => acc + (parseFloat(t.amount || 0) + parseFloat(t.interest || 0)), 0);
   };
 
   const getSupplierJoinDate = (supplier) => {
