@@ -62,7 +62,13 @@ export default function CashFlowForecastPage() {
     
     // Create Date objects from the min/max date strings using parseISO for safety
     const minDate = parseISO(minDateStr);
-    const maxDate = parseISO(maxDateStr);
+    let maxDate = parseISO(maxDateStr);
+    
+    // Cap maxDate to today - don't show future months with no data
+    const today = startOfDay(new Date());
+    if (maxDate > today) {
+      maxDate = today;
+    }
     
     return { minDate, maxDate };
   };
