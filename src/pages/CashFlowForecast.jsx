@@ -262,7 +262,11 @@ export default function CashFlowForecastPage() {
 
   // Calculate opening balance (all transactions before start date)
   const openingBalance = transactions
-    .filter(t => parseISO(t.date) < dateRange.startDate)
+    .filter(t => {
+      const tDateStr = t.date.split('T')[0];
+      const tDate = parseISO(tDateStr);
+      return tDate < dateRange.startDate;
+    })
     .reduce((acc, t) => {
       const amount = parseFloat(t.amount) || 0;
       return acc + (t.type === 'venda' ? amount : -amount);
