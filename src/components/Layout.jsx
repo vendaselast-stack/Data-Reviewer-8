@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { LayoutDashboard, Receipt, Users, Settings, Menu, X, Brain, Building2, TrendingUp, Tag, LogOut } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,7 +13,6 @@ export default function Layout({ children }) {
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/login';
   };
 
   const baseNavigation = [
@@ -38,13 +37,13 @@ export default function Layout({ children }) {
         {navigation.map((item) => {
             const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
             return (
-                <a key={item.name} href={item.path} onClick={onNavigate}>
+                <Link key={item.name} href={item.path} onClick={onNavigate}>
                 <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive ? 'text-black shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
                     style={{ backgroundColor: isActive ? '#E7AA1C' : 'transparent' }} data-testid={`link-nav-${item.name.toLowerCase()}`}>
                     <item.icon className={`w-5 h-5 ${isActive ? 'text-black' : 'text-slate-400 group-hover:text-white'}`} />
                     <span className="font-medium text-sm">{item.name}</span>
                 </div>
-                </a>
+                </Link>
             );
         })}
       </nav>

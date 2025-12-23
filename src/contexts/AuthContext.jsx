@@ -25,6 +25,13 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  // Redirect to login when logged out
+  useEffect(() => {
+    if (!loading && !token && window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+      window.location.href = '/login';
+    }
+  }, [token, loading]);
+
   const signup = async (companyName, companyDocument, username, email, password, name) => {
     try {
       setError(null);
