@@ -62,10 +62,12 @@ export default function PeriodFilter({
     today: {
       label: 'Hoje',
       getValue: () => {
-        const now = new Date();
+        // Use UTC normalization to avoid timezone issues
+        const todayStr = new Date().toISOString().split('T')[0];
+        const today = new Date(todayStr + 'T00:00:00Z');
         return { 
-          startDate: startOfDay(now), 
-          endDate: endOfDay(now),
+          startDate: today, 
+          endDate: new Date(todayStr + 'T23:59:59Z'),
           label: 'Hoje' 
         };
       }
@@ -73,25 +75,31 @@ export default function PeriodFilter({
     last7Days: {
       label: 'Últimos 7 dias',
       getValue: () => {
-        const end = endOfDay(new Date());
-        const start = startOfDay(subDays(new Date(), 6));
-        return { startDate: start, endDate: end, label: 'Últimos 7 dias' };
+        const todayStr = new Date().toISOString().split('T')[0];
+        const today = new Date(todayStr + 'T23:59:59Z');
+        const sevenDaysAgoStr = new Date(new Date().setDate(new Date().getDate() - 6)).toISOString().split('T')[0];
+        const sevenDaysAgo = new Date(sevenDaysAgoStr + 'T00:00:00Z');
+        return { startDate: sevenDaysAgo, endDate: today, label: 'Últimos 7 dias' };
       }
     },
     last30Days: {
       label: 'Últimos 30 dias',
       getValue: () => {
-        const end = endOfDay(new Date());
-        const start = startOfDay(subDays(new Date(), 29));
-        return { startDate: start, endDate: end, label: 'Últimos 30 dias' };
+        const todayStr = new Date().toISOString().split('T')[0];
+        const today = new Date(todayStr + 'T23:59:59Z');
+        const thirtyDaysAgoStr = new Date(new Date().setDate(new Date().getDate() - 29)).toISOString().split('T')[0];
+        const thirtyDaysAgo = new Date(thirtyDaysAgoStr + 'T00:00:00Z');
+        return { startDate: thirtyDaysAgo, endDate: today, label: 'Últimos 30 dias' };
       }
     },
     last90Days: {
       label: 'Últimos 90 dias',
       getValue: () => {
-        const end = endOfDay(new Date());
-        const start = startOfDay(subDays(new Date(), 89));
-        return { startDate: start, endDate: end, label: 'Últimos 90 dias' };
+        const todayStr = new Date().toISOString().split('T')[0];
+        const today = new Date(todayStr + 'T23:59:59Z');
+        const ninetyDaysAgoStr = new Date(new Date().setDate(new Date().getDate() - 89)).toISOString().split('T')[0];
+        const ninetyDaysAgo = new Date(ninetyDaysAgoStr + 'T00:00:00Z');
+        return { startDate: ninetyDaysAgo, endDate: today, label: 'Últimos 90 dias' };
       }
     }
   };

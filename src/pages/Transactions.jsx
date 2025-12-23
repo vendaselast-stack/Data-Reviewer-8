@@ -25,11 +25,18 @@ export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [dateRange, setDateRange] = useState({
-    startDate: startOfDay(subDays(new Date(), 29)),
-    endDate: endOfDay(new Date()),
-    label: 'Últimos 30 dias'
-  });
+  // Initialize with UTC-normalized dates to avoid timezone issues
+  const getInitialDateRange = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgoStr = new Date(new Date().setDate(new Date().getDate() - 29)).toISOString().split('T')[0];
+    return {
+      startDate: new Date(thirtyDaysAgoStr + 'T00:00:00Z'),
+      endDate: new Date(todayStr + 'T23:59:59Z'),
+      label: 'Últimos 30 dias'
+    };
+  };
+
+  const [dateRange, setDateRange] = useState(getInitialDateRange());
   const [uploadOpen, setUploadOpen] = useState(false);
   const [reconciliationOpen, setReconciliationOpen] = useState(false);
   const [statementData, setStatementData] = useState(null);
