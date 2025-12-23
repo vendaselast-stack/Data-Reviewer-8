@@ -212,7 +212,13 @@ export default function PeriodFilter({
                     onSelect={setDateRange}
                     numberOfMonths={2}
                     locale={ptBR}
-                    className="rounded-md border calendar-range"
+                    className="rounded-md border"
+                    classNames={{
+                      day_selected: "bg-primary text-white font-bold",
+                      day_range_start: "bg-primary text-white font-bold rounded-l-md",
+                      day_range_end: "bg-primary text-white font-bold rounded-r-md",
+                      day_range_middle: "bg-blue-100 dark:bg-blue-900/30 text-foreground aria-selected:bg-blue-100 dark:aria-selected:bg-blue-900/30"
+                    }}
                   />
                 </div>
                 <Button
