@@ -482,7 +482,6 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
       pdf.save(`relatorio-financeiro-${formatDateUTC3()}.pdf`);
       toast.success('PDF exportado com sucesso!');
     } catch (error) {
-      console.error('PDF export error:', error);
       toast.error('Erro ao exportar PDF');
     } finally {
       setIsExporting(false);
