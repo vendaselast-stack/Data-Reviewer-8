@@ -12,7 +12,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, subDays, subMonths, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export default function CashFlowPeriodFilter({ onPeriodChange }) {
+export default function CashFlowPeriodFilter({ onPeriodChange, minDate = new Date('2000-01-01'), maxDate = new Date('2099-12-31') }) {
   const [period, setPeriod] = useState('allTime');
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState(null);
@@ -24,8 +24,8 @@ export default function CashFlowPeriodFilter({ onPeriodChange }) {
       label: 'Todo período',
       getValue: () => {
         return { 
-          startDate: new Date('2000-01-01'), 
-          endDate: new Date('2099-12-31'),
+          startDate: minDate, 
+          endDate: maxDate,
           label: 'Todo período' 
         };
       }
