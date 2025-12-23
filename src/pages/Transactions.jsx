@@ -389,7 +389,7 @@ export default function TransactionsPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className={`text-right font-bold ${t.type === 'venda' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                    {t.type === 'venda' ? '+' : '-'} R$ {Math.abs(parseFloat(t.amount || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {t.type === 'venda' ? '+' : '-'} R$ {Math.abs(parseFloat(t.amount || 0) + parseFloat(t.interest || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </TableCell>
                                 <TableCell className="text-right pr-6">
                                     <div className="flex justify-end">

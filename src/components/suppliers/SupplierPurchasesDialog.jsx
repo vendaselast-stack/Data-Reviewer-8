@@ -293,7 +293,7 @@ export default function SupplierPurchasesDialog({ supplier, open, onOpenChange }
                           </div>
                           <div>
                             <p className="font-semibold text-slate-900">
-                              R$ {parseFloat(installment.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              R$ {(parseFloat(installment.amount || 0) + parseFloat(installment.interest || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                             <p className="text-xs text-slate-500">
                               Venc: {installment.date ? format(parseISO(installment.date), "dd/MM/yyyy") : '-'}
