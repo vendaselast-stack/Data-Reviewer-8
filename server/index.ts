@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import http from 'http';
+import { fileURLToPath } from 'url';
 import { storage } from './storage';
 
 const app = express();
@@ -9,11 +10,13 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 app.use(express.json());
 
-const cwd = process.cwd();
+// Get __dirname from import.meta.url for both ES modules and CommonJS
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Only serve static files in production mode
 if (!isDev) {
-  const staticPath = path.join(cwd, 'dist', 'public');
+  const staticPath = path.join(__dirname, '..', 'public');
   app.use(express.static(staticPath));
 }
 
@@ -524,7 +527,7 @@ app.delete('/api/purchase-installments/:id', async (req, res) => {
 // SPA fallback - serve index.html for all other routes (production only)
 if (!isDev) {
   app.get('*', (_req, res) => {
-    const indexPath = path.join(cwd, 'dist', 'public', 'index.html');
+    const indexPath = path.join(__dirname, '..', 'public', 'index.html');
     res.sendFile(indexPath);
   });
 }
