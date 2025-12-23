@@ -103,7 +103,7 @@ export default function PaymentEditDialog({ isOpen, onClose, transaction, onConf
                 type="date"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
-                className="flex-1"
+                className="flex-1 [&::-webkit-calendar-picker-indicator]:hidden"
                 data-testid="input-payment-date"
               />
             </div>
