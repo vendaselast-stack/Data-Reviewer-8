@@ -28,11 +28,10 @@ export default function TransactionsPage() {
   // Initialize with UTC-normalized dates to avoid timezone issues
   const getInitialDateRange = () => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const thirtyDaysAgoStr = new Date(new Date().setDate(new Date().getDate() - 29)).toISOString().split('T')[0];
     return {
-      startDate: new Date(thirtyDaysAgoStr + 'T00:00:00Z'),
+      startDate: new Date(todayStr + 'T00:00:00Z'),
       endDate: new Date(todayStr + 'T23:59:59Z'),
-      label: 'Últimos 30 dias'
+      label: 'Hoje'
     };
   };
 

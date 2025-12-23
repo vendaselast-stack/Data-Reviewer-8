@@ -295,7 +295,9 @@ export default function ReportsPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Período de Análise</label>
               <PeriodFilter 
-                onPeriodChange={setTempDateRange}
+                onPeriodChange={(period) => {
+                  setTempDateRange(period);
+                }}
                 mode="days"
                 defaultPeriod="last30Days"
               />
