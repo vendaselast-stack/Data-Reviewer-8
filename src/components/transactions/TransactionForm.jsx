@@ -28,8 +28,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
     amount: '',
     type: 'venda',
     categoryId: '',
-    date: new Date(),
-    status: 'concluído'
+    date: new Date()
   });
 
   // Fetch Categories
@@ -87,8 +86,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
           amount: '',
           type: 'venda',
           categoryId: '',
-          date: new Date(),
-          status: 'concluído'
+          date: new Date()
         });
       }
     }
@@ -270,21 +268,6 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
               </Popover>
             </div>
 
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(v) => setFormData({...formData, status: v})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="concluído">Concluído</SelectItem>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
