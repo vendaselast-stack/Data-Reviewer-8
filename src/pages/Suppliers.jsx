@@ -34,37 +34,43 @@ export default function SuppliersPage() {
   const { data: suppliers, isLoading } = useQuery({
     queryKey: ['/api/suppliers', company?.id],
     queryFn: () => Supplier.list(),
-    initialData: [],
-    enabled: !!company?.id
+    enabled: !!company?.id,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+    refetchOnReconnect: false,
+    retry: 1
   });
 
   const { data: expenseCategories = [] } = useQuery({
     queryKey: ['/api/categories', company?.id],
     queryFn: () => Category.list(),
-    initialData: [],
-    enabled: !!company?.id
+    enabled: !!company?.id,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+    refetchOnReconnect: false,
+    retry: 1
   });
 
   const transactionsQuery = useQuery({
     queryKey: ['/api/transactions', company?.id],
     queryFn: async () => {
-      try {
-        const data = await Transaction.list();
-        return data || [];
-      } catch (err) {
-        console.error('❌ Error fetching transactions:', err);
-        throw err;
-      }
+      const data = await Transaction.list();
+      return data || [];
     },
-    initialData: [],
     enabled: !!company?.id,
-    staleTime: 60 * 60 * 1000, // 1 hour
-    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    staleTime: Infinity, // NEVER consider stale once fetched
+    gcTime: Infinity, // NEVER delete from cache
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchInterval: false,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    refetchOnReconnect: false,
+    retry: 1
   });
 
   const { data: transactionsData = [] } = transactionsQuery;
