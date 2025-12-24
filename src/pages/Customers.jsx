@@ -248,8 +248,8 @@ export default function CustomersPage() {
                                     -
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <div className={`font-semibold ${isTransactionsLoading ? 'text-slate-400' : 'text-emerald-600'}`}>
-                                        {isTransactionsLoading ? 'Carregando...' : `R$ ${getCustomerSales(c.id).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                    <div className="font-semibold text-emerald-600">
+                                        {`R$ ${getCustomerSales(c.id).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right pr-6">
