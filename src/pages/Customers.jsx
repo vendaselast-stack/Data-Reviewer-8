@@ -63,19 +63,32 @@ export default function CustomersPage() {
         credentials: 'include'
       }).then(res => {
         if (!res.ok) throw new Error('Failed to fetch transactions');
-        return res.json();
+        const data = res.json();
+        console.log('📊 Transactions fetched:', data);
+        return data;
       });
     },
     initialData: [],
     enabled: !!company?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 60 * 60 * 1000, // 1 hour - much longer cache
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
     refetchOnMount: false, // Never refetch on mount
     refetchOnWindowFocus: false, // Never refetch on window focus
-    refetchInterval: false // Never refetch automatically
+    refetchInterval: false, // Never refetch automatically
+    retry: 3, // Retry 3 times on failure
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
-  const { data: transactionsData = [] } = transactionsQuery;
-  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
+  const { data: transactionsData = [], isLoading: isTransactionsLoading, error: transactionsError } = transactionsQuery;
+  const transactions = Array.isArray(transactionsData) ? transactionsData : (Array.isArray(transactionsData?.data) ? transactionsData.data : []);
+  
+  // Log for debugging
+  console.log('💰 Transactions state:', { 
+    data: transactions, 
+    length: transactions.length,
+    isLoading: isTransactionsLoading,
+    error: transactionsError 
+  });
 
   const saveMutation = useMutation({
     mutationFn: (data) => {
@@ -125,11 +138,31 @@ export default function CustomersPage() {
     setIsSalesViewDialogOpen(true);
   };
 
-  // Calculate customer sales from transactions
+  // Calculate customer sales from transactions with fallback
   const getCustomerSales = (customerId) => {
-    return transactions
-      .filter(t => t.customerId === customerId && t.type === 'venda')
-      .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+    try {
+      if (!Array.isArray(transactions) || transactions.length === 0) {
+        console.warn('📉 No transactions available for customer:', customerId);
+        return 0;
+      }
+      const total = transactions
+        .filter(t => {
+          if (!t) return false;
+          // Match customer AND sale type
+          const isCustomerMatch = String(t.customerId || '') === String(customerId || '');
+          const isSaleType = String(t.type || '').toLowerCase() === 'venda';
+          return isCustomerMatch && isSaleType;
+        })
+        .reduce((acc, t) => {
+          const amount = parseFloat(t.amount || 0);
+          return acc + (isNaN(amount) ? 0 : amount);
+        }, 0);
+      console.log(`💵 Customer ${customerId} sales: R$ ${total}`);
+      return total;
+    } catch (err) {
+      console.error('❌ Error calculating sales:', err);
+      return 0;
+    }
   };
 
   const filteredCustomers = customers
@@ -154,16 +187,22 @@ export default function CustomersPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Clientes</h1>
-            <p className="text-xs sm:text-sm text-slate-500">Gerencie sua base de clientes e contatos.</p>
+            <p className="text-xs sm:text-sm text-slate-500">
+              {transactionsError ? '⚠️ Erro ao carregar vendas' : 'Gerencie sua base de clientes e contatos.'}
+            </p>
         </div>
         
         <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
           <Button 
             variant="outline"
-            onClick={() => transactionsQuery.refetch()}
+            onClick={() => {
+              console.log('🔄 Manual refresh clicked');
+              queryClient.invalidateQueries({ queryKey: ['/api/transactions', company?.id] });
+              transactionsQuery.refetch();
+            }}
             disabled={transactionsQuery.isRefetching}
           >
-            Atualizar
+            Atualizar Vendas
           </Button>
           <Button 
             className="bg-primary hover:bg-primary"
@@ -220,8 +259,8 @@ export default function CustomersPage() {
                                     -
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <div className="text-emerald-600 font-semibold">
-                                        R$ {getCustomerSales(c.id).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    <div className={`font-semibold ${isTransactionsLoading ? 'text-slate-400' : 'text-emerald-600'}`}>
+                                        {isTransactionsLoading ? 'Carregando...' : `R$ ${getCustomerSales(c.id).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right pr-6">
