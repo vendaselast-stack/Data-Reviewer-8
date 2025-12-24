@@ -130,6 +130,7 @@ export default function PaymentEditDialog({ isOpen, onClose, transaction, onConf
                 <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
                 <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
                 <SelectItem value="Boleto">Boleto</SelectItem>
+                <SelectItem value="Crediário">Crediário</SelectItem>
                 <SelectItem value="Transferência">Transferência</SelectItem>
               </SelectContent>
             </Select>

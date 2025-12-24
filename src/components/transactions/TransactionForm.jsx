@@ -215,7 +215,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
         return;
     }
 
-    if (formData.status === 'pago' && !formData.paymentMethod) {
+    if (!formData.paymentMethod) {
         toast.error('Selecione a forma de pagamento', { duration: 5000 });
         return;
     }
@@ -297,7 +297,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
           type: formData.type,
           description: formData.description,
           status: formData.status,
-          paymentMethod: formData.status === 'pago' ? formData.paymentMethod : undefined,
+          paymentMethod: formData.paymentMethod,
           installmentGroup: installmentGroupId,
           installmentNumber: i + 1,
           installmentTotal: installmentCount
@@ -324,7 +324,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
         type: formData.type,
         description: formData.description,
         status: formData.status,
-        paymentMethod: formData.status === 'pago' ? formData.paymentMethod : undefined
+        paymentMethod: formData.paymentMethod
       };
       
       // Only add customer/supplier if selected and has value
@@ -512,6 +512,35 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Forma de Pagamento</Label>
+            <Select 
+              value={formData.paymentMethod} 
+              onValueChange={(v) => {
+                const canInstall = ['Cartão de Crédito', 'Boleto', 'Crediário'].includes(v);
+                setFormData(prev => ({
+                  ...prev, 
+                  paymentMethod: v,
+                  status: (v === 'Pix' || v === 'Dinheiro' || v === 'Cartão de Débito') ? 'pago' : prev.status,
+                  installments: canInstall ? prev.installments : 1
+                }));
+              }}
+            >
+              <SelectTrigger className="w-full" required>
+                <SelectValue placeholder="Selecione a forma..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                <SelectItem value="Pix">Pix</SelectItem>
+                <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                <SelectItem value="Boleto">Boleto</SelectItem>
+                <SelectItem value="Crediário">Crediário</SelectItem>
+                <SelectItem value="Transferência">Transferência</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900 border border-emerald-200 dark:border-emerald-700">
             <Label className="cursor-pointer">Pago à Vista</Label>
             <Switch 
@@ -525,34 +554,11 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
                 });
                 if (checked) {
                   setCustomInstallments([]);
-                } else {
-                  setFormData(prev => ({ ...prev, paymentMethod: '' }));
                 }
               }}
+              disabled={['Pix', 'Dinheiro', 'Cartão de Débito'].includes(formData.paymentMethod)}
             />
           </div>
-
-          {formData.status === 'pago' && (
-            <div className="space-y-2">
-              <Label>Forma de Pagamento</Label>
-              <Select 
-                value={formData.paymentMethod} 
-                onValueChange={(v) => setFormData({...formData, paymentMethod: v})}
-              >
-                <SelectTrigger className="w-full" required>
-                  <SelectValue placeholder="Selecione a forma..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                  <SelectItem value="Pix">Pix</SelectItem>
-                  <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                  <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
-                  <SelectItem value="Boleto">Boleto</SelectItem>
-                  <SelectItem value="Transferência">Transferência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           {formData.status !== 'pago' && (
             <>
