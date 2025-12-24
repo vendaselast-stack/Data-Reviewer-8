@@ -38,48 +38,79 @@ export default function CashFlowForecastPage() {
     enabled: !!company?.id
   });
 
-  // Calculate min and max dates from all transactions
+  // Calculate min and max dates from all transactions and installments
   const getDateRange = () => {
     const today = startOfDay(new Date());
     
-    // If no transactions, show next 30 days only
-    if (transactions.length === 0) {
+    // Collect all potential dates: transactions, sales, purchases, and installments
+    let allDates = [];
+    
+    // Add transaction dates
+    if (transactions.length > 0) {
+      transactions.forEach(t => {
+        if (t.date) {
+          const dateStr = t.date.split('T')[0];
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            allDates.push(dateStr);
+          }
+        }
+      });
+    }
+    
+    // If no transactions at all, show next 30 days
+    if (allDates.length === 0) {
       const thirtyDaysFromNow = new Date(today);
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
       return { minDate: today, maxDate: thirtyDaysFromNow };
     }
     
-    // Extract and validate date strings (YYYY-MM-DD format)
-    const validDateStrings = transactions
-      .map(t => {
-        if (!t.date) return null;
-        const dateStr = t.date.split('T')[0];
-        // Validate format: should match YYYY-MM-DD
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
-        return dateStr;
-      })
-      .filter(d => d !== null)
-      .sort();
-    
-    if (validDateStrings.length === 0) {
-      const thirtyDaysFromNow = new Date(today);
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      return { minDate: today, maxDate: thirtyDaysFromNow };
-    }
-    
-    const minDateStr = validDateStrings[0];
-    const maxDateStr = validDateStrings[validDateStrings.length - 1];
-    
-    // Create Date objects from the min/max date strings using parseISO for safety
-    const minDate = parseISO(minDateStr);
+    // Sort dates
+    allDates.sort();
+    const minDateStr = allDates[0];
+    let maxDateStr = allDates[allDates.length - 1];
     let maxDate = parseISO(maxDateStr);
+    const minDate = parseISO(minDateStr);
     
-    // Limit maxDate to 6 months in the future from today
+    // Check for future dates beyond 6 months in installments
+    // If there are unpaid installments beyond 6 months, extend the range
     const sixMonthsFromToday = new Date(today);
     sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
     
-    // Use whichever is earlier: the last transaction date or 6 months from today
-    if (maxDate > sixMonthsFromToday) {
+    // Check sale installments for future dates
+    if (saleInstallments && saleInstallments.length > 0) {
+      saleInstallments.forEach(inst => {
+        if (!inst.paid && inst.due_date) {
+          try {
+            const dueDate = parseISO(inst.due_date);
+            if (dueDate > maxDate) {
+              maxDate = dueDate;
+            }
+          } catch (e) {
+            // Invalid date, skip
+          }
+        }
+      });
+    }
+    
+    // Check purchase installments for future dates
+    if (purchaseInstallments && purchaseInstallments.length > 0) {
+      purchaseInstallments.forEach(inst => {
+        if (!inst.paid && inst.due_date) {
+          try {
+            const dueDate = parseISO(inst.due_date);
+            if (dueDate > maxDate) {
+              maxDate = dueDate;
+            }
+          } catch (e) {
+            // Invalid date, skip
+          }
+        }
+      });
+    }
+    
+    // If maxDate is still within 6 months, cap it there. Otherwise, use the actual maxDate
+    // This ensures we show at least 6 months OR all unpaid installments, whichever is larger
+    if (maxDate < sixMonthsFromToday) {
       maxDate = sixMonthsFromToday;
     }
     
