@@ -29,7 +29,7 @@ const setStorageData = (data) => {
 };
 
 const fetchWithTimeout = (url, options = {}) => {
-  const timeout = options.timeout || 2000;
+  const timeout = options.timeout || 30000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
