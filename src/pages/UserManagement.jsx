@@ -3,27 +3,16 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Trash2, Plus, Mail, Copy, Settings } from 'lucide-react';
+import { Trash2, Plus, Settings, Mail } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
 import { queryClient } from '@/lib/queryClient';
-
-const ROLES = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'manager', label: 'Gerente' },
-  { value: 'user', label: 'Usuário' },
-  { value: 'operational', label: 'Operacional' }
-];
+import InviteUserModal from '@/components/users/InviteUserModal';
 
 export default function UserManagementPage() {
   const { company } = useAuth();
   const [, setLocation] = useLocation();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('user');
 
   const { data: users = [] } = useQuery({
     queryKey: ['/api/users', company?.id],
@@ -55,13 +44,8 @@ export default function UserManagementPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', company?.id] });
       setIsInviteOpen(false);
-      setInviteEmail('');
-      setInviteRole('user');
       toast.success('Convite enviado!');
-      if (data.inviteLink) {
-        navigator.clipboard.writeText(data.inviteLink);
-        toast.success('Link copiado para clipboard!');
-      }
+      return data;
     }
   });
 
@@ -80,60 +64,73 @@ export default function UserManagementPage() {
     }
   });
 
-  const handleInvite = (e) => {
-    e.preventDefault();
-    if (!inviteEmail) {
-      toast.error('Digite um email');
-      return;
-    }
-    inviteMutation.mutate({
-      email: inviteEmail,
-      role: inviteRole
-    });
+  const handleInvite = async (data) => {
+    return inviteMutation.mutateAsync(data);
   };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
-        <Button onClick={() => setIsInviteOpen(true)} data-testid="button-invite-user">
-          <Plus className="w-4 h-4 mr-2" />
-          Convidar Usuário
+        <div>
+          <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
+          <p className="text-sm text-slate-500 mt-1">Gerenciar e convidar usuários da empresa</p>
+        </div>
+        <Button onClick={() => setIsInviteOpen(true)} data-testid="button-invite-user" className="gap-2">
+          <Plus className="w-4 h-4" />
+          Adicionar Usuário
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Usuários da Empresa</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5" />
+            Usuários da Empresa
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
-            <p className="text-muted-foreground">Nenhum usuário cadastrado</p>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhum usuário cadastrado</p>
+              <p className="text-xs text-slate-400 mt-2">Clique em "Adicionar Usuário" para convidar o primeiro usuário</p>
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {users.map(user => (
-                <div key={user.id} className="flex justify-between items-center p-3 border rounded-md" data-testid={`user-row-${user.id}`}>
-                  <div>
-                    <p className="font-medium">{user.name || user.username}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                <div key={user.id} className="flex justify-between items-center p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors" data-testid={`user-row-${user.id}`}>
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">{user.name || user.username}</p>
+                    <p className="text-sm text-slate-500">{user.email}</p>
+                    <div className="mt-2 flex gap-2">
+                      <span className="inline-block px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-md capitalize">
+                        {user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Gerente' : user.role === 'operational' ? 'Operacional' : 'Usuário'}
+                      </span>
+                      {user.status && <span className="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-md">Ativo</span>}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      size="icon"
+                      size="sm"
                       onClick={() => setLocation(`/permissions?userId=${user.id}`)}
                       title="Gerenciar permissões"
                       data-testid={`button-manage-permissions-${user.id}`}
+                      className="gap-2"
                     >
                       <Settings className="w-4 h-4" />
+                      Permissões
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteUserMutation.mutate(user.id)}
+                      onClick={() => {
+                        if (confirm('Tem certeza que deseja remover este usuário?')) {
+                          deleteUserMutation.mutate(user.id);
+                        }
+                      }}
                       disabled={deleteUserMutation.isPending}
                       data-testid={`button-delete-user-${user.id}`}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -145,42 +142,11 @@ export default function UserManagementPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convidar Novo Usuário</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleInvite} className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Email do usuário"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              data-testid="input-invite-email"
-            />
-            <Select value={inviteRole} onValueChange={setInviteRole}>
-              <SelectTrigger data-testid="select-invite-role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map(role => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={inviteMutation.isPending} data-testid="button-send-invite">
-                {inviteMutation.isPending ? 'Enviando...' : 'Enviar Convite'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <InviteUserModal 
+        open={isInviteOpen} 
+        onOpenChange={setIsInviteOpen}
+        onInvite={handleInvite}
+      />
     </div>
   );
 }
