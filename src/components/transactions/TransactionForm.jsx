@@ -35,9 +35,8 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
     date: new Date(),
     installments: 1,
     installment_amount: '',
-    status: 'pendente',
-    paymentDate: null,
-    isInstallmentPayment: true
+    status: 'pago',
+    paymentDate: new Date()
   });
 
   // Fetch Categories
@@ -98,9 +97,8 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
           date: new Date(),
           installments: 1,
           installment_amount: '',
-          status: 'pendente',
-          paymentDate: null,
-          isInstallmentPayment: true
+          status: 'pago',
+          paymentDate: new Date()
         });
         setCustomInstallments([]);
       }
@@ -328,58 +326,26 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700">
-            <Label className="cursor-pointer">Pagamento à vista</Label>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900 border border-emerald-200 dark:border-emerald-700">
+            <Label className="cursor-pointer">Pago à Vista</Label>
             <Switch 
-              checked={!formData.isInstallmentPayment}
+              checked={formData.status === 'pago'}
               onCheckedChange={(checked) => {
                 setFormData({
                   ...formData, 
-                  isInstallmentPayment: !checked,
-                  installments: checked ? 1 : formData.installments,
                   status: checked ? 'pago' : 'pendente',
-                  paymentDate: checked ? new Date() : null
+                  paymentDate: checked ? new Date() : null,
+                  installments: checked ? 1 : formData.installments
                 });
-                if (!checked) {
+                if (checked) {
                   setCustomInstallments([]);
                 }
               }}
             />
           </div>
 
-          {formData.isInstallmentPayment && (
+          {formData.status !== 'pago' && (
             <>
-              <div className="space-y-2">
-                <Label>Data de Vencimento (1ª Parcela)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !formData.date && "text-muted-foreground"
-                      )}
-                    >
-                      {formData.date ? (
-                        format(formData.date, "dd/MM/yyyy")
-                      ) : (
-                        <span>Selecione uma data</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.date}
-                      onSelect={(d) => d && setFormData({...formData, date: d})}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
               <div className="space-y-2">
                 <Label>Número de Parcelas</Label>
                 <Input
@@ -389,12 +355,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
                   onChange={(e) => handleInstallmentsChange(e.target.value)}
                 />
               </div>
-            </>
-          )}
 
-
-          {formData.isInstallmentPayment && (
-            <>
               {Number(formData.installments) > 1 && customInstallments.length === 0 && (
                 <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-600">
                   <p>
@@ -461,23 +422,6 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
                 </div>
               )}
             </>
-          )}
-
-          {formData.isInstallmentPayment && (
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-              <Label className="cursor-pointer">Já está pago?</Label>
-              <Switch 
-                checked={formData.status === 'pago'}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    const today = new Date();
-                    setFormData({...formData, status: 'pago', paymentDate: today});
-                  } else {
-                    setFormData({...formData, status: 'pendente', paymentDate: null});
-                  }
-                }}
-              />
-            </div>
           )}
 
           {formData.status === 'pago' && (
