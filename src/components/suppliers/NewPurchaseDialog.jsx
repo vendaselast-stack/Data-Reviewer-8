@@ -235,7 +235,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
           </div>
 
           <div className="space-y-2">
-            <Label>Data da Compra</Label>
+            <Label>Data de Vencimento (1ª Parcela)</Label>
             <Input
               type="date"
               value={formData.purchase_date}
