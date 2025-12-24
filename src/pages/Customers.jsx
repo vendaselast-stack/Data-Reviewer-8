@@ -87,6 +87,11 @@ export default function CustomersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customers', company?.id] });
       toast.success('Cliente removido.', { duration: 5000 });
+      setCustomerToDelete(null);
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast.error(error?.message || 'Erro ao deletar cliente', { duration: 5000 });
     }
   });
 
@@ -299,14 +304,13 @@ export default function CustomersPage() {
             <AlertDialogAction 
               onClick={() => {
                 if (customerToDelete) {
-                  deleteMutation.mutate(customerToDelete.id, {
-                    onSettled: () => setCustomerToDelete(null)
-                  });
+                  deleteMutation.mutate(customerToDelete.id);
                 }
               }}
+              disabled={deleteMutation.isPending}
               className="bg-rose-600 hover:bg-rose-700"
             >
-              Sim, remover tudo
+              {deleteMutation.isPending ? 'Removendo...' : 'Sim, remover tudo'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
