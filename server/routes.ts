@@ -16,6 +16,18 @@ import {
   users,
   companies,
   subscriptions,
+  loginAttempts,
+  auditLogs,
+  sessions,
+  invitations,
+  installments,
+  purchaseInstallments,
+  purchases,
+  sales,
+  transactions,
+  cashFlow,
+  categories,
+  suppliers,
 } from "../shared/schema";
 import {
   createCompany,
