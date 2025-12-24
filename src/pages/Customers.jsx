@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Customer, Sale, Category, Transaction } from '@/api/entities';
+import { Customer, Category } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -60,25 +60,6 @@ export default function CustomersPage() {
     retry: 1
   });
 
-  const transactionsQuery = useQuery({
-    queryKey: ['/api/transactions', company?.id],
-    queryFn: async () => {
-      const data = await Transaction.list();
-      return Array.isArray(data) ? data : [];
-    },
-    enabled: !!company?.id,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchInterval: false,
-    refetchOnReconnect: false,
-    retry: 1
-  });
-
-  const { data: transactionsData = [] } = transactionsQuery;
-  const transactions = Array.isArray(transactionsData) ? transactionsData : [];
-
   const saveMutation = useMutation({
     mutationFn: (data) => {
       if (selectedCustomer) {
@@ -127,31 +108,9 @@ export default function CustomersPage() {
     setIsSalesViewDialogOpen(true);
   };
 
-  // Calculate customer sales from transactions with fallback
-  const getCustomerSales = (customerId) => {
-    try {
-      if (!Array.isArray(transactions) || transactions.length === 0) {
-        console.warn('📉 No transactions available for customer:', customerId);
-        return 0;
-      }
-      const total = transactions
-        .filter(t => {
-          if (!t) return false;
-          // Match customer AND sale type
-          const isCustomerMatch = String(t.customerId || '') === String(customerId || '');
-          const isSaleType = String(t.type || '').toLowerCase() === 'venda';
-          return isCustomerMatch && isSaleType;
-        })
-        .reduce((acc, t) => {
-          const amount = parseFloat(t.amount || 0);
-          return acc + (isNaN(amount) ? 0 : amount);
-        }, 0);
-      console.log(`💵 Customer ${customerId} sales: R$ ${total}`);
-      return total;
-    } catch (err) {
-      console.error('❌ Error calculating sales:', err);
-      return 0;
-    }
+  // Get customer sales from the totalSales field calculated by the backend
+  const getCustomerSales = (customer) => {
+    return customer?.totalSales || 0;
   };
 
   const filteredCustomers = customers
@@ -182,17 +141,6 @@ export default function CustomersPage() {
         </div>
         
         <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
-          <Button 
-            variant="outline"
-            onClick={() => {
-              console.log('🔄 Manual refresh - forcing cache invalidation');
-              queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-              transactionsQuery.refetch();
-            }}
-            disabled={transactionsQuery.isRefetching}
-          >
-            Atualizar Vendas
-          </Button>
           <Button 
             className="bg-primary hover:bg-primary"
             onClick={() => openFormDialog()}
@@ -249,7 +197,7 @@ export default function CustomersPage() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="font-semibold text-emerald-600">
-                                        {`R$ ${getCustomerSales(c.id).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                        {`R$ ${getCustomerSales(c).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right pr-6">
