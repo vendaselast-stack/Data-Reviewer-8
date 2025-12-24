@@ -685,6 +685,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Pay sale - confirm payment/receipt
+  app.post("/api/sales/:id/pay", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const { paidAmount, interest } = req.body;
+      
+      if (!paidAmount || isNaN(parseFloat(paidAmount.toString()))) {
+        return res.status(400).json({ error: "Invalid paid amount" });
+      }
+
+      const sale = await storage.getSale(req.user.companyId, req.params.id);
+      if (!sale) return res.status(404).json({ error: "Sale not found" });
+
+      const paid = parseFloat(paidAmount.toString());
+      const interestAmount = interest ? parseFloat(interest.toString()) : 0;
+      const newPaidAmount = (sale.paidAmount ? parseFloat(sale.paidAmount.toString()) : 0) + paid;
+      const totalDue = parseFloat(sale.totalAmount.toString()) + interestAmount;
+      
+      const newStatus = newPaidAmount >= totalDue ? "pago" : "parcial";
+
+      const updated = await storage.updateSale(req.user.companyId, req.params.id, {
+        paidAmount: newPaidAmount.toString(),
+        status: newStatus
+      });
+
+      res.json({
+        ...updated,
+        totalAmount: updated.totalAmount ? parseFloat(updated.totalAmount.toString()) : 0,
+        paidAmount: updated.paidAmount ? parseFloat(updated.paidAmount.toString()) : 0
+      });
+    } catch (error: any) {
+      console.error("Sale payment error:", error);
+      res.status(500).json({ error: error.message || "Failed to process payment" });
+    }
+  });
+
   // Purchases routes
   app.get("/api/purchases", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
@@ -736,6 +772,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete purchase" });
+    }
+  });
+
+  // Pay purchase - confirm payment/receipt
+  app.post("/api/purchases/:id/pay", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const { paidAmount, interest } = req.body;
+      
+      if (!paidAmount || isNaN(parseFloat(paidAmount.toString()))) {
+        return res.status(400).json({ error: "Invalid paid amount" });
+      }
+
+      const purchase = await storage.getPurchase(req.user.companyId, req.params.id);
+      if (!purchase) return res.status(404).json({ error: "Purchase not found" });
+
+      const paid = parseFloat(paidAmount.toString());
+      const interestAmount = interest ? parseFloat(interest.toString()) : 0;
+      const newPaidAmount = (purchase.paidAmount ? parseFloat(purchase.paidAmount.toString()) : 0) + paid;
+      const totalDue = parseFloat(purchase.totalAmount.toString()) + interestAmount;
+      
+      const newStatus = newPaidAmount >= totalDue ? "pago" : "parcial";
+
+      const updated = await storage.updatePurchase(req.user.companyId, req.params.id, {
+        paidAmount: newPaidAmount.toString(),
+        status: newStatus
+      });
+
+      res.json({
+        ...updated,
+        totalAmount: updated.totalAmount ? parseFloat(updated.totalAmount.toString()) : 0,
+        paidAmount: updated.paidAmount ? parseFloat(updated.paidAmount.toString()) : 0
+      });
+    } catch (error: any) {
+      console.error("Purchase payment error:", error);
+      res.status(500).json({ error: error.message || "Failed to process payment" });
     }
   });
 
@@ -793,6 +865,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // Pay installment
+  app.post("/api/installments/:id/pay", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const installment = await storage.getInstallment(req.user.companyId, req.params.id);
+      if (!installment) return res.status(404).json({ error: "Installment not found" });
+
+      const now = new Date();
+      const updated = await storage.updateInstallment(req.user.companyId, req.params.id, {
+        paid: true,
+        paidDate: now
+      });
+
+      res.json({
+        ...updated,
+        amount: updated.amount ? parseFloat(updated.amount.toString()) : 0
+      });
+    } catch (error: any) {
+      console.error("Installment payment error:", error);
+      res.status(500).json({ error: error.message || "Failed to pay installment" });
+    }
+  });
+
   // Purchase Installments routes
   app.get("/api/purchase-installments", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
@@ -844,6 +939,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete purchase installment" });
+    }
+  });
+
+  // Pay purchase installment
+  app.post("/api/purchase-installments/:id/pay", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const installment = await storage.getPurchaseInstallment(req.user.companyId, req.params.id);
+      if (!installment) return res.status(404).json({ error: "Purchase installment not found" });
+
+      const now = new Date();
+      const updated = await storage.updatePurchaseInstallment(req.user.companyId, req.params.id, {
+        paid: true,
+        paidDate: now
+      });
+
+      res.json({
+        ...updated,
+        amount: updated.amount ? parseFloat(updated.amount.toString()) : 0
+      });
+    } catch (error: any) {
+      console.error("Purchase installment payment error:", error);
+      res.status(500).json({ error: error.message || "Failed to pay purchase installment" });
     }
   });
 
