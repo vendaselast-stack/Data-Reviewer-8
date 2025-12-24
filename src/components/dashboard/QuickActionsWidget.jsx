@@ -16,7 +16,8 @@ export default function QuickActionsWidget() {
   const createTransactionMutation = useMutation({
     mutationFn: (data) => Transaction.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'], exact: false });
       setTransactionFormOpen(false);
       toast.success('Transação criada!', { duration: 5000 });
     }

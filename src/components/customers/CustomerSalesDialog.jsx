@@ -164,7 +164,7 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     onSuccess: (data) => {
       toast.success('Pagamento confirmado!', { duration: 5000 });
       // Refetch immediately and wait for it to complete before closing
-      queryClient.refetchQueries({ queryKey: ['transactions'] }).then(() => {
+      queryClient.refetchQueries({ queryKey: ['transactions'], exact: false }).then(() => {
         setPaymentEditOpen(false);
         setSelectedTransaction(null);
       });
@@ -210,8 +210,8 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['/api/cash-flow'] });
       toast.success('Pagamento cancelado!', { duration: 5000 });
     },
