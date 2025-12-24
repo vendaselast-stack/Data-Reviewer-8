@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 import Pages from "@/pages/index.jsx";
 import Login from "@/pages/Login.jsx";
 import Signup from "@/pages/Signup.jsx";
+import Landing from "@/pages/Landing.jsx";
 import AcceptInvite from "@/pages/AcceptInvite.jsx";
 import AccessDenied from "@/pages/AccessDenied.jsx";
 
@@ -37,10 +38,11 @@ function AppContent() {
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/" component={Landing} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/accept-invite" component={AcceptInvite} />
-        <Route component={Login} />
+        <Route component={Landing} />
       </Switch>
     );
   }
