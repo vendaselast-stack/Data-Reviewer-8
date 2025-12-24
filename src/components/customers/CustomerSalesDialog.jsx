@@ -9,6 +9,7 @@ import { CheckCircle2, Clock, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner';
 import PaymentEditDialog from '../suppliers/PaymentEditDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { Transaction } from '@/api/entities';
 
 export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
   const { company } = useAuth();
@@ -31,15 +32,12 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
   // Fetch transactions specific to this customer when modal opens
   const { data: transactionsData = [], isLoading } = useQuery({
     queryKey: ['/api/transactions', customer?.id],
-    queryFn: async () => {
-      const Transaction = require('@/api/entities').Transaction;
-      const allTransactions = await Transaction.list();
-      return allTransactions;
-    },
+    queryFn: () => Transaction.list(),
+    initialData: [],
     enabled: !!customer?.id && open,
     staleTime: 0,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
