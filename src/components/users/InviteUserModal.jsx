@@ -11,8 +11,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const ROLES = [
   { value: 'admin', label: 'Admin' },
-  { value: 'manager', label: 'Gerente' },
-  { value: 'user', label: 'Usuário' },
   { value: 'operational', label: 'Operacional' }
 ];
 
