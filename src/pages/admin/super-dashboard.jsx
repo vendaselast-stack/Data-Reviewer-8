@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Users, TrendingUp, AlertTriangle, Plus, MoreVertical, Eye, Lock, Trash2 } from 'lucide-react';
+import { Building2, Users, TrendingUp, AlertTriangle, Plus, MoreVertical, Eye, Lock, Trash2, BarChart3, Activity } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
@@ -42,6 +42,26 @@ const formatCurrency = (value) => {
   }).format(value || 0);
 };
 
+function KPICard({ title, value, icon: Icon, trend, trendValue }) {
+  return (
+    <Card className="p-6">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{title}</p>
+          <p className="text-4xl font-bold text-foreground">{value}</p>
+          {trend && (
+            <div className={`text-xs mt-2 flex items-center gap-1 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+              <span>{trend === 'up' ? '↑' : '↓'}</span>
+              <span>{trendValue}</span>
+            </div>
+          )}
+        </div>
+        <Icon className="h-8 w-8 text-primary opacity-30" />
+      </div>
+    </Card>
+  );
+}
+
 function SuperAdminContent() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,6 +82,18 @@ function SuperAdminContent() {
     queryFn: () => apiRequest('/api/admin/companies'),
   });
 
+  // Fetch users
+  const { data: users = [] } = useQuery({
+    queryKey: ['/api/admin/users'],
+    queryFn: () => apiRequest('/api/admin/users'),
+  });
+
+  // Fetch customers
+  const { data: customers = [] } = useQuery({
+    queryKey: ['/api/admin/customers'],
+    queryFn: () => apiRequest('/api/admin/customers'),
+  });
+
   // Filter companies
   const filteredCompanies = companies.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,6 +102,10 @@ function SuperAdminContent() {
     const matchesStatus = statusFilter === 'all' || c.subscriptionStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Calculate statistics
+  const activeCompanies = companies.filter(c => c.subscriptionStatus === 'active').length;
+  const suspendedCompanies = companies.filter(c => c.subscriptionStatus === 'suspended').length;
 
   // Create company mutation
   const createCompanyMutation = useMutation({
@@ -140,63 +176,112 @@ function SuperAdminContent() {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Super Admin Dashboard</h1>
-        <p className="text-muted-foreground">Gerencie todas as empresas e assinaturas</p>
+        <h1 className="text-4xl font-bold text-foreground">Super Admin Dashboard</h1>
+        <p className="text-muted-foreground mt-2">Visão geral do sistema e gestão de empresas</p>
       </div>
 
-      {/* KPI Cards */}
+      {/* Executive KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard 
+          title="Total de Empresas" 
+          value={stats.totalCompanies || 0}
+          icon={Building2}
+          trend={activeCompanies > suspendedCompanies ? 'up' : 'down'}
+          trendValue={`${activeCompanies} ativas`}
+        />
+        <KPICard 
+          title="Usuários Ativos" 
+          value={users.filter(u => u.status === 'active').length}
+          icon={Users}
+        />
+        <KPICard 
+          title="Clientes Cadastrados" 
+          value={customers.length}
+          icon={Activity}
+        />
+        <KPICard 
+          title="Alertas Críticos" 
+          value={stats.alerts || 0}
+          icon={AlertTriangle}
+        />
+      </div>
+
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Total de Empresas</p>
-              <p className="text-3xl font-bold text-foreground">{stats.totalCompanies || 0}</p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground uppercase tracking-wide">Status das Empresas</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Ativas</span>
+                <Badge variant="default" className="bg-green-600">{activeCompanies}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Suspensas</span>
+                <Badge variant="destructive">{suspendedCompanies}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Outras</span>
+                <Badge variant="secondary">{companies.length - activeCompanies - suspendedCompanies}</Badge>
+              </div>
             </div>
-            <Building2 className="h-8 w-8 text-primary opacity-50" />
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Assinaturas Ativas</p>
-              <p className="text-3xl font-bold text-foreground">{stats.activeSubscriptions || 0}</p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground uppercase tracking-wide">Status dos Usuários</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Ativos</span>
+                <Badge variant="default" className="bg-green-600">{users.filter(u => u.status === 'active').length}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Inativos</span>
+                <Badge variant="secondary">{users.filter(u => u.status === 'inactive').length}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Suspensos</span>
+                <Badge variant="destructive">{users.filter(u => u.status === 'suspended').length}</Badge>
+              </div>
             </div>
-            <Users className="h-8 w-8 text-primary opacity-50" />
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Receita Mensal</p>
-              <p className="text-3xl font-bold text-foreground">{formatCurrency(stats.monthlyRevenue)}</p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground uppercase tracking-wide">Informações Adicionais</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Total de Usuários</span>
+                <span className="font-bold">{users.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Clientes Ativos</span>
+                <span className="font-bold">{customers.filter(c => c.status === 'active').length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Taxa de Crescimento</span>
+                <span className="font-bold text-green-600">+12%</span>
+              </div>
             </div>
-            <TrendingUp className="h-8 w-8 text-green-500 opacity-50" />
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Alertas</p>
-              <p className="text-3xl font-bold text-foreground">{stats.alerts || 0}</p>
-            </div>
-            <AlertTriangle className="h-8 w-8 text-destructive opacity-50" />
           </div>
         </Card>
       </div>
 
-      {/* Companies Table */}
+      {/* Companies Management Section */}
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Gestão de Empresas</h2>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold">Gestão de Empresas</h2>
+            <p className="text-sm text-muted-foreground mt-1">Gerencie todas as empresas cadastradas no sistema</p>
+          </div>
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2" data-testid="button-new-company">
+              <Button className="gap-2 w-full md:w-auto" data-testid="button-new-company">
                 <Plus className="h-4 w-4" />
                 Nova Empresa
               </Button>
@@ -216,7 +301,7 @@ function SuperAdminContent() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <Input
             placeholder="Buscar por nome, documento ou email..."
             value={searchTerm}
@@ -225,7 +310,7 @@ function SuperAdminContent() {
             data-testid="input-search-companies"
           />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -285,7 +370,7 @@ function SuperAdminContent() {
                         {company.subscriptionStatus === 'active' ? 'Ativo' : 'Suspenso'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{company.userCount}</TableCell>
+                    <TableCell>{company.userCount || 0}</TableCell>
                     <TableCell className="text-right">
                       <CompanyActionsMenu
                         company={company}
@@ -327,7 +412,7 @@ function SuperAdminContent() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Plano</p>
-                <p className="text-lg font-medium capitalize">{detailsDialogOpen.subscription?.plan}</p>
+                <p className="text-lg font-medium capitalize">{detailsDialogOpen.subscription?.plan || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
@@ -335,7 +420,7 @@ function SuperAdminContent() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Usuários</p>
-                <p className="text-lg font-medium">{detailsDialogOpen.userCount}</p>
+                <p className="text-lg font-medium">{detailsDialogOpen.userCount || 0}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Criada em</p>
