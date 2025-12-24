@@ -162,6 +162,18 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
         toast.error('Selecione uma categoria', { duration: 5000 });
         return;
     }
+    if (formData.entityType === 'none') {
+        toast.error('Escolha entre Cliente ou Fornecedor', { duration: 5000 });
+        return;
+    }
+    if (formData.entityType === 'customer' && !formData.customerId) {
+        toast.error('Selecione um cliente', { duration: 5000 });
+        return;
+    }
+    if (formData.entityType === 'supplier' && !formData.supplierId) {
+        toast.error('Selecione um fornecedor', { duration: 5000 });
+        return;
+    }
     
     // Get selected category to determine if value should be negative
     const selectedCategory = categories.find(c => c.id === formData.categoryId);

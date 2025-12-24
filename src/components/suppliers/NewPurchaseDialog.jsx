@@ -160,8 +160,16 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.description || !formData.total_amount || !formData.category) {
-      toast.error('Preencha todos os campos obrigatórios');
+    if (!formData.description.trim()) {
+      toast.error('Digite uma descrição', { duration: 5000 });
+      return;
+    }
+    if (!formData.total_amount || Number(formData.total_amount) <= 0) {
+      toast.error('Digite um valor válido', { duration: 5000 });
+      return;
+    }
+    if (!formData.category) {
+      toast.error('Selecione uma categoria', { duration: 5000 });
       return;
     }
 
