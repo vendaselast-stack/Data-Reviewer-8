@@ -8,8 +8,10 @@ import { ptBR } from 'date-fns/locale';
 import { CheckCircle2, Clock, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import PaymentEditDialog from '../suppliers/PaymentEditDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
+  const { company } = useAuth();
   const queryClient = useQueryClient();
   const [paymentEditOpen, setPaymentEditOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -27,9 +29,10 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
   };
 
   const { data: transactionsData = [] } = useQuery({
-    queryKey: ['/api/transactions'],
+    queryKey: ['/api/transactions', company?.id],
     queryFn: () => fetch('/api/transactions').then(res => res.json()),
-    initialData: []
+    initialData: [],
+    enabled: !!company?.id
   });
 
   const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
