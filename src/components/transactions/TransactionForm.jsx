@@ -154,11 +154,27 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
     if (numValue > 1) {
       const totalAmount = parseFloat(formData.amount) || 0;
       const defaultAmount = totalAmount > 0 ? totalAmount / numValue : '';
-      const baseDate = new Date(formData.date);
-      const newCustomInstallments = Array.from({ length: numValue }, (_, i) => ({
-        amount: defaultAmount,
-        due_date: format(addMonths(baseDate, i), 'yyyy-MM-dd')
-      }));
+      
+      // Extract local date from formData.date (which might be Date or string)
+      let baseDate;
+      if (typeof formData.date === 'string') {
+        // If it's a string like "2025-12-23", parse it correctly
+        const [year, month, day] = formData.date.split('-');
+        baseDate = new Date(year, parseInt(month) - 1, parseInt(day));
+      } else {
+        baseDate = new Date(formData.date);
+      }
+      
+      const newCustomInstallments = Array.from({ length: numValue }, (_, i) => {
+        const installmentDate = addMonths(baseDate, i);
+        const year = installmentDate.getFullYear();
+        const month = String(installmentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(installmentDate.getDate()).padStart(2, '0');
+        return {
+          amount: defaultAmount,
+          due_date: `${year}-${month}-${day}`
+        };
+      });
       setCustomInstallments(newCustomInstallments);
     } else {
       setCustomInstallments([]);
@@ -209,22 +225,31 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
       amount = Math.abs(Number(amount)).toFixed(2);
     }
     
-    // Convert date to ISO string using noon UTC to avoid timezone display issues
+    // Convert date to ISO string using local time (not UTC)
     let isoDate;
     if (formData.date && typeof formData.date === 'string') {
       const [year, month, day] = formData.date.split('-');
-      isoDate = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+      isoDate = new Date(`${year}-${month}-${day}T00:00:00Z`).toISOString();
     } else {
-      isoDate = new Date(formData.date).toISOString();
+      // Extract local date components to avoid timezone shift
+      const date = new Date(formData.date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      isoDate = new Date(`${year}-${month}-${day}T00:00:00Z`).toISOString();
     }
 
     let paymentDateISO = null;
     if (formData.paymentDate) {
       if (typeof formData.paymentDate === 'string') {
         const [year, month, day] = formData.paymentDate.split('-');
-        paymentDateISO = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+        paymentDateISO = new Date(`${year}-${month}-${day}T00:00:00Z`).toISOString();
       } else {
-        paymentDateISO = new Date(formData.paymentDate).toISOString();
+        const date = new Date(formData.paymentDate);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        paymentDateISO = new Date(`${year}-${month}-${day}T00:00:00Z`).toISOString();
       }
     }
 
@@ -233,12 +258,26 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
     if (installmentCount > 1) {
       // Create multiple transactions for installments
       const installmentGroupId = `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const baseDate = new Date(formData.date);
+      
+      // Extract local date from formData.date
+      let baseDate;
+      if (typeof formData.date === 'string') {
+        const [year, month, day] = formData.date.split('-');
+        baseDate = new Date(year, parseInt(month) - 1, parseInt(day));
+      } else {
+        const date = new Date(formData.date);
+        baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      }
       
       const transactions = [];
       for (let i = 0; i < installmentCount; i++) {
         const dueDate = addMonths(baseDate, i);
-        const dueDateISO = dueDate.toISOString();
+        // Convert to ISO string using local date components
+        const year = dueDate.getFullYear();
+        const month = String(dueDate.getMonth() + 1).padStart(2, '0');
+        const day = String(dueDate.getDate()).padStart(2, '0');
+        const dueDateISO = new Date(`${year}-${month}-${day}T00:00:00Z`).toISOString();
+        
         const installmentAmount = customInstallments.length > i 
           ? parseFloat(customInstallments[i].amount) 
           : parseFloat(amount) / installmentCount;
