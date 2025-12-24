@@ -28,7 +28,9 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
     amount: '',
     type: 'venda',
     categoryId: '',
-    date: new Date()
+    date: new Date(),
+    status: 'pendente',
+    paymentDate: null
   });
 
   // Fetch Categories
@@ -86,7 +88,9 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
           amount: '',
           type: 'venda',
           categoryId: '',
-          date: new Date()
+          date: new Date(),
+          status: 'pendente',
+          paymentDate: null
         });
       }
     }
@@ -127,12 +131,23 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
       isoDate = new Date(formData.date).toISOString();
     }
 
+    let paymentDateISO = null;
+    if (formData.paymentDate) {
+      if (typeof formData.paymentDate === 'string') {
+        const [year, month, day] = formData.paymentDate.split('-');
+        paymentDateISO = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+      } else {
+        paymentDateISO = new Date(formData.paymentDate).toISOString();
+      }
+    }
+
     onSubmit({
       ...formData,
       categoryId: formData.categoryId,
       category: selectedCategory?.name || '',
       amount: amount,
       date: isoDate,
+      paymentDate: paymentDateISO,
       shift: 'turno1'
     });
   };
@@ -247,7 +262,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Data</Label>
+              <Label>Data da Transação</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -277,7 +292,58 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
               </Popover>
             </div>
 
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(v) => {
+                  setFormData({...formData, status: v, paymentDate: v === 'pendente' ? null : formData.paymentDate});
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="pago">Pago</SelectItem>
+                  <SelectItem value="parcial">Parcialmente Pago</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {(formData.status === 'pago' || formData.status === 'parcial') && (
+            <div className="space-y-2">
+              <Label>Data do Pagamento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full pl-3 text-left font-normal",
+                      !formData.paymentDate && "text-muted-foreground"
+                    )}
+                  >
+                    {formData.paymentDate ? (
+                      format(formData.paymentDate, "dd/MM/yyyy")
+                    ) : (
+                      <span>Selecione a data do pagamento</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.paymentDate}
+                    onSelect={(d) => d && setFormData({...formData, paymentDate: d})}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
 
           <div className="pt-4 flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
