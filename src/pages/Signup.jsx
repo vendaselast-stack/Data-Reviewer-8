@@ -15,6 +15,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     name: "",
+  });
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const [, setLocation] = useLocation();
