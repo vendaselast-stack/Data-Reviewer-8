@@ -85,21 +85,19 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    // Importar queryClient aqui para evitar circular dependency
-    const { queryClient } = await import("@/lib/queryClient");
+    try {
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.clear();
+    } catch (e) {
+      // Ignore if queryClient import fails
+    }
     
-    // Limpar todo o cache do React Query COMPLETAMENTE
-    queryClient.clear();
-    queryClient.removeQueries();
-    
-    // Remover dados locais
     setToken(null);
     setUser(null);
     setCompany(null);
     localStorage.clear();
     sessionStorage.clear();
     
-    // Forçar reload da página para limpar tudo
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
