@@ -32,7 +32,7 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     initialData: []
   });
 
-  const transactions = transactionsData;
+  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
   const sales = transactions.filter(t => t.customerId === customer?.id && t.type === 'venda');
   
   // Group sales by installment group

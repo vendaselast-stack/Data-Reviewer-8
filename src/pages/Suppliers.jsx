@@ -52,7 +52,7 @@ export default function SuppliersPage() {
     enabled: !!company?.id
   });
 
-  const transactions = transactionsData;
+  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
 
   const saveMutation = useMutation({
     mutationFn: (data) => {
