@@ -96,7 +96,14 @@ export default function TransactionsPage() {
     if (editingTransaction) {
       updateMutation.mutate({ id: editingTransaction.id, data });
     } else {
-      createMutation.mutate(data);
+      // Handle array of transactions (for installments)
+      if (Array.isArray(data)) {
+        data.forEach(transaction => {
+          createMutation.mutate(transaction);
+        });
+      } else {
+        createMutation.mutate(data);
+      }
     }
   };
 
