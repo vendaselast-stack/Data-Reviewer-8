@@ -20,7 +20,7 @@ export default function Layout({ children }) {
   // Super Admin navigation
   const superAdminNavigation = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/', roles: ['super_admin'], permission: null },
-    { name: 'Clientes', icon: Users, path: '/admin/customers', roles: ['super_admin'], permission: null },
+    { name: 'Assinaturas', icon: Users, path: '/admin/subscriptions', roles: ['super_admin'], permission: null },
     { name: 'Usuários', icon: Users, path: '/admin/users', roles: ['super_admin'], permission: null },
   ];
 

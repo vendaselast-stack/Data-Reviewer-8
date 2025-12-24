@@ -2,7 +2,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'wouter';
 import Layout from '@/components/Layout';
 import SuperAdminDashboard from './admin/super-dashboard';
-import AdminCustomers from './admin/customers';
 import AdminSubscriptions from './admin/subscriptions';
 import AdminUsers from './admin/users';
 
@@ -24,7 +23,6 @@ export default function SuperAdmin() {
   return (
     <Layout>
       {pathname === '/' && <SuperAdminDashboard />}
-      {pathname.startsWith('/admin/customers') && <AdminCustomers />}
       {pathname.startsWith('/admin/subscriptions') && <AdminSubscriptions />}
       {pathname.startsWith('/admin/users') && <AdminUsers />}
     </Layout>
