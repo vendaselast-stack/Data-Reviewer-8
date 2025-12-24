@@ -6,14 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Download, MoreVertical, Trash2, Eye } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Download, MoreVertical, Trash2, Eye, Power } from 'lucide-react';
+import { CustomerEditModal } from '@/components/admin/CustomerEditModal';
+import { formatDateWithTimezone } from '@/utils/dateFormatter';
 
 const apiRequest = async (url, options = {}) => {
   const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
@@ -38,13 +37,13 @@ const exportToExcel = (data) => {
   const csv = [
     ['Data Criação', 'Nome', 'Empresa', 'Email', 'Telefone', 'CPF/CNPJ', 'Status'],
     ...data.map(c => [
-      new Date(c.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      formatDateWithTimezone(c.createdAt),
       c.name || '',
       c.companyName || '',
       c.email || '',
       c.phone || '',
-      c.contact || '',
-      c.status || '',
+      c.document || '',
+      c.status === 'active' ? 'Ativo' : c.status === 'blocked' ? 'Bloqueado' : 'Inativo',
     ])
   ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
 
@@ -73,7 +72,7 @@ function CustomerListContent() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
-      toast({ title: 'Sucesso', description: 'Cliente atualizado' });
+      toast({ title: 'Sucesso', description: 'Cliente atualizado com sucesso' });
       setSelectedCustomer(null);
     },
     onError: (error) => {
@@ -85,7 +84,7 @@ function CustomerListContent() {
     mutationFn: (id) => apiRequest(`/api/admin/customers/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
-      toast({ title: 'Sucesso', description: 'Cliente deletado' });
+      toast({ title: 'Sucesso', description: 'Cliente deletado com sucesso' });
       setDeleteConfirm(null);
     },
     onError: (error) => {
@@ -93,28 +92,46 @@ function CustomerListContent() {
     },
   });
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: (customer) => apiRequest(`/api/admin/customers/${customer.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: customer.status === 'active' ? 'blocked' : 'active' }),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/customers'] });
+      toast({ title: 'Sucesso', description: 'Status do cliente atualizado' });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const filtered = customers.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.companyName.toLowerCase().includes(searchTerm.toLowerCase())
+    c.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 md:p-8">
+    <div className="space-y-6 p-4 md:p-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Clientes do Sistema</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Gerencie todos os clientes de todas as empresas</p>
+          <h1 className="text-4xl font-bold text-foreground">Clientes do Sistema</h1>
+          <p className="text-sm text-muted-foreground mt-2">Gerencie todos os clientes de todas as empresas</p>
         </div>
-        <Button onClick={() => exportToExcel(customers)} className="gap-2 w-full sm:w-auto">
+        <Button 
+          onClick={() => exportToExcel(customers)} 
+          className="gap-2 w-full md:w-auto"
+          data-testid="button-export-customers"
+        >
           <Download className="h-4 w-4" />
           Exportar Excel
         </Button>
       </div>
 
-      {/* Filtro */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Search */}
+      <div className="flex gap-3">
         <Input
           placeholder="Buscar por nome, email ou empresa..."
           value={searchTerm}
@@ -124,13 +141,14 @@ function CustomerListContent() {
         />
       </div>
 
-      {/* Tabela */}
+      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Data Criação</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Empresa</TableHead>
                   <TableHead>Email</TableHead>
@@ -143,47 +161,43 @@ function CustomerListContent() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan="7" className="text-center py-8 text-muted-foreground">
-                      Carregando...
+                    <TableCell colSpan="8" className="text-center py-8 text-muted-foreground">
+                      Carregando clientes...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan="7" className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan="8" className="text-center py-8 text-muted-foreground">
                       Nenhum cliente encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((c) => (
                     <TableRow key={c.id} data-testid={`row-customer-${c.id}`}>
+                      <TableCell className="text-sm" data-testid={`text-created-${c.id}`}>
+                        {formatDateWithTimezone(c.createdAt)}
+                      </TableCell>
                       <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell>{c.companyName}</TableCell>
+                      <TableCell>{c.companyName || 'N/A'}</TableCell>
                       <TableCell>{c.email || '-'}</TableCell>
                       <TableCell>{c.phone || '-'}</TableCell>
-                      <TableCell>{c.contact || '-'}</TableCell>
+                      <TableCell className="font-mono text-sm">{c.document || '-'}</TableCell>
                       <TableCell>
-                        <Badge variant={c.status === 'ativo' ? 'default' : 'destructive'}>
-                          {c.status}
+                        <Badge 
+                          variant={c.status === 'active' ? 'default' : c.status === 'blocked' ? 'destructive' : 'secondary'}
+                          data-testid={`badge-status-${c.id}`}
+                        >
+                          {c.status === 'active' ? 'Ativo' : c.status === 'blocked' ? 'Bloqueado' : 'Inativo'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" data-testid={`button-actions-${c.id}`}>
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setSelectedCustomer(c)} data-testid={`action-edit-${c.id}`}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver/Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteConfirm(c)} className="text-destructive" data-testid={`action-delete-${c.id}`}>
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Deletar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <CustomerActionsMenu
+                          customer={c}
+                          onView={() => setSelectedCustomer(c)}
+                          onToggleStatus={() => toggleStatusMutation.mutate(c)}
+                          onDelete={() => setDeleteConfirm(c)}
+                          isStatusLoading={toggleStatusMutation.isPending}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
@@ -194,18 +208,16 @@ function CustomerListContent() {
         </CardContent>
       </Card>
 
-      {selectedCustomer && (
-        <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Editar Cliente</DialogTitle>
-              <DialogDescription>Altere as informações do cliente abaixo</DialogDescription>
-            </DialogHeader>
-            <EditCustomerForm customer={selectedCustomer} onSave={(data) => updateMutation.mutate(data)} />
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Customer Edit Modal */}
+      <CustomerEditModal
+        customer={selectedCustomer}
+        open={!!selectedCustomer}
+        onOpenChange={() => setSelectedCustomer(null)}
+        onSave={updateMutation.mutate}
+        isPending={updateMutation.isPending}
+      />
 
+      {/* Delete Confirmation */}
       {deleteConfirm && (
         <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
           <AlertDialogContent>
@@ -215,13 +227,19 @@ function CustomerListContent() {
                 Tem certeza que deseja deletar <strong>{deleteConfirm.name}</strong>? Esta ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => deleteMutation.mutate(deleteConfirm.id)} 
+            <div className="bg-destructive/10 border border-destructive/20 rounded p-4 mb-4">
+              <p className="text-sm text-destructive font-medium">
+                Aviso: Isso vai deletar permanentemente o cliente e todos os seus dados.
+              </p>
+            </div>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteConfirm.id)}
+              disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              Deletar
+              {deleteMutation.isPending ? 'Deletando...' : 'Deletar Cliente'}
             </AlertDialogAction>
           </AlertDialogContent>
         </AlertDialog>
@@ -230,52 +248,42 @@ function CustomerListContent() {
   );
 }
 
-function EditCustomerForm({ customer, onSave }) {
-  const form = useForm({
-    defaultValues: {
-      id: customer.id,
-      name: customer.name,
-      email: customer.email || '',
-      phone: customer.phone || '',
-      contact: customer.contact || '',
-      status: customer.status,
-    },
-  });
-
+function CustomerActionsMenu({ customer, onView, onToggleStatus, onDelete, isStatusLoading }) {
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
-        <FormField control={form.control} name="name" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nome</FormLabel>
-            <FormControl><Input {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="email" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Email</FormLabel>
-            <FormControl><Input type="email" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="phone" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Telefone</FormLabel>
-            <FormControl><Input {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="contact" render={({ field }) => (
-          <FormItem>
-            <FormLabel>CPF/CNPJ</FormLabel>
-            <FormControl><Input {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <Button type="submit" className="w-full">Salvar Alterações</Button>
-      </form>
-    </Form>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          data-testid={`button-actions-${customer.id}`}
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onView} data-testid={`action-view-${customer.id}`}>
+          <Eye className="h-4 w-4 mr-2" />
+          Ver/Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={onToggleStatus}
+          disabled={isStatusLoading}
+          className={customer.status === 'blocked' ? 'text-green-600' : 'text-orange-600'}
+          data-testid={`action-toggle-status-${customer.id}`}
+        >
+          <Power className="h-4 w-4 mr-2" />
+          {customer.status === 'active' ? 'Bloquear' : 'Desbloquear'}
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={onDelete}
+          className="text-destructive"
+          data-testid={`action-delete-${customer.id}`}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Deletar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
