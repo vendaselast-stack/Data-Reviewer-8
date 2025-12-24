@@ -47,10 +47,19 @@ export default function SuppliersPage() {
 
   const { data: transactionsData = [] } = useQuery({
     queryKey: ['/api/transactions', company?.id],
-    queryFn: () => fetch('/api/transactions').then(res => res.json()),
+    queryFn: () => {
+      // Direct API call with proper error handling
+      return fetch('/api/transactions', {
+        method: 'GET',
+        credentials: 'include'
+      }).then(res => {
+        if (!res.ok) throw new Error('Failed to fetch transactions');
+        return res.json();
+      });
+    },
     initialData: [],
     enabled: !!company?.id,
-    staleTime: 0,
+    staleTime: 1000, // Cache for 1 second only
     refetchOnMount: true,
     refetchOnWindowFocus: true
   });

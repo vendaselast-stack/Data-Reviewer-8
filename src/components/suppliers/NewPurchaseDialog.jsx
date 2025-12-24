@@ -114,7 +114,6 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
         const dueDateISO = dueDate.toISOString();
         
         const payload = {
-          companyId: company?.id,
           supplierId: supplier.id,
           categoryId: cat.id,
           type: 'compra',
