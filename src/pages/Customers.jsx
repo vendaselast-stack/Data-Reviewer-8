@@ -34,55 +34,49 @@ export default function CustomersPage() {
   const { data: customers, isLoading } = useQuery({
     queryKey: ['/api/customers', company?.id],
     queryFn: () => Customer.list(),
-    initialData: [],
     enabled: !!company?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (cache garbage collection)
-    refetchOnMount: false, // Never refetch on mount
-    refetchOnWindowFocus: false, // Never refetch on window focus
-    refetchInterval: false // Never refetch automatically
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+    refetchOnReconnect: false,
+    retry: 1
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['/api/categories', company?.id],
     queryFn: () => Category.list(),
-    initialData: [],
     enabled: !!company?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    refetchInterval: false
+    refetchInterval: false,
+    refetchOnReconnect: false,
+    retry: 1
   });
 
   const transactionsQuery = useQuery({
     queryKey: ['/api/transactions', company?.id],
     queryFn: async () => {
-      try {
-        console.log('🔄 Fetching transactions...');
-        const data = await Transaction.list();
-        console.log('✅ Transactions fetched:', data);
-        return data || [];
-      } catch (err) {
-        console.error('❌ Error fetching transactions:', err);
-        throw err;
-      }
+      console.log('🔄 Fetching transactions...');
+      const data = await Transaction.list();
+      console.log('✅ Transactions fetched:', data);
+      return data || [];
     },
-    initialData: [],
     enabled: !!company?.id,
-    staleTime: 60 * 60 * 1000, // 1 hour
-    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    staleTime: Infinity, // NEVER consider stale once fetched
+    gcTime: Infinity, // NEVER delete from cache
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchInterval: false,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    refetchOnReconnect: false,
+    retry: 1
   });
 
-  const { data: transactionsData = [], isLoading: isTransactionsLoading, error: transactionsError } = transactionsQuery;
+  const { data: transactionsData = [], isLoading: isTransactionsLoading } = transactionsQuery;
   const transactions = Array.isArray(transactionsData) ? transactionsData : [];
-  
-  console.log('💰 Transactions state:', { length: transactions.length, error: transactionsError });
 
   const saveMutation = useMutation({
     mutationFn: (data) => {
@@ -182,7 +176,7 @@ export default function CustomersPage() {
         <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Clientes</h1>
             <p className="text-xs sm:text-sm text-slate-500">
-              {transactionsError ? '⚠️ Erro ao carregar vendas' : 'Gerencie sua base de clientes e contatos.'}
+              Gerencie sua base de clientes e contatos.
             </p>
         </div>
         
