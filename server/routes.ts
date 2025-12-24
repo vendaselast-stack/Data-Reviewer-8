@@ -509,23 +509,31 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.patch("/api/transactions/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const body = req.body;
+      const body = { ...req.body };
+      
+      // Date handling
       if (typeof body.date === "string") body.date = new Date(body.date);
       if (typeof body.paymentDate === "string") body.paymentDate = new Date(body.paymentDate);
       
-      // Convert numeric fields to strings (schema expects strings for Decimal fields)
+      // CRITICAL: Always convert numeric fields to strings (schema requires strings for Decimal)
+      // This accepts both numbers and strings from frontend
       if (body.paidAmount !== undefined && body.paidAmount !== null) {
-        body.paidAmount = body.paidAmount.toString();
+        body.paidAmount = String(body.paidAmount);
       }
       if (body.interest !== undefined && body.interest !== null) {
-        body.interest = body.interest.toString();
+        body.interest = String(body.interest);
       }
       if (body.amount !== undefined && body.amount !== null) {
-        body.amount = body.amount.toString();
+        body.amount = String(body.amount);
       }
       
       const data = insertTransactionSchema.partial().parse(body);
       const transaction = await storage.updateTransaction(req.user.companyId, req.params.id, data);
+      
+      if (!transaction) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+      
       res.json({
         ...transaction,
         amount: transaction.amount ? parseFloat(transaction.amount.toString()) : 0,
