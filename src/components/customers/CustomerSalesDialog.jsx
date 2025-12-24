@@ -28,25 +28,26 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     return expandedGroups[groupId] !== false;
   };
 
-  const { data: sales = [] } = useQuery({
-    queryKey: ['/api/customers', customer?.id, 'sales'],
-    queryFn: async () => {
-      const response = await fetch(`/api/customers/${customer?.id}/sales`);
-      if (!response.ok) throw new Error('Failed to fetch customer sales');
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+  const { data: transactionsData = [] } = useQuery({
+    queryKey: ['/api/transactions', company?.id],
+    queryFn: () => {
+      const Transaction = require('@/api/entities').Transaction;
+      return Transaction.list();
     },
     initialData: [],
-    enabled: !!customer?.id,
+    enabled: !!company?.id,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true
   });
+
+  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
+  const sales = transactions.filter(t => t.customerId === customer?.id && (t.type === 'venda' || t.type === 'income'));
   
   // Group sales by installment group
   const groupedSales = React.useMemo(() => {
     const groups = {};
-    (Array.isArray(sales) ? sales : []).forEach(s => {
+    sales.forEach(s => {
       // Use installmentGroup if available, otherwise extract base description (remove (X/Y) suffix)
       let groupKey = s.installmentGroup;
       if (!groupKey) {
