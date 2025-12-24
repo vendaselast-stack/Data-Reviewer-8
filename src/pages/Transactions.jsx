@@ -27,14 +27,16 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('paid'); // 'all', 'paid', 'pending'
-  // Initialize with UTC-normalized dates to avoid timezone issues
+  // Initialize with local date (not UTC) to respect user timezone
   const getInitialDateRange = () => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    // Use noon UTC to ensure date stays consistent across timezones
-    const [year, month, day] = todayStr.split('-');
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
     return {
-      startDate: new Date(`${year}-${month}-${day}T00:00:00Z`),
-      endDate: new Date(`${year}-${month}-${day}T23:59:59Z`),
+      startDate: new Date(todayStr + 'T00:00:00Z'),
+      endDate: new Date(todayStr + 'T23:59:59Z'),
       label: 'Hoje'
     };
   };
