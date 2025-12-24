@@ -144,13 +144,28 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getCustomers(companyId: string): Promise<Customer[]> {
-    // Get all customers with their basic info
-    return await db
-      .select()
+  async getCustomers(companyId: string): Promise<(Customer & { totalSales: number })[]> {
+    // Get all customers with their total sales calculated in real-time via SQL aggregation
+    const result = await db
+      .select({
+        id: customers.id,
+        companyId: customers.companyId,
+        name: customers.name,
+        email: customers.email,
+        phone: customers.phone,
+        contact: customers.contact,
+        category: customers.category,
+        status: customers.status,
+        createdAt: customers.createdAt,
+        totalSales: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.type} IN ('income', 'venda') THEN ${transactions.amount} ELSE 0 END), 0)`.mapWith(Number),
+      })
       .from(customers)
+      .leftJoin(transactions, eq(transactions.customerId, customers.id))
       .where(eq(customers.companyId, companyId))
+      .groupBy(customers.id)
       .orderBy(desc(customers.createdAt));
+    
+    return result as (Customer & { totalSales: number })[];
   }
 
   async getCustomer(companyId: string, id: string): Promise<Customer | undefined> {
