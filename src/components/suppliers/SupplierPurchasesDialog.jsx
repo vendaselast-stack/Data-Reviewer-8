@@ -171,6 +171,7 @@ export default function SupplierPurchasesDialog({ supplier, open, onOpenChange }
     onError: (error) => {
       toast.error(error.message);
     }
+  });
 
   const cancelPaymentMutation = useMutation({
     mutationFn: async (purchaseId) => {
@@ -216,6 +217,7 @@ export default function SupplierPurchasesDialog({ supplier, open, onOpenChange }
     onError: (error) => {
       toast.error(error.message);
     }
+  });
 
   if (!supplier) return null;
 

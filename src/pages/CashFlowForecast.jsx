@@ -372,6 +372,7 @@ export default function CashFlowForecastPage() {
       ...item,
       saldoAcumulado: cumulativeBalance
     };
+  });
   
   // Filter for balanced view (only show periods with transactions)
   const chartDataWithBalance = cashFlowWithBalance.filter(item => item.receita > 0 || item.despesa > 0);

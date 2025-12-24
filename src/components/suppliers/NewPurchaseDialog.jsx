@@ -134,6 +134,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
       });
       onOpenChange(false);
     }
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
