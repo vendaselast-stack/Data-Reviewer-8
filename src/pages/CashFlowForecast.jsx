@@ -291,34 +291,42 @@ export default function CashFlowForecastPage() {
 
         // Then, add pending installments from sales
         saleInstallments.forEach(inst => {
-          if (!inst.paid) {
-            const dueDate = parseISO(inst.due_date);
-            if (isWithinInterval(dueDate, { start: monthStart, end: monthEnd })) {
-              revenue += inst.amount;
-              const sale = sales.find(s => s.id === inst.sale_id);
-              revenueDetails.push({
-                description: `${sale?.description || 'Venda'} - Parcela ${inst.installment_number}`,
-                amount: inst.amount,
-                date: inst.due_date,
-                category: sale?.category
-              });
+          if (!inst.paid && inst.due_date) {
+            try {
+              const dueDate = parseISO(inst.due_date);
+              if (isWithinInterval(dueDate, { start: monthStart, end: monthEnd })) {
+                revenue += inst.amount;
+                const sale = sales.find(s => s.id === inst.sale_id);
+                revenueDetails.push({
+                  description: `${sale?.description || 'Venda'} - Parcela ${inst.installment_number}`,
+                  amount: inst.amount,
+                  date: inst.due_date,
+                  category: sale?.category
+                });
+              }
+            } catch (e) {
+              // Skip invalid dates
             }
           }
         });
 
         // And pending installments from purchases
         purchaseInstallments.forEach(inst => {
-          if (!inst.paid) {
-            const dueDate = parseISO(inst.due_date);
-            if (isWithinInterval(dueDate, { start: monthStart, end: monthEnd })) {
-              expense += inst.amount;
-              const purchase = purchases.find(p => p.id === inst.purchase_id);
-              expenseDetails.push({
-                description: `${purchase?.description || 'Compra'} - Parcela ${inst.installment_number}`,
-                amount: inst.amount,
-                date: inst.due_date,
-                category: purchase?.category
-              });
+          if (!inst.paid && inst.due_date) {
+            try {
+              const dueDate = parseISO(inst.due_date);
+              if (isWithinInterval(dueDate, { start: monthStart, end: monthEnd })) {
+                expense += inst.amount;
+                const purchase = purchases.find(p => p.id === inst.purchase_id);
+                expenseDetails.push({
+                  description: `${purchase?.description || 'Compra'} - Parcela ${inst.installment_number}`,
+                  amount: inst.amount,
+                  date: inst.due_date,
+                  category: purchase?.category
+                });
+              }
+            } catch (e) {
+              // Skip invalid dates
             }
           }
         });
