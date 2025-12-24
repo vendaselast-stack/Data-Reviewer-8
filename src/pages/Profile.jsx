@@ -21,6 +21,7 @@ export default function ProfilePage() {
     email: user?.email || '',
     role: user?.role || '',
     companyId: user?.companyId || '',
+  });
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
@@ -52,7 +53,8 @@ export default function ProfilePage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    },
+    }
+  });
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];

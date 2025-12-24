@@ -30,7 +30,9 @@ export default function SupplierPurchasesDialog({ supplier, open, onOpenChange }
     queryKey: ['transactions'],
     queryFn: () => fetch('/api/transactions').then(res => res.json()),
     initialData: []
+  });
 
+  const transactions = transactionsData;
   const purchases = transactions.filter(t => t.supplierId === supplier?.id && t.type === 'compra');
   
   // Group purchases by installment group

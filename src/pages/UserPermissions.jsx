@@ -45,6 +45,7 @@ export default function UserPermissionsPage() {
       return res.json();
     },
     enabled: !!company?.id
+  });
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async () => {
@@ -63,6 +64,7 @@ export default function UserPermissionsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/users', company?.id] });
       toast.success('Permissões atualizadas!');
     }
+  });
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);

@@ -19,6 +19,7 @@ export default function BankReconciliation({ open, onOpenChange, statementData, 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
     }
+  });
 
   // Match statement items with existing transactions
   const matchTransactions = () => {
