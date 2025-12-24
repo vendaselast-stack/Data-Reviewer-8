@@ -121,7 +121,8 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
       return Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       toast.success('Compra registrada com sucesso!');
       setFormData({

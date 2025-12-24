@@ -17,7 +17,8 @@ export default function BankReconciliation({ open, onOpenChange, statementData, 
   const createTransactionMutation = useMutation({
     mutationFn: (data) => Transaction.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'], exact: false });
     }
   });
 

@@ -117,7 +117,8 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       return Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       onOpenChange(false);
       setFormData({

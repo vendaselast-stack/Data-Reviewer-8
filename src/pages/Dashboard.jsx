@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const createMutation = useMutation({
     mutationFn: (data) => Transaction.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions', company?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions', 'all', company?.id] });
       setIsFormOpen(false);
       toast.success('Transação criada com sucesso!');
     }
