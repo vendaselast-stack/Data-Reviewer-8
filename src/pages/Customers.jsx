@@ -31,7 +31,7 @@ export default function CustomersPage() {
   const { company } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: customers, isLoading } = useQuery({
+  const { data: customers = [], isLoading } = useQuery({
     queryKey: ['/api/customers', company?.id],
     queryFn: () => Customer.list(),
     enabled: !!company?.id,
@@ -46,7 +46,10 @@ export default function CustomersPage() {
 
   const { data: categories = [] } = useQuery({
     queryKey: ['/api/categories', company?.id],
-    queryFn: () => Category.list(),
+    queryFn: async () => {
+      const data = await Category.list();
+      return data || [];
+    },
     enabled: !!company?.id,
     staleTime: Infinity,
     gcTime: Infinity,
@@ -60,14 +63,12 @@ export default function CustomersPage() {
   const transactionsQuery = useQuery({
     queryKey: ['/api/transactions', company?.id],
     queryFn: async () => {
-      console.log('🔄 Fetching transactions...');
       const data = await Transaction.list();
-      console.log('✅ Transactions fetched:', data);
-      return data || [];
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!company?.id,
-    staleTime: Infinity, // NEVER consider stale once fetched
-    gcTime: Infinity, // NEVER delete from cache
+    staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchInterval: false,
@@ -75,7 +76,7 @@ export default function CustomersPage() {
     retry: 1
   });
 
-  const { data: transactionsData = [], isLoading: isTransactionsLoading } = transactionsQuery;
+  const { data: transactionsData = [] } = transactionsQuery;
   const transactions = Array.isArray(transactionsData) ? transactionsData : [];
 
   const saveMutation = useMutation({

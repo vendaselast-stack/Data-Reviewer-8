@@ -31,7 +31,7 @@ export default function SuppliersPage() {
   const { company } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: suppliers, isLoading } = useQuery({
+  const { data: suppliers = [], isLoading } = useQuery({
     queryKey: ['/api/suppliers', company?.id],
     queryFn: () => Supplier.list(),
     enabled: !!company?.id,
@@ -46,7 +46,10 @@ export default function SuppliersPage() {
 
   const { data: expenseCategories = [] } = useQuery({
     queryKey: ['/api/categories', company?.id],
-    queryFn: () => Category.list(),
+    queryFn: async () => {
+      const data = await Category.list();
+      return data || [];
+    },
     enabled: !!company?.id,
     staleTime: Infinity,
     gcTime: Infinity,
@@ -61,11 +64,11 @@ export default function SuppliersPage() {
     queryKey: ['/api/transactions', company?.id],
     queryFn: async () => {
       const data = await Transaction.list();
-      return data || [];
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!company?.id,
-    staleTime: Infinity, // NEVER consider stale once fetched
-    gcTime: Infinity, // NEVER delete from cache
+    staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchInterval: false,
