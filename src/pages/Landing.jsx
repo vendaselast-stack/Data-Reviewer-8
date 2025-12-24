@@ -11,15 +11,18 @@ import {
   DollarSign,
   Clock,
   Award,
-  Zap as Lightning,
   Database,
   Eye,
   UserCheck,
   AlertCircle,
   ChevronDown,
   ChevronRight,
-  GitBranch,
   Gauge,
+  LineChart,
+  PieChart,
+  Activity,
+  Layers,
+  Grid3x3,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
@@ -58,6 +61,98 @@ export default function Landing() {
       icon: Lock,
       title: "Conformidade",
       description: "Audit logs completos e rastreamento de todas as operações.",
+    },
+  ];
+
+  const modules = [
+    {
+      title: "Dashboard Executivo",
+      description: "Visão 360º do seu negócio em tempo real",
+      features: [
+        "KPIs principais em cards grandes",
+        "Saldo de caixa atualizado",
+        "Receita vs Despesa do mês",
+        "Tendências de 12 meses",
+      ],
+      icon: Activity,
+    },
+    {
+      title: "Gestão de Transações",
+      description: "Controle completo de entradas e saídas",
+      features: [
+        "Lançamentos manuais ou por importação",
+        "Categorização automática",
+        "Pagamento parcelado com juros",
+        "Reconciliação bancária",
+      ],
+      icon: DollarSign,
+    },
+    {
+      title: "Fluxo de Caixa",
+      description: "Preveja o futuro financeiro do seu negócio",
+      features: [
+        "Projeção automática de 90 dias",
+        "Cenários e simulações",
+        "Alertas de falta de caixa",
+        "Histórico de períodos passados",
+      ],
+      icon: LineChart,
+    },
+    {
+      title: "Relatórios & DRE",
+      description: "Análise profunda da saúde financeira",
+      features: [
+        "DRE detalhado por período",
+        "Análise de rentabilidade",
+        "Comparação de períodos",
+        "Exportação em PDF/Excel",
+      ],
+      icon: PieChart,
+    },
+    {
+      title: "Gestão de Clientes",
+      description: "Organize e acompanhe relacionamentos",
+      features: [
+        "Cadastro de clientes completo",
+        "Histórico de vendas",
+        "Contas a receber",
+        "Filtros e buscas avançadas",
+      ],
+      icon: Users,
+    },
+    {
+      title: "Gestão de Fornecedores",
+      description: "Controle seu pipeline de compras",
+      features: [
+        "Cadastro com dados bancários",
+        "Contas a pagar integradas",
+        "Termos de pagamento",
+        "Análise de custos",
+      ],
+      icon: Grid3x3,
+    },
+  ];
+
+  const systemShowcase = [
+    {
+      title: "Dashboard com Métricas",
+      description: "Visualize todos os KPIs importantes em uma única tela",
+      metrics: [
+        { label: "Saldo de Caixa", value: "R$ 45.230,00", icon: DollarSign },
+        { label: "Receita Mês", value: "R$ 125.900,00", icon: TrendingUp },
+        { label: "Despesas", value: "R$ 80.670,00", icon: BarChart3 },
+        { label: "Lucro Líquido", value: "R$ 45.230,00", icon: Award },
+      ],
+    },
+    {
+      title: "Transações Gerenciadas",
+      description: "Controle total sobre cada movimento financeiro",
+      preview: true,
+    },
+    {
+      title: "Gráficos de Análise",
+      description: "Visualize tendências e padrões de forma clara",
+      preview: true,
     },
   ];
 
@@ -109,21 +204,21 @@ export default function Landing() {
   const testimonials = [
     {
       name: "Carlos Silva",
-      role: "Proprietário, Comércio Eletrônico",
+      role: "Proprietário, E-commerce",
       company: "TechShop Brasil",
-      text: "Depois de 2 anos perdendo dinheiro em planilhas desorganizadas, esse sistema me mostrou onde estava vazando caixa. Recuperei 23% em 3 meses.",
+      text: "Após 2 anos perdendo dinheiro em planilhas desorganizadas, esse sistema me mostrou onde estava vazando caixa. Recuperei 23% em 3 meses.",
       avatar: "CS",
     },
     {
       name: "Mariana Costa",
-      role: "Gerente Financeira, Indústria",
+      role: "Gerente Financeira",
       company: "Manufatura Premium",
       text: "As permissões granulares são um divisor de águas. Delego com confiança e tenho controle total. Ganho 10h por semana.",
       avatar: "MC",
     },
     {
       name: "Roberto Mendes",
-      role: "CEO, Varejo Distribuidor",
+      role: "CEO, Distribuidor",
       company: "Dist. Brasil",
       text: "A previsão de fluxo funcionou perfeito. Antecipei falta de caixa em 2 meses e renegociei com fornecedor. Economizei R$ 50k em juros.",
       avatar: "RM",
@@ -301,6 +396,149 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Capabilities Showcase */}
+      <section className="py-24 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20 space-y-4">
+            <h2 className="text-5xl font-bold">Veja o que você consegue fazer</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400">
+              6 módulos poderosos integrados em um único sistema
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            {modules.slice(0, 2).map((module, idx) => {
+              const Icon = module.icon;
+              return (
+                <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 overflow-hidden hover:border-yellow-400 dark:hover:border-yellow-400 transition-all">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-7 h-7 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">{module.title}</h3>
+                      <p className="text-gray-600 dark:text-gray-400">{module.description}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 pl-0">
+                    {module.features.map((feature, fidx) => (
+                      <div key={fidx} className="flex items-center gap-3">
+                        <Check className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {modules.slice(2).map((module, idx) => {
+              const Icon = module.icon;
+              return (
+                <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 overflow-hidden hover:border-yellow-400 dark:hover:border-yellow-400 transition-all">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{module.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{module.description}</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-2">
+                    {module.features.map((feature, fidx) => (
+                      <li key={fidx} className="flex items-center gap-2 text-sm">
+                        <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Dashboard Preview */}
+      <section className="py-24 bg-white dark:bg-black">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-5xl font-bold">Dashboard em Tempo Real</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400">
+              Visualize todos os KPIs importantes em uma tela única
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-900 dark:to-black rounded-2xl p-8 border border-gray-700 overflow-hidden">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-gray-700 pb-4">
+                <h3 className="text-white font-bold text-lg">Visão Executiva</h3>
+                <Layers className="w-5 h-5 text-yellow-400" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: "Saldo de Caixa", value: "R$ 45.230,00", icon: DollarSign, color: "text-yellow-400" },
+                  { label: "Receita Mês", value: "R$ 125.900,00", icon: TrendingUp, color: "text-green-400" },
+                  { label: "Despesas", value: "R$ 80.670,00", icon: BarChart3, color: "text-red-400" },
+                  { label: "Lucro Líquido", value: "R$ 45.230,00", icon: Award, color: "text-blue-400" },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={idx} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-gray-400 text-sm">{item.label}</p>
+                        <Icon className={`w-5 h-5 ${item.color}`} />
+                      </div>
+                      <p className="text-white text-xl font-bold">{item.value}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-6">
+                <div className="lg:col-span-2 bg-gray-800/50 rounded-lg p-6 border border-gray-700 h-48 flex items-end justify-around">
+                  <div className="space-y-4 w-full">
+                    <p className="text-gray-400 text-sm">Receita vs Despesa (Últimos 30 dias)</p>
+                    <div className="flex items-end justify-around h-24 gap-2">
+                      {[40, 65, 35, 60, 75, 55, 70].map((height, idx) => (
+                        <div key={idx} className="flex flex-col items-center gap-1">
+                          <div className={`w-3 rounded-sm bg-gradient-to-t from-yellow-400 to-yellow-300`} style={{height: `${height}%`}} />
+                          <span className="text-xs text-gray-500">D{idx + 1}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                  <p className="text-gray-400 text-sm mb-4">Distribuição de Despesas</p>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Operacional", value: "45%", color: "bg-yellow-400" },
+                      { label: "Pessoal", value: "35%", color: "bg-blue-400" },
+                      { label: "Impostos", value: "20%", color: "bg-red-400" },
+                    ].map((item, idx) => (
+                      <div key={idx}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-300">{item.label}</span>
+                          <span className="text-gray-400">{item.value}</span>
+                        </div>
+                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div className={`h-full ${item.color}`} style={{width: item.value}} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pain Points Section */}
       <section className="py-24 bg-gray-50 dark:bg-gray-900 border-y border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -415,7 +653,7 @@ export default function Landing() {
                 className="p-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
               >
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
                     {test.avatar}
                   </div>
                   <div>
