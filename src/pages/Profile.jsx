@@ -12,8 +12,6 @@ import { queryClient } from '@/lib/queryClient';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
-  const fileInputRef = useRef(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(user?.avatar || '');
   
   const [formData, setFormData] = useState({
@@ -27,28 +25,22 @@ export default function ProfilePage() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
-      const formDataToSend = new FormData();
-      
-      // Add text fields
-      formDataToSend.append('name', data.name);
-      formDataToSend.append('phone', data.phone);
-      
-      // Add avatar file if present
-      if (data.avatarFile) {
-        formDataToSend.append('avatar', data.avatarFile);
-      }
       
       const res = await fetch('/api/auth/profile', {
         method: 'PATCH',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: formDataToSend,
+        body: JSON.stringify({
+          name: data.name || '',
+          phone: data.phone || '',
+        }),
       });
       
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || 'Failed to update profile');
+        throw new Error(error.error || 'Falha ao atualizar perfil');
       }
       
       return res.json();
@@ -67,27 +59,22 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Por favor, selecione uma imagem válida');
       return;
     }
     
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Arquivo muito grande. Máximo 5MB');
       return;
     }
     
-    // Create preview
     const reader = new FileReader();
     reader.onload = (event) => {
       setPreviewUrl(event.target?.result || '');
     };
     reader.readAsDataURL(file);
-    
-    // Store file for upload
-    setFormData(prev => ({ ...prev, avatarFile: file }));
+    toast.info('Função de avatar implementada em breve');
   };
 
   const handleInputChange = (e) => {
@@ -97,12 +84,13 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSaving(true);
-    try {
-      await updateProfileMutation.mutateAsync(formData);
-    } finally {
-      setIsSaving(false);
+    
+    if (!formData.name?.trim()) {
+      toast.error('Nome completo é obrigatório');
+      return;
     }
+    
+    await updateProfileMutation.mutateAsync(formData);
   };
 
   const getInitials = (name) => {
@@ -138,7 +126,7 @@ export default function ProfilePage() {
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isSaving}
+                  disabled={updateProfileMutation.isPending}
                   data-testid="button-upload-avatar"
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -216,12 +204,12 @@ export default function ProfilePage() {
             {/* Save Button */}
             <Button 
               type="submit" 
-              disabled={isSaving || updateProfileMutation.isPending}
+              disabled={updateProfileMutation.isPending}
               className="w-full"
               data-testid="button-save-profile"
             >
               <Save className="w-4 h-4 mr-2" />
-              {isSaving || updateProfileMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+              {updateProfileMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </form>
         </CardContent>
