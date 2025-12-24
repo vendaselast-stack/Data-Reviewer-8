@@ -106,6 +106,11 @@ export default function SuppliersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/suppliers', company?.id] });
       toast.success('Fornecedor removido.', { duration: 5000 });
+      setSupplierToDelete(null);
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast.error(error?.message || 'Erro ao deletar fornecedor', { duration: 5000 });
     }
   });
 
@@ -326,14 +331,13 @@ export default function SuppliersPage() {
             <AlertDialogAction 
               onClick={() => {
                 if (supplierToDelete) {
-                  deleteMutation.mutate(supplierToDelete.id, {
-                    onSettled: () => setSupplierToDelete(null)
-                  });
+                  deleteMutation.mutate(supplierToDelete.id);
                 }
               }}
+              disabled={deleteMutation.isPending}
               className="bg-rose-600 hover:bg-rose-700"
             >
-              Sim, remover tudo
+              {deleteMutation.isPending ? 'Removendo...' : 'Sim, remover tudo'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
