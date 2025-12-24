@@ -265,6 +265,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const transactions = await storage.getTransactions(req.user.companyId);
+      console.log(`🔍 Fetching sales for customer ${req.params.id}:`, {
+        totalTransactions: transactions.length,
+        customerId: req.params.id,
+        sampleTransaction: transactions[0] ? { customerId: transactions[0].customerId, type: transactions[0].type, description: transactions[0].description } : 'none'
+      });
       // Filter for this customer's sales
       const sales = (transactions || [])
         .filter(t => String(t.customerId || '') === String(req.params.id) && (t.type === 'venda' || t.type === 'income'))
@@ -274,8 +279,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           paidAmount: t.paidAmount ? parseFloat(t.paidAmount.toString()) : null,
           interest: t.interest ? parseFloat(t.interest.toString()) : 0
         }));
+      console.log(`✅ Found ${sales.length} sales for customer ${req.params.id}`);
       res.json(sales);
     } catch (error) {
+      console.error('❌ Error fetching customer sales:', error);
       res.status(500).json({ error: "Failed to fetch customer sales" });
     }
   });
