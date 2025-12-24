@@ -53,13 +53,16 @@ export default function TransactionsPage() {
     queryFn: () => Category.list(),
     initialData: [],
     enabled: !!company?.id
+  });
 
   const { data: transactionsData, isLoading } = useQuery({
     queryKey: ['/api/transactions', company?.id],
     queryFn: () => Transaction.list(),
     initialData: [],
     enabled: !!company?.id
+  });
 
+  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
 
   const createMutation = useMutation({
     mutationFn: (data) => Transaction.create(data),
@@ -68,6 +71,7 @@ export default function TransactionsPage() {
       setIsFormOpen(false);
       toast.success('Transação criada com sucesso!', { duration: 5000 });
     }
+  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => Transaction.update(id, data),
@@ -77,6 +81,7 @@ export default function TransactionsPage() {
       setEditingTransaction(null);
       toast.success('Transação atualizada!', { duration: 5000 });
     }
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => Transaction.delete(id),
@@ -84,6 +89,7 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions', company?.id] });
       toast.success('Transação removida.', { duration: 5000 });
     }
+  });
 
   const handleSubmit = (data) => {
     if (editingTransaction) {

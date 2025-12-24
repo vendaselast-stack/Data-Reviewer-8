@@ -43,7 +43,6 @@ export default function CashFlowForecastPage() {
   // Calculate min and max dates from all transactions and installments
   const getDateRange = () => {
     const today = startOfDay(new Date());
-    
     // Collect all potential dates: transactions, sales, purchases, and installments
     let allDates = [];
     
