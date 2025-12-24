@@ -66,6 +66,21 @@ export default function DREAnalysis({ transactions, categories = [], period = 'c
 
     const despesasOperacionaisBreakdown = Object.entries(expenses);
 
+    // Group by payment method
+    const paymentMethodStats = {};
+    transactions.forEach(t => {
+      const method = t.paymentMethod || 'Não Informado';
+      if (!paymentMethodStats[method]) {
+        paymentMethodStats[method] = { income: 0, expense: 0 };
+      }
+      const amount = (parseFloat(t.amount || 0) + parseFloat(t.interest || 0));
+      if (t.type === 'venda' || t.type === 'income') {
+        paymentMethodStats[method].income += amount;
+      } else {
+        paymentMethodStats[method].expense += amount;
+      }
+    });
+
     return {
       receitaBruta,
       custosDiretos,
@@ -78,7 +93,8 @@ export default function DREAnalysis({ transactions, categories = [], period = 'c
       lucroOperacional,
       margemLiquida,
       revenues,
-      expenses
+      expenses,
+      paymentMethodStats
     };
   };
 
@@ -253,6 +269,37 @@ export default function DREAnalysis({ transactions, categories = [], period = 'c
             <span className={`text-2xl font-bold ${dre.lucroOperacional >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {dre.lucroOperacional >= 0 ? '+' : ''} R$ {dre.lucroOperacional.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
+          </div>
+        </div>
+
+        {/* Payment Methods Section */}
+        <div className="space-y-3 pt-4 border-t">
+          <h4 className="font-semibold text-slate-900 flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-primary" />
+            Resumo por Forma de Pagamento
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Object.entries(dre.paymentMethodStats).map(([method, stats]) => (
+              <div key={method} className="p-3 bg-white rounded-lg border border-slate-200">
+                <p className="text-sm font-bold text-slate-700 mb-2 border-b pb-1">{method}</p>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Entradas:</span>
+                    <span className="text-emerald-600 font-medium">R$ {stats.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Saídas:</span>
+                    <span className="text-rose-600 font-medium">R$ {stats.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t text-xs font-bold">
+                    <span>Líquido:</span>
+                    <span className={stats.income - stats.expense >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                      R$ {(stats.income - stats.expense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
