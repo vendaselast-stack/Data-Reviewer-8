@@ -38,17 +38,50 @@ export default function DashboardPage() {
     mutationFn: (data) => Transaction.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions', 'all', company?.id] });
-      setIsFormOpen(false);
-      toast.success('Transação criada com sucesso!');
     },
     onError: (error) => {
       console.error('Erro ao criar transação:', error);
-      toast.error(error.message || 'Erro ao salvar transação. Tente novamente.');
     }
   });
 
   const handleSubmit = (data) => {
-    createMutation.mutate(data);
+    console.log('handleSubmit received:', Array.isArray(data) ? `array of ${data.length}` : 'single object');
+    
+    if (Array.isArray(data)) {
+      // Para parcelado: criar todas as parcelas sequencialmente
+      Promise.all(
+        data.map(item => {
+          console.log('Creating installment:', { amount: item.amount, installmentNumber: item.installmentNumber });
+          return fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(item)
+          }).then(res => {
+            if (!res.ok) throw new Error(`Error: ${res.statusText}`);
+            return res.json();
+          });
+        })
+      ).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/transactions', 'all', company?.id] });
+        setIsFormOpen(false);
+        toast.success(`${data.length} parcel(as) criada(s) com sucesso!`);
+      }).catch(error => {
+        console.error('Error creating installments:', error);
+        toast.error(error.message || 'Erro ao salvar parcelado. Tente novamente.');
+      });
+    } else {
+      // Para transação única
+      createMutation.mutate(data, {
+        onSuccess: () => {
+          setIsFormOpen(false);
+          toast.success('Transação criada com sucesso!');
+        },
+        onError: (error) => {
+          toast.error(error.message || 'Erro ao salvar transação. Tente novamente.');
+        }
+      });
+    }
   };
 
   // Fetch ALL transactions to show only periods with actual data
