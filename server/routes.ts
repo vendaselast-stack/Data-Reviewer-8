@@ -513,15 +513,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (typeof body.date === "string") body.date = new Date(body.date);
       if (typeof body.paymentDate === "string") body.paymentDate = new Date(body.paymentDate);
       
-      // Ensure numeric fields are numbers
+      // Convert numeric fields to strings (schema expects strings for Decimal fields)
       if (body.paidAmount !== undefined && body.paidAmount !== null) {
-        body.paidAmount = typeof body.paidAmount === "string" ? parseFloat(body.paidAmount) : body.paidAmount;
+        body.paidAmount = body.paidAmount.toString();
       }
       if (body.interest !== undefined && body.interest !== null) {
-        body.interest = typeof body.interest === "string" ? parseFloat(body.interest) : body.interest;
+        body.interest = body.interest.toString();
       }
       if (body.amount !== undefined && body.amount !== null) {
-        body.amount = typeof body.amount === "string" ? parseFloat(body.amount) : body.amount;
+        body.amount = body.amount.toString();
       }
       
       const data = insertTransactionSchema.partial().parse(body);
