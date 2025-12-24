@@ -29,12 +29,14 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
     type: 'venda',
     categoryId: '',
     date: new Date()
+  });
 
   // Fetch Categories
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => Category.list(),
     initialData: []
+  });
 
   const createCategoryMutation = useMutation({
     mutationFn: (data) => Category.create(data),
@@ -47,6 +49,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
     onError: (error) => {
       toast.error(error.message || 'Erro ao criar categoria');
     }
+  });
 
   React.useEffect(() => {
     if (open) {

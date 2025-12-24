@@ -21,6 +21,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
     purchase_date: format(new Date(), 'yyyy-MM-dd'),
     installments: 1,
     installment_amount: ''
+  });
   const [customInstallments, setCustomInstallments] = useState([]);
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
 
@@ -51,6 +52,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
     queryKey: ['categories'],
     queryFn: () => Category.list(),
     initialData: []
+  });
 
   const createCategoryMutation = useMutation({
     mutationFn: (data) => Category.create(data),
@@ -63,6 +65,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
     onError: (error) => {
       toast.error(error.message || 'Erro ao criar categoria', { duration: 5000 });
     }
+  });
 
   // No need to filter - use all categories
   const expenseCategories = categories;

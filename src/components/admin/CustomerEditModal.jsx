@@ -20,6 +20,7 @@ export function CustomerEditModal({ customer, open, onOpenChange, onSave, isPend
       document: customer?.document || '',
       status: customer?.status || 'active',
     },
+  });
 
   const onSubmit = async (data) => {
     await onSave({

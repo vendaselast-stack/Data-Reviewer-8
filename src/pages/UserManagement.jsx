@@ -36,6 +36,7 @@ export default function UserManagementPage() {
       return res.json();
     },
     enabled: !!company?.id
+  });
 
   const inviteMutation = useMutation({
     mutationFn: async (data) => {
@@ -62,6 +63,7 @@ export default function UserManagementPage() {
         toast.success('Link copiado para clipboard!');
       }
     }
+  });
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId) => {
@@ -76,6 +78,7 @@ export default function UserManagementPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/users', company?.id] });
       toast.success('Usuário removido!');
     }
+  });
 
   const handleInvite = (e) => {
     e.preventDefault();

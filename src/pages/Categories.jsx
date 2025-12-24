@@ -28,6 +28,7 @@ export default function CategoriesPage() {
     queryFn: () => Category.list(),
     initialData: [],
     enabled: !!company?.id
+  });
 
   const createMutation = useMutation({
     mutationFn: (data) => Category.create(data),
@@ -41,6 +42,7 @@ export default function CategoriesPage() {
       const message = error.message || 'Erro desconhecido';
       toast.error(message.includes('HTTP') ? 'Erro ao criar categoria' : message, { duration: 5000 });
     }
+  });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => Category.update(id, data),
@@ -52,6 +54,7 @@ export default function CategoriesPage() {
       toast.success('Categoria atualizada!', { duration: 5000 });
     },
     onError: () => toast.error('Erro ao atualizar categoria', { duration: 5000 })
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => Category.delete(id),
@@ -60,6 +63,7 @@ export default function CategoriesPage() {
       toast.success('Categoria removida!', { duration: 5000 });
     },
     onError: () => toast.error('Erro ao remover categoria', { duration: 5000 })
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();

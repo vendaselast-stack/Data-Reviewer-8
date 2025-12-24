@@ -19,6 +19,7 @@ export function SubscriptionEditModal({ subscription, open, onOpenChange, onSave
       amount: subscription?.amount || '',
       status: subscription?.status || 'active',
     },
+  });
 
   const onSubmit = async (data) => {
     await onSave({

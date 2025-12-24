@@ -20,6 +20,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     sale_date: format(new Date(), 'yyyy-MM-dd'),
     installments: '1',
     installment_amount: ''
+  });
   const [customInstallments, setCustomInstallments] = useState([]);
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
 
@@ -50,6 +51,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     queryKey: ['categories'],
     queryFn: () => Category.list(),
     initialData: []
+  });
 
   const createCategoryMutation = useMutation({
     mutationFn: (data) => Category.create(data),
@@ -62,6 +64,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     onError: (error) => {
       toast.error(error.message || 'Erro ao criar categoria', { duration: 5000 });
     }
+  });
 
   const createSaleMutation = useMutation({
     mutationFn: async (data) => {
@@ -128,6 +131,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       setCustomInstallments([]);
       toast.success('Venda registrada com sucesso!', { duration: 5000 });
     }
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();

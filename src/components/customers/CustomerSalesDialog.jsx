@@ -30,7 +30,9 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     queryKey: ['transactions'],
     queryFn: () => fetch('/api/transactions').then(res => res.json()),
     initialData: []
+  });
 
+  const transactions = transactionsData;
   const sales = transactions.filter(t => t.customerId === customer?.id && t.type === 'venda');
   
   // Group sales by installment group
@@ -170,6 +172,7 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     onError: (error) => {
       toast.error(error.message, { duration: 5000 });
     }
+  });
 
   const cancelPaymentMutation = useMutation({
     mutationFn: async (saleId) => {
@@ -215,6 +218,7 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     onError: (error) => {
       toast.error(error.message, { duration: 5000 });
     }
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -18,6 +18,7 @@ export default function PricingCalculatorPage() {
     operationalCost: '',
     desiredMargin: '30',
     marketComparison: ''
+  });
   const [results, setResults] = useState(null);
   const [aiSuggestion, setAiSuggestion] = useState(null);
 
