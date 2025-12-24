@@ -132,7 +132,7 @@ export default function SuppliersPage() {
       .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
   };
 
-  const filteredSuppliers = suppliers
+  const filteredSuppliers = (suppliers || [])
     .filter(s => 
       s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       s.email?.toLowerCase().includes(searchTerm.toLowerCase())
