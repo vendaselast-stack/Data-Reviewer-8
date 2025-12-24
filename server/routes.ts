@@ -1361,6 +1361,170 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // ========== SUPER ADMIN - GLOBAL CUSTOMERS ==========
+
+  // Get all customers across all companies
+  app.get("/api/admin/customers", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const customers_list = await db.select().from(customers).orderBy(desc(customers.createdAt));
+      
+      const enriched = await Promise.all(
+        customers_list.map(async (c) => {
+          const company = await storage.getCompany(c.companyId);
+          return { ...c, companyName: company?.name || 'N/A' };
+        })
+      );
+
+      res.json(enriched);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+
+  // Update customer
+  app.patch("/api/admin/customers/:id", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const { name, email, phone, contact, category, status } = req.body;
+      const customer = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.id, req.params.id));
+
+      if (!customer.length) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+
+      const result = await db
+        .update(customers)
+        .set({ name, email, phone, contact, category, status })
+        .where(eq(customers.id, req.params.id))
+        .returning();
+
+      res.json(result[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update customer" });
+    }
+  });
+
+  // Delete customer
+  app.delete("/api/admin/customers/:id", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      await db.delete(customers).where(eq(customers.id, req.params.id));
+      res.json({ message: "Customer deleted" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete customer" });
+    }
+  });
+
+  // ========== SUPER ADMIN - GLOBAL USERS ==========
+
+  // Get all users across all companies
+  app.get("/api/admin/users", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const users_list = await db.select().from(users).orderBy(desc(users.createdAt));
+      
+      const enriched = await Promise.all(
+        users_list.map(async (u) => {
+          const company = await storage.getCompany(u.companyId || '');
+          return {
+            id: u.id,
+            username: u.username,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            role: u.role,
+            status: u.status,
+            companyId: u.companyId,
+            companyName: company?.name || 'N/A',
+            createdAt: u.createdAt,
+            isSuperAdmin: u.isSuperAdmin,
+          };
+        })
+      );
+
+      res.json(enriched);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Update user info
+  app.patch("/api/admin/users/:id", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const { name, email, phone, status, role } = req.body;
+      
+      const result = await db
+        .update(users)
+        .set({ name, email, phone, status, role })
+        .where(eq(users.id, req.params.id))
+        .returning();
+
+      res.json(result[0]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Reset user password
+  app.post("/api/admin/users/:id/reset-password", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const { newPassword } = req.body;
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+      
+      const result = await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, req.params.id))
+        .returning();
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
+  // Delete user
+  app.delete("/api/admin/users/:id", authMiddleware, requireSuperAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user?.isSuperAdmin) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      await db.delete(users).where(eq(users.id, req.params.id));
+      res.json({ message: "User deleted" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
   // 404 fallback
   app.all("/api/*", (req, res) => {
     res.status(404).json({ error: "API route not found" });

@@ -17,6 +17,14 @@ export default function Layout({ children }) {
     logout();
   };
 
+  // Super Admin navigation
+  const superAdminNavigation = [
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/', roles: ['super_admin'], permission: null },
+    { name: 'Clientes', icon: Users, path: '/admin/customers', roles: ['super_admin'], permission: null },
+    { name: 'Usuários', icon: Users, path: '/admin/users', roles: ['super_admin'], permission: null },
+  ];
+
+  // Regular user navigation
   const baseNavigation = [
     { name: 'Visão Geral', icon: LayoutDashboard, path: '/', roles: ['admin', 'manager', 'user', 'operational'], permission: null },
     { name: 'Transações', icon: Receipt, path: '/transactions', roles: ['admin', 'manager', 'user', 'operational'], permission: 'view_transactions' },
@@ -29,8 +37,11 @@ export default function Layout({ children }) {
     { name: 'Gestão de Usuários', icon: Users, path: '/users', roles: ['admin'], permission: 'manage_users' },
   ];
 
-  const navigation = baseNavigation.filter(item => {
-    const hasRole = item.roles.includes(user?.role || 'user');
+  // Choose navigation based on user type
+  const navigationList = user?.isSuperAdmin ? superAdminNavigation : baseNavigation;
+
+  const navigation = navigationList.filter(item => {
+    const hasRole = item.roles.includes(user?.role || 'user') || (user?.isSuperAdmin && item.roles.includes('super_admin'));
     const hasPermissionCheck = item.permission ? hasPermission(item.permission) : true;
     return hasRole && hasPermissionCheck;
   });
