@@ -73,8 +73,8 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/profile'] });
     },
     onError: (error) => {
-      const errorMessage = error?.message || typeof error === 'string' ? error : 'Erro ao atualizar perfil';
-      toast.error(errorMessage);
+      const errorMessage = typeof error?.message === 'string' ? error.message : (typeof error === 'string' ? error : 'Erro ao atualizar perfil');
+      toast.error(String(errorMessage));
     }
   });
 
@@ -117,7 +117,7 @@ export default function ProfilePage() {
           
           if (!res.ok) {
             const error = await res.json();
-            toast.error(error.error || 'Falha ao fazer upload');
+            toast.error(String(error.error || 'Falha ao fazer upload'));
             return;
           }
           
@@ -125,7 +125,8 @@ export default function ProfilePage() {
           updateUser(result.user);
           toast.success('Foto atualizada com sucesso!');
         } catch (error) {
-          toast.error(error?.message || 'Falha ao fazer upload');
+          const errorMsg = typeof error?.message === 'string' ? error.message : 'Falha ao fazer upload';
+          toast.error(String(errorMsg));
         }
       }
     };
