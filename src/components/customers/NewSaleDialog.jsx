@@ -358,7 +358,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Data da Venda</Label>
+              <Label>Data de Vencimento (1ª Parcela)</Label>
               <Input 
                 type="date" 
                 value={formData.sale_date}
