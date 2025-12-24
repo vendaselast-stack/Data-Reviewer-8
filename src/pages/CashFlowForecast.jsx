@@ -31,104 +31,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function CashFlowForecastPage() {
   const { company } = useAuth();
+  
+  // Load all data first
   const { data: transactionsData } = useQuery({
     queryKey: ['/api/transactions', company?.id],
     queryFn: () => Transaction.list(),
     initialData: [],
     enabled: !!company?.id
   });
-
-  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
-
-  // Calculate min and max dates from all transactions and installments
-  const getDateRange = () => {
-    const today = startOfDay(new Date());
-    // Collect all potential dates: transactions, sales, purchases, and installments
-    let allDates = [];
-    
-    // Add transaction dates
-    if (transactions.length > 0) {
-      transactions.forEach(t => {
-        if (t.date) {
-          const dateStr = t.date.split('T')[0];
-          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-            allDates.push(dateStr);
-          }
-        }
-      });
-    }
-    
-    // If no transactions at all, show next 30 days
-    if (allDates.length === 0) {
-      const thirtyDaysFromNow = new Date(today);
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      return { minDate: today, maxDate: thirtyDaysFromNow };
-    }
-    
-    // Sort dates
-    allDates.sort();
-    const minDateStr = allDates[0];
-    let maxDateStr = allDates[allDates.length - 1];
-    let maxDate = parseISO(maxDateStr);
-    const minDate = parseISO(minDateStr);
-    
-    // Check for future dates beyond 6 months in installments
-    // If there are unpaid installments beyond 6 months, extend the range
-    const sixMonthsFromToday = new Date(today);
-    sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
-    
-    // Check sale installments for future dates
-    if (saleInstallments && saleInstallments.length > 0) {
-      saleInstallments.forEach(inst => {
-        if (!inst.paid && inst.due_date) {
-          try {
-            const dueDate = parseISO(inst.due_date);
-            if (dueDate > maxDate) {
-              maxDate = dueDate;
-            }
-          } catch (e) {
-            // Invalid date, skip
-          }
-        }
-      });
-    }
-    
-    // Check purchase installments for future dates
-    if (purchaseInstallments && purchaseInstallments.length > 0) {
-      purchaseInstallments.forEach(inst => {
-        if (!inst.paid && inst.due_date) {
-          try {
-            const dueDate = parseISO(inst.due_date);
-            if (dueDate > maxDate) {
-              maxDate = dueDate;
-            }
-          } catch (e) {
-            // Invalid date, skip
-          }
-        }
-      });
-    }
-    
-    // If maxDate is still within 6 months, cap it there. Otherwise, use the actual maxDate
-    // This ensures we show at least 6 months OR all unpaid installments, whichever is larger
-    if (maxDate < sixMonthsFromToday) {
-      maxDate = sixMonthsFromToday;
-    }
-    
-    return { minDate, maxDate };
-  };
-
-  const { minDate, maxDate } = getDateRange();
-
-  // Initialize with all time - will be set by CashFlowPeriodFilter
-  const [dateRange, setDateRange] = useState({
-    startDate: minDate,
-    endDate: maxDate,
-    label: 'Todo período'
-  });
-  const [expandedMonths, setExpandedMonths] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
 
   const { data: saleInstallments } = useQuery({
     queryKey: ['/api/sale-installments', company?.id],
@@ -157,6 +67,86 @@ export default function CashFlowForecastPage() {
     initialData: [],
     enabled: !!company?.id
   });
+
+  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
+
+  // Calculate min and max dates from all transactions and installments
+  const getDateRange = () => {
+    const today = startOfDay(new Date());
+    let allDates = [];
+    
+    if (transactions.length > 0) {
+      transactions.forEach(t => {
+        if (t.date) {
+          const dateStr = t.date.split('T')[0];
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            allDates.push(dateStr);
+          }
+        }
+      });
+    }
+    
+    if (allDates.length === 0) {
+      const thirtyDaysFromNow = new Date(today);
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      return { minDate: today, maxDate: thirtyDaysFromNow };
+    }
+    
+    allDates.sort();
+    const minDateStr = allDates[0];
+    let maxDate = parseISO(allDates[allDates.length - 1]);
+    const minDate = parseISO(minDateStr);
+    
+    const sixMonthsFromToday = new Date(today);
+    sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
+    
+    if (saleInstallments && saleInstallments.length > 0) {
+      saleInstallments.forEach(inst => {
+        if (!inst.paid && inst.due_date) {
+          try {
+            const dueDate = parseISO(inst.due_date);
+            if (dueDate > maxDate) {
+              maxDate = dueDate;
+            }
+          } catch (e) {
+            // Invalid date, skip
+          }
+        }
+      });
+    }
+    
+    if (purchaseInstallments && purchaseInstallments.length > 0) {
+      purchaseInstallments.forEach(inst => {
+        if (!inst.paid && inst.due_date) {
+          try {
+            const dueDate = parseISO(inst.due_date);
+            if (dueDate > maxDate) {
+              maxDate = dueDate;
+            }
+          } catch (e) {
+            // Invalid date, skip
+          }
+        }
+      });
+    }
+    
+    if (maxDate < sixMonthsFromToday) {
+      maxDate = sixMonthsFromToday;
+    }
+    
+    return { minDate, maxDate };
+  };
+
+  const { minDate, maxDate } = getDateRange();
+
+  const [dateRange, setDateRange] = useState({
+    startDate: minDate,
+    endDate: maxDate,
+    label: 'Todo período'
+  });
+  const [expandedMonths, setExpandedMonths] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const calculateCashFlow = () => {
     if (!dateRange.startDate || !dateRange.endDate) return [];
