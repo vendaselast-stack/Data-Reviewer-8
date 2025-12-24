@@ -32,7 +32,7 @@ export default function SupplierPurchasesDialog({ supplier, open, onOpenChange }
     initialData: []
   });
 
-  const transactions = transactionsData;
+  const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
   const purchases = transactions.filter(t => t.supplierId === supplier?.id && t.type === 'compra');
   
   // Group purchases by installment group
