@@ -1204,6 +1204,29 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.post("/api/invitations/send-email", authMiddleware, requireRole(["admin"]), async (req: AuthenticatedRequest, res) => {
+    try {
+      const { email, name, role } = req.body;
+      
+      if (!email?.trim() || !name?.trim()) {
+        return res.status(400).json({ error: "Email and name are required" });
+      }
+
+      const inviteLink = `${process.env.APP_URL || 'http://localhost:5000'}/signup?companyId=${req.user.companyId}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&role=${role || 'user'}`;
+      
+      // TODO: Implement actual email sending via SMTP
+      // For now, just return success response
+      console.log(`[EMAIL] Would send invite to ${email} with link: ${inviteLink}`);
+      
+      res.json({ 
+        message: "Email sending functionality will be enabled when SMTP is configured",
+        inviteLink 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to send email" });
+    }
+  });
+
   app.post("/api/invitations/accept", async (req, res) => {
     try {
       const { token, username, password } = req.body;
