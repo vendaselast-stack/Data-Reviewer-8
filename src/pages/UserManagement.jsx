@@ -35,16 +35,28 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 import { PERMISSIONS } from '../../shared/schema';
 
 export default function UserManagementPage() {
-  const { company } = useAuth();
+  const { company, user: currentUser } = useAuth();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['/api/users'],
@@ -86,15 +98,25 @@ export default function UserManagementPage() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId) => {
       const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
+      console.log(`[DEBUG] Attempting to delete user: ${userId}`);
       const res = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error('Failed to delete user');
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to delete user');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      toast.success('Usuário removido!');
+      toast.success('Usuário removido com sucesso!');
+      setUserToDelete(null);
+    },
+    onError: (error) => {
+      console.error("Delete user error:", error);
+      toast.error(`Erro ao remover usuário: ${error.message}`);
+      setUserToDelete(null);
     }
   });
 
@@ -205,7 +227,10 @@ export default function UserManagementPage() {
                 users.map(user => (
                   <TableRow key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                     <TableCell className="font-medium text-slate-900 pl-6">
-                      {user.name || user.username}
+                      <div className="flex flex-col">
+                        <span>{user.name || user.username}</span>
+                        {currentUser?.id === user.id && <span className="text-[10px] text-primary font-bold">(VOCÊ)</span>}
+                      </div>
                     </TableCell>
                     <TableCell className="text-slate-600">
                       {user.email}
@@ -241,12 +266,8 @@ export default function UserManagementPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem 
                               className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
-                              onClick={() => {
-                                if (confirm(`Deseja realmente remover o acesso de ${user.name || user.username}?`)) {
-                                  deleteUserMutation.mutate(user.id);
-                                }
-                              }}
-                              disabled={deleteUserMutation.isPending}
+                              onClick={() => setUserToDelete(user)}
+                              disabled={currentUser?.id === user.id}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Remover Usuário
@@ -268,6 +289,34 @@ export default function UserManagementPage() {
         onOpenChange={setIsInviteOpen}
         onInvite={(data) => inviteMutation.mutateAsync(data)}
       />
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">Remover Usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover o acesso de <strong>{userToDelete?.name || userToDelete?.username}</strong>? 
+              Esta ação não pode ser desfeita e o usuário perderá o acesso imediatamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteUserMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deleteUserMutation.mutate(userToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Removendo...
+                </>
+              ) : 'Sim, remover usuário'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Permissions Modal */}
       <Dialog open={isPermissionsOpen} onOpenChange={setIsPermissionsOpen}>
