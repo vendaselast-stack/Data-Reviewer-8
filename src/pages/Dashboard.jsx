@@ -225,7 +225,7 @@ export default function DashboardPage() {
       {/* KPI Cards - 4 Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIWidget
-          title="Receita Total"
+          title="Receita total"
           value={`R$ ${metrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={TrendingUp}
           trend="up"
@@ -234,7 +234,7 @@ export default function DashboardPage() {
         />
         
         <KPIWidget
-          title="Despesa Total"
+          title="Despesa total"
           value={`R$ ${metrics.totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={DollarSign}
           trend="down"
@@ -243,7 +243,7 @@ export default function DashboardPage() {
         />
 
         <KPIWidget
-          title="Contas a Receber"
+          title="Contas a receber"
           value={`R$ ${metrics.futureRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={Clock}
           trendValue={`${metrics.futureRevenueCount} parcelas`}
@@ -252,7 +252,7 @@ export default function DashboardPage() {
         />
 
         <KPIWidget
-          title="Contas a Pagar"
+          title="Contas a pagar"
           value={`R$ ${metrics.futureExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={Clock}
           trendValue={`${metrics.futureExpensesCount} parcelas`}
