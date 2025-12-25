@@ -24,6 +24,7 @@ import WhatIfAnalysis from '../components/reports/WhatIfAnalysis';
 import DebtImpactSimulator from '../components/reports/DebtImpactSimulator';
 import DREAnalysis from '../components/reports/DREAnalysis';
 import ReportExporter from '../components/reports/ReportExporter';
+import AnalysisLoading from '../components/reports/AnalysisLoading';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
@@ -450,7 +451,9 @@ Forneça:
       </Dialog>
 
       {/* Report Suggestions and Results */}
-      {!analysisResult && !isAnalyzing ? (
+      {isAnalyzing ? (
+        <AnalysisLoading />
+      ) : !analysisResult ? (
         <div className="space-y-6">
           <ReportSuggestions 
             transactions={filteredTransactions}
@@ -471,7 +474,7 @@ Forneça:
             </CardContent>
           </Card>
         </div>
-      ) : analysisResult ? (
+      ) : (
         <div className="space-y-6 animate-in fade-in duration-500">
           {/* Executive Summary with KPIs */}
           <ExecutiveSummary 
@@ -594,7 +597,7 @@ Forneça:
             </Card>
           )}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
