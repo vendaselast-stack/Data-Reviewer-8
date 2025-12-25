@@ -1114,15 +1114,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/users", authMiddleware, requireRole("admin", "manager"), async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      console.log(`[DEBUG] Fetching users for companyId: ${req.user.companyId}`);
-      const usersList = await storage.getUsers(req.user.companyId);
+      const currentCompanyId = req.user.companyId;
+      console.log(`[DEBUG] Fetching users for companyId: ${currentCompanyId}`);
+      
+      const usersList = await storage.getUsers(currentCompanyId);
       console.log(`[DEBUG] Found ${usersList.length} users`);
       
-      // Converter permissões de string para objeto se necessário
-      const formattedUsers = usersList.map(u => ({
-        ...u,
-        permissions: typeof u.permissions === 'string' ? JSON.parse(u.permissions) : (u.permissions || {})
-      }));
+      // Garantir isolamento multi-tenant extra e converter permissões
+      const formattedUsers = usersList
+        .filter(u => u.companyId === currentCompanyId)
+        .map(u => ({
+          ...u,
+          permissions: typeof u.permissions === 'string' ? JSON.parse(u.permissions) : (u.permissions || {})
+        }));
       
       res.json(formattedUsers);
     } catch (error) {
