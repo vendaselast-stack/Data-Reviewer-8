@@ -27,14 +27,14 @@ export default function Layout({ children }) {
 
   // Regular user navigation
   const baseNavigation = [
-    { name: 'Visão Geral', icon: LayoutDashboard, path: '/', roles: ['admin', 'manager', 'user', 'operational'], permission: null },
-    { name: 'Transações', icon: Receipt, path: '/transactions', roles: ['admin', 'manager', 'user', 'operational'], permission: 'view_transactions' },
-    { name: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'manager', 'user', 'operational'], permission: 'view_customers' },
-    { name: 'Fornecedores', icon: Building2, path: '/suppliers', roles: ['admin', 'manager', 'user', 'operational'], permission: 'view_suppliers' },
-    { name: 'Categorias', icon: Tag, path: '/categories', roles: ['admin', 'manager'], permission: null },
-    { name: 'Fluxo de Caixa', icon: TrendingUp, path: '/cashflowforecast', roles: ['admin', 'manager', 'user'], permission: 'view_reports' },
-    { name: 'IA Analista', icon: Brain, path: '/reports', roles: ['admin', 'manager', 'user'], permission: 'view_reports' },
-    { name: 'Calc. Preços', icon: Settings, path: '/pricingcalculator', roles: ['admin', 'manager', 'user', 'operational'], permission: null },
+    { name: 'Visão Geral', icon: LayoutDashboard, path: '/', roles: ['admin', 'operational'], permission: null },
+    { name: 'Transações', icon: Receipt, path: '/transactions', roles: ['admin', 'operational'], permission: 'view_transactions' },
+    { name: 'Clientes', icon: Users, path: '/customers', roles: ['admin', 'operational'], permission: 'view_customers' },
+    { name: 'Fornecedores', icon: Building2, path: '/suppliers', roles: ['admin', 'operational'], permission: 'view_suppliers' },
+    { name: 'Categorias', icon: Tag, path: '/categories', roles: ['admin'], permission: null },
+    { name: 'Fluxo de Caixa', icon: TrendingUp, path: '/cashflowforecast', roles: ['admin'], permission: 'view_reports' },
+    { name: 'IA Analista', icon: Brain, path: '/reports', roles: ['admin'], permission: 'view_reports' },
+    { name: 'Calc. Preços', icon: Settings, path: '/pricingcalculator', roles: ['admin', 'operational'], permission: null },
     { name: 'Gestão de Usuários', icon: Users, path: '/users', roles: ['admin'], permission: 'manage_users' },
   ];
 
@@ -42,7 +42,7 @@ export default function Layout({ children }) {
   const navigationList = user?.isSuperAdmin ? superAdminNavigation : baseNavigation;
 
   const navigation = navigationList.filter(item => {
-    const hasRole = item.roles.includes(user?.role || 'user') || (user?.isSuperAdmin && item.roles.includes('super_admin'));
+    const hasRole = item.roles.includes(user?.role || 'operational') || (user?.isSuperAdmin && item.roles.includes('super_admin'));
     // Mostrar item se tem role certo. Permissão é verificada na página.
     return hasRole;
   });

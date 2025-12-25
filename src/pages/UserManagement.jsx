@@ -307,7 +307,7 @@ export default function UserManagement() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className="capitalize font-normal border-slate-200">
-                        {user.role === 'admin' ? 'Administrador' : user.role === 'manager' ? 'Gerente' : user.role === 'operational' ? 'Operacional' : 'Usuário'}
+                        {user.role === 'admin' ? 'Administrador' : 'Operacional'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">

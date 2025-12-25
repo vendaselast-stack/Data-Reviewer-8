@@ -515,7 +515,7 @@ export default function ProfilePage() {
               <Label className="text-slate-600 text-xs mb-2 block">Cargo</Label>
               <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-2">
                 <Badge variant="outline" className="capitalize">
-                  {formData.role === 'admin' ? 'Admin' : formData.role === 'manager' ? 'Gerente' : formData.role === 'operational' ? 'Operacional' : 'Usuário'}
+                  {formData.role === 'admin' ? 'Admin' : 'Operacional'}
                 </Badge>
               </div>
             </div>

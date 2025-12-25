@@ -19,7 +19,7 @@ export default function InviteUserModal({ open, onOpenChange, onInvite }) {
   const [step, setStep] = useState('methods'); // methods, create, email
   const [inviteData, setInviteData] = useState({
     email: '',
-    role: 'user',
+    role: 'operational',
     name: '',
     password: '',
     confirmPassword: ''
