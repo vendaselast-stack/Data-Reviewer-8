@@ -30,7 +30,6 @@ const PERMISSIONS_LIST = [
 const ROLES = [
   { value: 'admin', label: 'Administrador', fullAccess: true },
   { value: 'operational', label: 'Operacional', fullAccess: false },
-  { value: 'user', label: 'Usuário', fullAccess: false },
 ];
 
 export default function TeamPage() {
