@@ -1,11 +1,11 @@
-// OpenAI AI Integration with GPT-4o Mini
-const API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-const API_URL = 'https://api.openai.com/v1/chat/completions';
+// Groq AI Integration with Llama 3.1 8B
+const API_KEY = import.meta.env.VITE_GROQ;
+const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 // Mock response para quando API key não está configurada
 const generateMockAnalysis = (responseJsonSchema) => {
   if (!responseJsonSchema) {
-    return 'Análise financeira gerada. Configure VITE_OPENAI_API_KEY para análises reais com IA.';
+    return 'Análise financeira gerada. Configure VITE_GROQ para análises reais com IA.';
   }
   
   // Detectar tipo de análise baseado no schema
@@ -138,7 +138,7 @@ export const invokeOpenAI = async (prompt, responseJsonSchema = null) => {
   try {
     // Se não tem API key, retorna mock
     if (!API_KEY) {
-      console.warn('⚠️ VITE_OPENAI_API_KEY não configurada, usando resposta simulada');
+      console.warn('⚠️ VITE_GROQ não configurada, usando resposta simulada');
       return generateMockAnalysis(responseJsonSchema);
     }
 
@@ -149,7 +149,7 @@ export const invokeOpenAI = async (prompt, responseJsonSchema = null) => {
     }
 
     const requestBody = {
-      model: 'gpt-4o-mini',
+      model: 'llama-3.1-8b-instant',
       messages: [
         {
           role: 'system',
@@ -175,7 +175,7 @@ export const invokeOpenAI = async (prompt, responseJsonSchema = null) => {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('OpenAI API Error:', error);
+      console.error('Groq API Error:', error);
       return generateMockAnalysis(responseJsonSchema);
     }
 
@@ -204,7 +204,7 @@ export const invokeOpenAI = async (prompt, responseJsonSchema = null) => {
     
     return textContent;
   } catch (error) {
-    console.error('OpenAI Request Error:', error.message);
+    console.error('Groq Request Error:', error.message);
     return generateMockAnalysis(responseJsonSchema);
   }
 };
