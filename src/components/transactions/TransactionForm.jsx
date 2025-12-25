@@ -640,38 +640,61 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
             </>
           )}
 
-          {formData.status === 'pago' && (
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Data do Pagamento</Label>
+              <Label>{formData.status === 'pago' ? 'Data da Transação' : (parseInt(formData.installments) === 1 ? 'Data de Vencimento' : 'Data da Transação')}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full pl-3 text-left font-normal",
-                      !formData.paymentDate && "text-muted-foreground"
+                      "w-full justify-start text-left font-normal",
+                      !formData.date && "text-muted-foreground"
                     )}
                   >
-                    {formData.paymentDate ? (
-                      format(formData.paymentDate, "dd/MM/yyyy")
-                    ) : (
-                      <span>Selecione a data do pagamento</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.date ? format(formData.date, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={formData.paymentDate}
-                    onSelect={(d) => d && setFormData({...formData, paymentDate: d})}
+                    selected={formData.date instanceof Date ? formData.date : new Date(formData.date)}
+                    onSelect={(date) => setFormData({ ...formData, date })}
                     initialFocus
-                    locale={ptBR}
                   />
                 </PopoverContent>
               </Popover>
             </div>
-          )}
+
+            {formData.status === 'pago' && (
+              <div className="space-y-2">
+                <Label>Data do Pagamento</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.paymentDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.paymentDate ? format(formData.paymentDate, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.paymentDate instanceof Date ? formData.paymentDate : (formData.paymentDate ? new Date(formData.paymentDate) : new Date())}
+                      onSelect={(date) => setFormData({ ...formData, paymentDate: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+          </div>
 
           <div className="pt-4 flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

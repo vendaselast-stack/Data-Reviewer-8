@@ -430,6 +430,29 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
                 required
               />
             </div>
+            {formData.status === 'pago' ? (
+              <div className="space-y-2">
+                <Label>Data do Pagamento</Label>
+                <Input 
+                  type="date" 
+                  value={formData.paymentDate}
+                  onChange={(e) => setFormData({...formData, paymentDate: e.target.value})}
+                  required
+                />
+              </div>
+            ) : (
+              parseInt(formData.installments) === 1 && (
+                <div className="space-y-2">
+                  <Label>Data de Vencimento</Label>
+                  <Input 
+                    type="date" 
+                    value={formData.sale_date}
+                    onChange={(e) => setFormData({...formData, sale_date: e.target.value})}
+                    required
+                  />
+                </div>
+              )
+            )}
           </div>
 
           <div className="pt-4 flex justify-end gap-3">

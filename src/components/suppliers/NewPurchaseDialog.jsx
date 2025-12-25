@@ -327,14 +327,39 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Data da Compra</Label>
-            <Input
-              type="date"
-              value={formData.purchase_date}
-              onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Data da Compra</Label>
+              <Input
+                type="date"
+                value={formData.purchase_date}
+                onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
+                required
+              />
+            </div>
+            {formData.status === 'pago' ? (
+              <div className="space-y-2">
+                <Label>Data do Pagamento</Label>
+                <Input
+                  type="date"
+                  value={formData.paymentDate}
+                  onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })}
+                  required
+                />
+              </div>
+            ) : (
+              parseInt(formData.installments) === 1 && (
+                <div className="space-y-2">
+                  <Label>Data de Vencimento</Label>
+                  <Input
+                    type="date"
+                    value={formData.purchase_date}
+                    onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
+                    required
+                  />
+                </div>
+              )
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
