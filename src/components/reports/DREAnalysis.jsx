@@ -1,6 +1,6 @@
 import { InvokeLLM } from '@/api/integrations';
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -9,14 +9,11 @@ export default function DREAnalysis({ transactions = [], categories = [] }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [forecast, setForecast] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
-    vendaBruta: true,
-    deducoes: false,
+    vendaBruta: false,
     custos: false,
-    despesas: false,
-    impostos: false
+    despesas: false
   });
 
-  // Agrupar transações por tipo e categoria
   const dreData = useMemo(() => {
     const txList = Array.isArray(transactions) ? transactions : [];
     
@@ -24,42 +21,31 @@ export default function DREAnalysis({ transactions = [], categories = [] }) {
     const compras = txList.filter(t => t.type === 'compra' || t.type === 'expense');
 
     const vendaBruta = vendas.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
-    const custos = compras.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+    const custosDiretos = compras.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+    
+    const receitaLiquida = vendaBruta - custosDiretos;
+    const despesasOp = custosDiretos * 0.15;
+    const lucroOp = receitaLiquida - despesasOp;
+    const marginLiquida = vendaBruta > 0 ? (lucroOp / vendaBruta) * 100 : 0;
 
-    // Agrupar vendas por categoria
-    const vendaByCategory = {};
+    // Agrupar por forma de pagamento
+    const pagamentos = {};
     vendas.forEach(v => {
-      const cat = v.categoryId || 'sem-categoria';
-      vendaByCategory[cat] = (vendaByCategory[cat] || 0) + Math.abs(parseFloat(v.amount || 0));
+      const metodo = v.paymentMethod || 'Outros';
+      if (!pagamentos[metodo]) {
+        pagamentos[metodo] = { entradas: 0, saidas: 0 };
+      }
+      pagamentos[metodo].entradas += Math.abs(parseFloat(v.amount || 0));
     });
-
-    const deducoes = vendaBruta * 0.09; // ICMS/PIS/COFINS ~9%
-    const vendaLiquida = vendaBruta - deducoes;
-    const lucroBruto = vendaLiquida - custos;
-    const marginLucroBruto = vendaLiquida > 0 ? (lucroBruto / vendaLiquida) * 100 : 0;
-
-    const despesasOp = custos * 0.15; // estimativa
-    const resultadoOp = lucroBruto - despesasOp;
-    const marginOp = vendaLiquida > 0 ? (resultadoOp / vendaLiquida) * 100 : 0;
-
-    const impostos = vendaBruta * 0.27; // 27% de IR/CSLL
-    const resultadoLiquido = resultadoOp - impostos;
-    const marginLiquido = vendaBruta > 0 ? (resultadoLiquido / vendaBruta) * 100 : 0;
 
     return {
       vendaBruta,
-      vendaByCategory,
-      deducoes,
-      vendaLiquida,
-      custos,
-      lucroBruto,
-      marginLucroBruto,
+      custosDiretos,
+      receitaLiquida,
       despesasOp,
-      resultadoOp,
-      marginOp,
-      impostos,
-      resultadoLiquido,
-      marginLiquido,
+      lucroOp,
+      marginLiquida,
+      pagamentos,
       vendaCount: vendas.length,
       compraCount: compras.length
     };
@@ -75,16 +61,14 @@ export default function DREAnalysis({ transactions = [], categories = [] }) {
   const handleGenerateForecast = async () => {
     setIsAnalyzing(true);
     try {
-      const prompt = `Analise este DRE:
+      const prompt = `Análise rápida desta DRE:
       Receita Bruta: R$ ${dreData.vendaBruta.toFixed(2)}
-      Deduções: R$ ${dreData.deducoes.toFixed(2)}
-      Receita Líquida: R$ ${dreData.vendaLiquida.toFixed(2)}
-      CMV: R$ ${dreData.custos.toFixed(2)}
-      Lucro Bruto: R$ ${dreData.lucroBruto.toFixed(2)} (${dreData.marginLucroBruto.toFixed(1)}%)
-      Resultado Operacional: R$ ${dreData.resultadoOp.toFixed(2)} (${dreData.marginOp.toFixed(1)}%)
-      Resultado Líquido: R$ ${dreData.resultadoLiquido.toFixed(2)} (${dreData.marginLiquido.toFixed(1)}%)
+      Custos Diretos: R$ ${dreData.custosDiretos.toFixed(2)}
+      Receita Líquida: R$ ${dreData.receitaLiquida.toFixed(2)}
+      Despesas Operacionais: R$ ${dreData.despesasOp.toFixed(2)}
+      Lucro Operacional: R$ ${dreData.lucroOp.toFixed(2)} (${dreData.marginLiquida.toFixed(2)}%)
       
-      Resuma em 2 linhas o desempenho e dê 1 recomendação`;
+      Resumo em 1-2 linhas e 1 insight`;
 
       const response = await InvokeLLM(prompt);
       setForecast(response);
@@ -97,76 +81,57 @@ export default function DREAnalysis({ transactions = [], categories = [] }) {
     }
   };
 
-  const LineItem = ({ label, value, isHighlight = false, isNegative = false, showChevron = false, onToggle = null, isExpanded = false, category = null }) => (
-    <div className="space-y-0">
+  const DRERow = ({ label, value, indent = 0, isExpanded = false, isExpandable = false, onToggle = null, type = 'normal', showSymbol = null }) => {
+    const bgColor = 
+      type === 'receita-liquida' ? 'bg-blue-50' :
+      type === 'lucro-op' ? 'bg-pink-50' :
+      type === 'expandable' ? 'bg-green-50' :
+      '';
+
+    const textColor = 
+      type === 'lucro-op' ? 'text-green-600' :
+      '';
+
+    return (
       <div 
-        className={`flex items-center justify-between px-4 py-3 ${
-          isHighlight 
-            ? isNegative 
-              ? 'bg-red-50 border-l-4 border-l-red-400' 
-              : 'bg-green-50 border-l-4 border-l-green-400'
-            : ''
-        } ${showChevron ? 'cursor-pointer hover-elevate' : ''}`}
+        className={`flex items-center justify-between px-6 py-3 border-b border-slate-100 ${bgColor} ${isExpandable ? 'cursor-pointer hover-elevate' : ''}`}
         onClick={onToggle}
       >
-        <div className="flex items-center gap-2">
-          {showChevron && (
+        <div className="flex items-center gap-3">
+          {isExpandable && (
             <ChevronDown 
               className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
             />
           )}
-          <span className={`${isHighlight ? 'font-bold text-base' : 'text-sm'}`}>
+          {!isExpandable && isExpandable === false && <div className="w-4" />}
+          <span style={{ marginLeft: `${indent * 20}px` }} className="font-medium text-slate-700">
+            {showSymbol && <span className="text-slate-500 mr-1">{showSymbol}</span>}
             {label}
           </span>
         </div>
-        <span className={`font-bold text-right ${
-          isNegative ? 'text-red-600' : 'text-emerald-700'
-        }`}>
-          {isNegative ? '-' : ''}R$ {Math.abs(value).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+        <span className={`font-bold text-right ${textColor} ${type === 'lucro-op' ? 'text-lg' : ''}`}>
+          {type === 'lucro-op' ? '+ ' : ''}R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </span>
       </div>
-    </div>
-  );
-
-  if (dreData.vendaBruta === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                DRE
-              </CardTitle>
-              <CardDescription>Demonstração de Resultado</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-slate-500">
-            <p>Nenhuma transação encontrada</p>
-          </div>
-        </CardContent>
-      </Card>
     );
-  }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              DRE
-            </CardTitle>
-            <CardDescription>Demonstração de Resultado</CardDescription>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-slate-700" />
+            <div>
+              <CardTitle className="text-xl">DRE - Demonstração do Resultado do Exercício</CardTitle>
+              <p className="text-sm text-slate-500">Análise detalhada do desempenho financeiro</p>
+            </div>
           </div>
-          <Button onClick={handleGenerateForecast} disabled={isAnalyzing} size="sm">
+          <Button onClick={handleGenerateForecast} disabled={isAnalyzing} className="bg-blue-600 hover:bg-blue-700">
             {isAnalyzing ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Analisando...
+                Gerando...
               </>
             ) : (
               <>
@@ -178,105 +143,103 @@ export default function DREAnalysis({ transactions = [], categories = [] }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-0">
-        {/* VENDA BRUTA */}
-        <LineItem 
-          label="Venda Bruta"
+        {/* Receita Bruta */}
+        <DRERow
+          label="Receita Bruta"
           value={dreData.vendaBruta}
-          showChevron={true}
+          isExpandable={true}
           isExpanded={expandedSections.vendaBruta}
           onToggle={() => toggleSection('vendaBruta')}
-          category="income"
+          type="expandable"
+          showSymbol=">"
         />
-        
-        {expandedSections.vendaBruta && (
-          <div className="bg-slate-50 px-8 py-2 space-y-1 text-sm">
-            {Object.entries(dreData.vendaByCategory).map(([catId, amount]) => (
-              <div key={catId} className="flex justify-between">
-                <span className="text-slate-600">{catId === 'sem-categoria' ? 'Outras' : 'Categoria'}</span>
-                <span className="text-slate-600">R$ {amount.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+
+        {/* Custos Diretos */}
+        <DRERow
+          label="(-) Custos Diretos"
+          value={dreData.custosDiretos}
+          isExpandable={true}
+          isExpanded={expandedSections.custos}
+          onToggle={() => toggleSection('custos')}
+          showSymbol=">"
+        />
+
+        {/* Receita Líquida */}
+        <DRERow
+          label="= Receita Líquida"
+          value={dreData.receitaLiquida}
+          type="receita-liquida"
+          showSymbol="="
+        />
+
+        {/* Despesas Operacionais - Header */}
+        <div className="flex items-center px-6 py-3 border-b border-slate-100">
+          <span className="text-slate-700 font-medium">(-) Despesas Operacionais:</span>
+        </div>
+
+        {/* Despesas Operacionais - Itens */}
+        <div className="px-6 py-3 border-b border-slate-100 bg-slate-50">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-slate-600">Vendas</span>
+            <span className="font-semibold text-slate-700">R$ {dreData.despesasOp.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+            <span className="font-bold text-slate-700">Total Despesas Operacionais</span>
+            <span className="font-bold text-slate-700">R$ {dreData.despesasOp.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+
+        {/* Lucro Operacional */}
+        <DRERow
+          label="= Lucro Operacional"
+          value={dreData.lucroOp}
+          type="lucro-op"
+          showSymbol="="
+        />
+
+        {/* Margem */}
+        <div className="px-6 py-2 bg-pink-50 text-blue-600 text-sm">
+          Margem Líquida: {dreData.marginLiquida.toFixed(2)}%
+        </div>
+
+        {/* Resumo por Forma de Pagamento */}
+        <div className="mt-8 border-t pt-6">
+          <div className="flex items-center gap-2 mb-6">
+            <FileText className="w-5 h-5 text-slate-700" />
+            <h3 className="font-bold text-slate-800">Resumo por Forma de Pagamento</h3>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            {Object.entries(dreData.pagamentos).map(([metodo, dados]) => (
+              <div key={metodo} className="border border-slate-200 rounded-lg p-4">
+                <h4 className="font-bold text-slate-800 mb-4">{metodo}</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Entradas:</span>
+                    <span className="font-semibold text-red-600">R$ {dados.entradas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Saídas:</span>
+                    <span className="font-semibold text-red-600">R$ {dados.saidas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-200 pt-2 font-bold">
+                    <span className="text-slate-700">Líquido:</span>
+                    <span className="text-green-600">R$ {(dados.entradas - dados.saidas).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
-        )}
-
-        {/* DEDUÇÕES */}
-        <LineItem 
-          label="Deduções (ICMS/PIS/COFINS)"
-          value={dreData.deducoes}
-          isNegative={true}
-          category="deduction"
-        />
-
-        {/* VENDA LÍQUIDA */}
-        <div className="flex justify-between px-4 py-3 bg-blue-50 border-l-4 border-l-blue-400">
-          <span className="font-bold">= Venda Líquida</span>
-          <span className="font-bold text-blue-700">R$ {dreData.vendaLiquida.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
         </div>
 
-        {/* CMV / CUSTOS */}
-        <LineItem 
-          label="CMV"
-          value={dreData.custos}
-          isNegative={true}
-          category="cost"
-        />
-
-        {/* LUCRO BRUTO */}
-        <div className="flex items-center justify-between px-4 py-3 bg-green-100 border-l-4 border-l-green-500">
-          <span className="font-bold text-green-900">= Lucro Bruto</span>
-          <div className="text-right">
-            <div className="font-bold text-green-700 text-lg">R$ {dreData.lucroBruto.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</div>
-            <div className="text-sm text-green-600">{dreData.marginLucroBruto.toFixed(1)}%</div>
-          </div>
-        </div>
-
-        {/* DESPESAS OPERACIONAIS */}
-        <LineItem 
-          label="Despesas Operacionais"
-          value={dreData.despesasOp}
-          isNegative={true}
-          category="expense"
-        />
-
-        {/* RESULTADO OPERACIONAL */}
-        <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border-l-4 border-l-blue-400">
-          <span className="font-bold text-slate-800">= Resultado Operacional</span>
-          <div className="text-right">
-            <div className="font-bold text-blue-700">R$ {dreData.resultadoOp.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</div>
-            <div className="text-sm text-blue-600">{dreData.marginOp.toFixed(1)}%</div>
-          </div>
-        </div>
-
-        {/* IMPOSTOS */}
-        <LineItem 
-          label="Impostos (27%)"
-          value={dreData.impostos}
-          isNegative={true}
-          category="tax"
-        />
-
-        {/* RESULTADO LÍQUIDO */}
-        <div className="flex items-center justify-between px-4 py-3 bg-green-50 rounded-md border-2 border-green-400">
-          <span className="font-bold text-green-900">= Resultado Líquido</span>
-          <div className="text-right">
-            <div className="font-bold text-green-700 text-xl">R$ {dreData.resultadoLiquido.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</div>
-            <div className="text-sm text-green-600">{dreData.marginLiquido.toFixed(1)}%</div>
-          </div>
-        </div>
-
-        {/* FORECAST */}
+        {/* Forecast */}
         {forecast && (
           <div className="mt-6 pt-6 border-t">
             <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
-              <p className="text-sm text-slate-700 leading-relaxed">{forecast}</p>
+              <p className="text-sm text-slate-700">{forecast}</p>
             </div>
           </div>
         )}
-
-        {/* ESTATÍSTICAS */}
-        <div className="mt-4 pt-4 border-t text-xs text-slate-500">
-          <p>{dreData.vendaCount} vendas | {dreData.compraCount} compras analisadas</p>
-        </div>
       </CardContent>
     </Card>
   );
