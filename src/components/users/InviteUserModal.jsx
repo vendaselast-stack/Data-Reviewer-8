@@ -49,12 +49,15 @@ export default function InviteUserModal({ open, onOpenChange, onInvite }) {
         password: inviteData.password,
         companyId: company?.id
       });
-      if (result?.invitationId) {
-        toast.success('Usuário criado com sucesso!');
-        setTimeout(() => {
-          resetModal();
-        }, 500);
-      }
+      
+      // The result from onInvite is the mutation result
+      toast.success('Usuário criado com sucesso!');
+      setTimeout(() => {
+        resetModal();
+      }, 500);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      toast.error('Erro ao criar usuário');
     } finally {
       setLoading(false);
     }

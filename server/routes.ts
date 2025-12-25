@@ -1113,9 +1113,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // ========== USER MANAGEMENT ==========
   app.get("/api/users", authMiddleware, requireRole(["admin", "manager"]), async (req: AuthenticatedRequest, res) => {
     try {
-      const users = await storage.getUsers(req.user.companyId);
-      res.json(users);
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const usersList = await storage.getUsers(req.user.companyId);
+      
+      // Converter permissões de string para objeto se necessário
+      const formattedUsers = usersList.map(u => ({
+        ...u,
+        permissions: typeof u.permissions === 'string' ? JSON.parse(u.permissions) : (u.permissions || {})
+      }));
+      
+      res.json(formattedUsers);
     } catch (error) {
+      console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
     }
   });
