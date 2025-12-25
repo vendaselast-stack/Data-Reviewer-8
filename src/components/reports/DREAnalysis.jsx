@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { subMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export default function DREAnalysis({ transactions, categories = [], period = 'currentYear' }) {
+export default function DREAnalysis({ transactions = [], categories = [], period = 'currentYear' }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [forecast, setForecast] = useState(null);
   const [expandedSections, setExpandedSections] = useState({ 
@@ -31,8 +31,11 @@ export default function DREAnalysis({ transactions, categories = [], period = 'c
     let totalDeductions = 0;
     let totalTaxes = 0;
 
+    // Ensure transactions is an array
+    const txArray = Array.isArray(transactions) ? transactions : [];
+
     // Process all transactions
-    transactions.forEach(t => {
+    txArray.forEach(t => {
       // Get category name
       let categoryName = 'Sem Categoria';
       const catId = t.categoryId || t.category;
@@ -203,14 +206,19 @@ export default function DREAnalysis({ transactions, categories = [], period = 'c
     setIsAnalyzing(true);
     try {
       const historicalData = [];
-      const referenceDate = transactions.length > 0 
-        ? new Date(transactions[0].date) 
+      const txArray = Array.isArray(transactions) ? transactions : [];
+      const referenceDate = txArray.length > 0 
+        ? new Date(txArray[0].date || new Date()) 
         : new Date();
 
       for (let i = 5; i >= 0; i--) {
         const date = subMonths(referenceDate, i);
         const monthKey = format(date, 'yyyy-MM');
-        const monthTrans = transactions.filter(t => t.date.startsWith(monthKey));
+        const monthTrans = txArray.filter(t => {
+          if (!t.date) return false;
+          const dateStr = typeof t.date === 'string' ? t.date : t.date.toString();
+          return dateStr.startsWith(monthKey);
+        });
         
         const monthRevenue = monthTrans.filter(t => t.type === 'venda' || t.type === 'income').reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
         const monthExpense = monthTrans.filter(t => t.type === 'compra' || t.type === 'expense').reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
