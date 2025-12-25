@@ -32,6 +32,42 @@ export default function ReportsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+
+  const setQuickPeriod = (period) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let start, end, label;
+    
+    switch(period) {
+      case 'this-month':
+        start = startOfMonth(today);
+        end = endOfMonth(today);
+        label = 'Este Mês';
+        break;
+      case 'next-3-months':
+        start = startOfDay(today);
+        end = endOfMonth(subMonths(today, -2));
+        label = 'Próximos 3 Meses';
+        break;
+      case 'year':
+        start = new Date(today.getFullYear(), 0, 1);
+        end = new Date(today.getFullYear(), 11, 31);
+        label = 'Ano Atual';
+        break;
+      default:
+        return;
+    }
+    
+    setDateRange({
+      startDate: start,
+      endDate: end,
+      label
+    });
+  };
+
   const [tempDateRange, setTempDateRange] = useState({
     startDate: startOfDay(subDays(new Date(), 29)),
     endDate: endOfDay(new Date()),
@@ -256,6 +292,32 @@ export default function ReportsPage() {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="flex bg-slate-100 p-1 rounded-lg gap-1 mr-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`text-xs h-8 ${dateRange.label === 'Este Mês' ? 'bg-white shadow-sm' : ''}`}
+              onClick={() => setQuickPeriod('this-month')}
+            >
+              Este Mês
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`text-xs h-8 ${dateRange.label === 'Próximos 3 Meses' ? 'bg-white shadow-sm' : ''}`}
+              onClick={() => setQuickPeriod('next-3-months')}
+            >
+              Próximos 3 Meses
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`text-xs h-8 ${dateRange.label === 'Ano Atual' ? 'bg-white shadow-sm' : ''}`}
+              onClick={() => setQuickPeriod('year')}
+            >
+              Ano Atual
+            </Button>
+          </div>
           <ReportExporter 
             reportData={{
               summary: analysisResult ? {
@@ -389,13 +451,17 @@ export default function ReportsPage() {
 
           <Tabs defaultValue="cashflow" className="w-full">
             <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="cashflow">Fluxo de Caixa</TabsTrigger>
+              <TabsTrigger value="cashflow">O Radar (Futuro)</TabsTrigger>
+              <TabsTrigger value="dre">O Pulso (DRE)</TabsTrigger>
               <TabsTrigger value="revenue">Receitas</TabsTrigger>
               <TabsTrigger value="expenses">Despesas</TabsTrigger>
-              <TabsTrigger value="dre">DRE</TabsTrigger>
               <TabsTrigger value="working-capital">Capital de Giro</TabsTrigger>
               <TabsTrigger value="debt">Endividamento</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="dre" className="space-y-6 mt-6">
+              <DREAnalysis transactions={filteredTransactions} categories={categories} />
+            </TabsContent>
 
             <TabsContent value="cashflow" className="space-y-6 mt-6">
               <CashFlowForecastChart forecast={analysisResult.cash_flow_forecast} />
@@ -404,26 +470,6 @@ export default function ReportsPage() {
                 saleInstallments={saleInstallments}
                 purchaseInstallments={purchaseInstallments}
               />
-            </TabsContent>
-
-            <TabsContent value="revenue" className="space-y-6 mt-6">
-              <RevenueGrowthReport
-                strategies={analysisResult.revenue_growth_suggestions}
-                transactions={filteredTransactions}
-                customers={customers}
-              />
-            </TabsContent>
-
-            <TabsContent value="expenses" className="space-y-6 mt-6">
-              <ExpensesBreakdown 
-                opportunities={analysisResult.expense_reduction_opportunities}
-                transactions={filteredTransactions}
-                categories={categories}
-              />
-            </TabsContent>
-
-            <TabsContent value="dre" className="space-y-6 mt-6">
-              <DREAnalysis transactions={filteredTransactions} categories={categories} />
             </TabsContent>
 
             <TabsContent value="working-capital" className="space-y-6 mt-6">
