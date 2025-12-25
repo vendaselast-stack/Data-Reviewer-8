@@ -50,10 +50,14 @@ export default function ReportsPage() {
         break;
       case 'next-3-months':
         start = new Date(Date.UTC(year, month, date, 0, 0, 0, 0));
-        // 3 months ahead, last day of month
-        const futureDate = new Date(Date.UTC(year, month + 3, 1, 0, 0, 0, 0));
-        end = new Date(futureDate.getTime() - 1000); // Last millisecond of previous day
-        end = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate(), 23, 59, 59, 999));
+        // 3 months ahead: go to end of (month + 3)
+        // If current month is 11 (Dec), month+3 = 14, which wraps to month 2 of next year
+        const endMonth = month + 3;
+        const endYear = endMonth > 11 ? year + 1 : year;
+        const normalizedMonth = endMonth > 11 ? endMonth - 12 : endMonth;
+        // Get last day of that month
+        const lastDayOfMonth = new Date(Date.UTC(endYear, normalizedMonth + 1, 0)).getUTCDate();
+        end = new Date(Date.UTC(endYear, normalizedMonth, lastDayOfMonth, 23, 59, 59, 999));
         label = 'Próximos 3 Meses';
         break;
       case 'year':
