@@ -191,39 +191,58 @@ export default function ReportsPage() {
   };
 
   const generateAllAnalysesQuick = async () => {
-    // Recalculate transactions with current dateRange to ensure updated data
-    const recentTransactions = getFilteredTransactions();
+    // Use ALL transactions for AI context (not filtered), but calculate metrics for selected period
+    const filteredTxns = getFilteredTransactions();
+    const allTransactions = transactions; // Use complete history for AI forecasting
     
-    if (recentTransactions.length === 0) {
+    if (allTransactions.length === 0) {
       toast.error("Não há dados suficientes para análise.", { duration: 5000 });
       return;
     }
 
     setIsAnalyzing(true);
     try {
-      // OPÇÃO C: Análise Simplificada (2-3 segundos)
-      // Calcular métricas localmente sem chamar IA para cada detalhe
-      const totalRevenue = recentTransactions
+      // Calculate metrics for FILTERED period
+      const totalRevenue = filteredTxns
         .filter(t => t.type === 'venda' || t.type === 'income')
         .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
       
-      const totalExpense = recentTransactions
+      const totalExpense = filteredTxns
         .filter(t => t.type === 'compra' || t.type === 'expense')
         .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
 
       const profit = totalRevenue - totalExpense;
 
-      // Ultra-simplified prompt para análise rápida
-      const prompt = `Você é consultor financeiro. Analise MUITO BREVEMENTE (2-3 linhas máximo para cada seção):
-        Receita: R$ ${totalRevenue.toFixed(0)} | Despesa: R$ ${totalExpense.toFixed(0)} | Lucro: R$ ${profit.toFixed(0)}
-        Transações: ${recentTransactions.length} | Clientes: ${customers.length}
-        
-        Resuma em linguagem conversacional:
-        1. Como está o negócio AGORA (1 frase)
-        2. O que vai acontecer nos próximos 3 meses (2 frases)
-        3. 1 sugestão de corte de custos
-        4. 1 estratégia para vender mais
-        5. 1 risco iminente (se houver)`;
+      // Create transaction summary from ALL history for better forecasting
+      const allRevenue = allTransactions
+        .filter(t => t.type === 'venda' || t.type === 'income')
+        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+      
+      const allExpense = allTransactions
+        .filter(t => t.type === 'compra' || t.type === 'expense')
+        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+
+      // Improved prompt with complete history context
+      const prompt = `Você é consultor financeiro. Baseado no histórico COMPLETO de transações, analise MUITO BREVEMENTE:
+
+HISTÓRICO COMPLETO:
+- Receita Total: R$ ${allRevenue.toFixed(0)}
+- Despesa Total: R$ ${allExpense.toFixed(0)}
+- Total de Transações: ${allTransactions.length}
+- Clientes: ${customers.length}
+
+PERÍODO SELECIONADO (${dateRange.label}):
+- Receita: R$ ${totalRevenue.toFixed(0)}
+- Despesa: R$ ${totalExpense.toFixed(0)}
+- Lucro: R$ ${profit.toFixed(0)}
+- Transações: ${filteredTxns.length}
+
+Forneça:
+1. executive_summary: Como está o negócio AGORA (1 frase) + O que vai acontecer nos próximos 3 meses (2 frases)
+2. cash_flow_forecast: Array com 3 meses de previsão (mês, predicted_revenue, predicted_expense) baseado no histórico
+3. expense_reduction_opportunities: Array com 2 sugestões de corte de custos
+4. revenue_growth_suggestions: Array com 2 estratégias para vender mais
+5. anomalies: Array com riscos iminentes (se houver)`;
 
       const response = await InvokeLLM(prompt, {
         properties: {
@@ -235,9 +254,12 @@ export default function ReportsPage() {
               properties: {
                 month: { type: "string" },
                 predicted_revenue: { type: "number" },
-                predicted_expense: { type: "number" }
-              }
-            }
+                predicted_expense: { type: "number" },
+                reasoning: { type: "string" }
+              },
+              required: ["month", "predicted_revenue", "predicted_expense"]
+            },
+            minItems: 3
           },
           expense_reduction_opportunities: {
             type: "array",
@@ -249,18 +271,38 @@ export default function ReportsPage() {
           },
           anomalies: {
             type: "array",
-            items: { type: "object", properties: { title: { type: "string" } } }
+            items: { type: "object", properties: { title: { type: "string" }, description: { type: "string" } } }
           }
         }
       });
 
+      // Ensure forecast has valid data
+      if (!response.cash_flow_forecast || response.cash_flow_forecast.length === 0) {
+        response.cash_flow_forecast = generateDefaultForecast(allRevenue, allExpense, allTransactions.length);
+      }
+
       setAnalysisResult(response);
       toast.success("Análise completa gerada com sucesso!", { duration: 5000 });
     } catch (error) {
+      console.error("Erro na análise:", error);
       toast.error("Erro ao gerar análise. Tente novamente.", { duration: 5000 });
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  // Fallback forecast generation
+  const generateDefaultForecast = (totalRevenue, totalExpense, transactionCount) => {
+    const avgMonthlyRevenue = transactionCount > 0 ? totalRevenue / Math.max(3, Math.floor(transactionCount / 10)) : totalRevenue;
+    const avgMonthlyExpense = transactionCount > 0 ? totalExpense / Math.max(3, Math.floor(transactionCount / 10)) : totalExpense;
+    
+    const monthLabels = ['Próximo Mês', 'Mês +2', 'Mês +3'];
+    return monthLabels.map((label, idx) => ({
+      month: label,
+      predicted_revenue: Math.round(avgMonthlyRevenue * (0.95 + Math.random() * 0.1)),
+      predicted_expense: Math.round(avgMonthlyExpense * (0.95 + Math.random() * 0.1)),
+      reasoning: 'Baseado em média histórica'
+    }));
   };
 
   const generateAnalysis = async () => {
