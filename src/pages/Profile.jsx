@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,75 @@ import { toast } from 'sonner';
 import { Upload, Save, Building2, User, Mail, Lock, Settings } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+// Brazilian states
+const BRAZILIAN_STATES = [
+  { code: 'AC', name: 'Acre' },
+  { code: 'AL', name: 'Alagoas' },
+  { code: 'AP', name: 'Amapá' },
+  { code: 'AM', name: 'Amazonas' },
+  { code: 'BA', name: 'Bahia' },
+  { code: 'CE', name: 'Ceará' },
+  { code: 'DF', name: 'Distrito Federal' },
+  { code: 'ES', name: 'Espírito Santo' },
+  { code: 'GO', name: 'Goiás' },
+  { code: 'MA', name: 'Maranhão' },
+  { code: 'MT', name: 'Mato Grosso' },
+  { code: 'MS', name: 'Mato Grosso do Sul' },
+  { code: 'MG', name: 'Minas Gerais' },
+  { code: 'PA', name: 'Pará' },
+  { code: 'PB', name: 'Paraíba' },
+  { code: 'PR', name: 'Paraná' },
+  { code: 'PE', name: 'Pernambuco' },
+  { code: 'PI', name: 'Piauí' },
+  { code: 'RJ', name: 'Rio de Janeiro' },
+  { code: 'RN', name: 'Rio Grande do Norte' },
+  { code: 'RS', name: 'Rio Grande do Sul' },
+  { code: 'RO', name: 'Rondônia' },
+  { code: 'RR', name: 'Roraima' },
+  { code: 'SC', name: 'Santa Catarina' },
+  { code: 'SP', name: 'São Paulo' },
+  { code: 'SE', name: 'Sergipe' },
+  { code: 'TO', name: 'Tocantins' },
+];
+
+// Mock cities by state (in production, fetch from an API)
+const CITIES_BY_STATE = {
+  'SP': ['São Paulo', 'Campinas', 'Santos', 'Sorocaba', 'Ribeirão Preto'],
+  'RJ': ['Rio de Janeiro', 'Niterói', 'Duque de Caxias', 'São Gonçalo', 'Nova Iguaçu'],
+  'MG': ['Belo Horizonte', 'Uberlândia', 'Juiz de Fora', 'Contagem', 'Montes Claros'],
+  'BA': ['Salvador', 'Feira de Santana', 'Vitória da Conquista', 'Ilhéus', 'Jequié'],
+  'RS': ['Porto Alegre', 'Caxias do Sul', 'Pelotas', 'Santa Maria', 'Novo Hamburgo'],
+  'PE': ['Recife', 'Olinda', 'Jaboatão dos Guararapes', 'Caruaru', 'Petrolina'],
+  'CE': ['Fortaleza', 'Caucaia', 'Juazeiro do Norte', 'Maracanaú', 'Sobral'],
+  'PR': ['Curitiba', 'Londrina', 'Maringá', 'São José dos Pinhais', 'Ponta Grossa'],
+  'SC': ['Florianópolis', 'Joinville', 'Blumenau', 'Brusque', 'Chapecó'],
+  'GO': ['Goiânia', 'Aparecida de Goiânia', 'Anápolis', 'Rio Verde', 'Luziânia'],
+  'PA': ['Belém', 'Ananindeua', 'Santarém', 'Marabá', 'Castanhal'],
+  'MA': ['São Luís', 'Imperatriz', 'Timon', 'Caxias', 'Codó'],
+  'PB': ['João Pessoa', 'Campina Grande', 'Patos', 'Cabedelo', 'Sousa'],
+  'ES': ['Vitória', 'Vila Velha', 'Serra', 'Cariacica', 'Cachoeiro de Itapemirim'],
+  'PI': ['Teresina', 'Parnaíba', 'Picos', 'Campo Maior', 'Oeiras'],
+  'RN': ['Natal', 'Mossoró', 'Parnamirim', 'São Gonçalo do Amarante', 'Ceará-Mirim'],
+  'AL': ['Maceió', 'Arapiraca', 'Rio Largo', 'Marechal Deodoro', 'Delmiro Gouveia'],
+  'MT': ['Cuiabá', 'Várzea Grande', 'Rondonópolis', 'Sinop', 'Cáceres'],
+  'MS': ['Campo Grande', 'Dourados', 'Três Lagoas', 'Corumbá', 'Maracaju'],
+  'DF': ['Brasília'],
+  'AC': ['Rio Branco', 'Cruzeiro do Sul'],
+  'AP': ['Macapá', 'Santana'],
+  'AM': ['Manaus', 'Itacoatiara'],
+  'RO': ['Porto Velho', 'Vilhena', 'Ariquemes'],
+  'RR': ['Boa Vista', 'Rorainópolis'],
+  'TO': ['Palmas', 'Araguaína'],
+  'SE': ['Aracaju', 'Lagarto']
+};
 
 export default function ProfilePage() {
   const { user, updateUser, company } = useAuth();
@@ -28,7 +97,17 @@ export default function ProfilePage() {
     phone: user?.phone || '',
     email: user?.email || '',
     role: user?.role || '',
+    cep: user?.cep || '',
+    endereco: user?.endereco || '',
+    rua: user?.rua || '',
+    numero: user?.numero || '',
+    complemento: user?.complemento || '',
+    estado: user?.estado || '',
+    cidade: user?.cidade || '',
   });
+
+  const [cities, setCities] = useState(CITIES_BY_STATE[formData.estado] || []);
+  const [loadingCep, setLoadingCep] = useState(false);
 
   const { data: companyData } = useQuery({
     queryKey: ['/api/companies', company?.id],
@@ -62,6 +141,13 @@ export default function ProfilePage() {
           name: data.name || '',
           phone: data.phone || '',
           avatar: data.avatar,
+          cep: data.cep || '',
+          endereco: data.endereco || '',
+          rua: data.rua || '',
+          numero: data.numero || '',
+          complemento: data.complemento || '',
+          estado: data.estado || '',
+          cidade: data.cidade || '',
         }),
       });
       
@@ -144,6 +230,42 @@ export default function ProfilePage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleStateChange = (value) => {
+    setFormData(prev => ({ ...prev, estado: value, cidade: '' }));
+    setCities(CITIES_BY_STATE[value] || []);
+  };
+
+  const handleCepChange = async (e) => {
+    const cep = e.target.value.replace(/\D/g, '');
+    setFormData(prev => ({ ...prev, cep }));
+
+    if (cep.length === 8) {
+      setLoadingCep(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+          setFormData(prev => ({
+            ...prev,
+            rua: data.logradouro || '',
+            complemento: data.complemento || '',
+            cidade: data.localidade || '',
+            estado: data.uf || '',
+          }));
+          setCities(CITIES_BY_STATE[data.uf] || []);
+          toast.success('CEP encontrado!');
+        } else {
+          toast.error('CEP não encontrado');
+        }
+      } catch (error) {
+        toast.error('Erro ao buscar CEP');
+      } finally {
+        setLoadingCep(false);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -244,6 +366,117 @@ export default function ProfilePage() {
                   placeholder="(11) 9 9999-9999"
                   data-testid="input-phone"
                 />
+              </div>
+            </div>
+
+            {/* Address Section */}
+            <div className="pt-4 border-t">
+              <h3 className="text-lg font-semibold mb-4">Endereço</h3>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="cep">CEP</Label>
+                  <Input
+                    id="cep"
+                    name="cep"
+                    type="text"
+                    value={formData.cep}
+                    onChange={handleCepChange}
+                    placeholder="00000-000"
+                    maxLength="8"
+                    disabled={loadingCep}
+                    data-testid="input-cep"
+                  />
+                  {loadingCep && <p className="text-xs text-muted-foreground mt-1">Buscando...</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="endereco">Endereço</Label>
+                  <Input
+                    id="endereco"
+                    name="endereco"
+                    type="text"
+                    value={formData.endereco}
+                    onChange={handleInputChange}
+                    placeholder="Complemento do endereço"
+                    data-testid="input-endereco"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="rua">Rua/Avenida</Label>
+                  <Input
+                    id="rua"
+                    name="rua"
+                    type="text"
+                    value={formData.rua}
+                    onChange={handleInputChange}
+                    placeholder="Nome da rua"
+                    data-testid="input-rua"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="numero">Número</Label>
+                  <Input
+                    id="numero"
+                    name="numero"
+                    type="text"
+                    value={formData.numero}
+                    onChange={handleInputChange}
+                    placeholder="Número"
+                    data-testid="input-numero"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="complemento">Complemento</Label>
+                  <Input
+                    id="complemento"
+                    name="complemento"
+                    type="text"
+                    value={formData.complemento}
+                    onChange={handleInputChange}
+                    placeholder="Apt., sala, etc."
+                    data-testid="input-complemento"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="estado">Estado</Label>
+                  <Select value={formData.estado} onValueChange={handleStateChange}>
+                    <SelectTrigger data-testid="select-estado">
+                      <SelectValue placeholder="Selecione o estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BRAZILIAN_STATES.map(state => (
+                        <SelectItem key={state.code} value={state.code}>
+                          {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Select value={formData.cidade} onValueChange={(value) => setFormData(prev => ({ ...prev, cidade: value }))}>
+                    <SelectTrigger disabled={!formData.estado} data-testid="select-cidade">
+                      <SelectValue placeholder={formData.estado ? "Selecione a cidade" : "Selecione um estado primeiro"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cities.map(city => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
