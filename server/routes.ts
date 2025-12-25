@@ -1169,54 +1169,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const { email, role = "operational", permissions = {}, name, password, companyId } = req.body;
       
-      // Require at least email
+      // Validate required fields
       if (!email?.trim()) {
         return res.status(400).json({ error: "Email is required" });
       }
+      if (!name?.trim()) {
+        return res.status(400).json({ error: "Name is required" });
+      }
+      if (!password?.trim()) {
+        return res.status(400).json({ error: "Password is required" });
+      }
+      if (!companyId?.trim()) {
+        return res.status(400).json({ error: "Company ID is required" });
+      }
 
+      // Validate email format
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ error: "Invalid email format" });
       }
 
-      // For immediate creation, we need email, name and password
-      if (!name?.trim() || !password?.trim()) {
-        return res.status(400).json({ error: "Name and password are required" });
-      }
-
+      // Validate password length
       if (password.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters" });
       }
 
-      // Get companyId from token or request
-      let cId = companyId;
-      const auth = req.headers.authorization;
-      if (auth && !cId) {
-        const token = auth.split(" ")[1];
-        const decoded = verifyToken(token);
-        if (decoded) {
-          cId = decoded.companyId;
-        }
-      }
-
-      if (!cId) {
-        return res.status(400).json({ error: "Company ID is required" });
-      }
-
       // Create user immediately
-      const user = await createUser(cId, email.split("@")[0], email.toLowerCase().trim(), password, name?.trim(), role);
+      const user = await createUser(companyId.trim(), email.split("@")[0], email.toLowerCase().trim(), password, name.trim(), role);
 
       // Add permissions if provided
       if (role !== "admin" && Object.keys(permissions).length > 0) {
-        await storage.updateUserPermissions(cId, user.id, permissions);
+        await storage.updateUserPermissions(companyId.trim(), user.id, permissions);
       }
-
-      const inviteLink = `${process.env.APP_URL || 'http://localhost:5000'}?companyId=${cId}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&role=${role}`;
 
       res.json({ 
         invitationId: user.id, 
         token: null,
         message: "User created successfully",
-        inviteLink,
         user: {
           id: user.id,
           email: user.email,
