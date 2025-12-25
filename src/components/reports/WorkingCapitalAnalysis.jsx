@@ -16,8 +16,15 @@ export default function WorkingCapitalAnalysis({ transactions, saleInstallments,
     // Usar a data de início do filtro como "Hoje" para o cálculo
     const now = dateRange?.startDate ? (dateRange.startDate instanceof Date ? dateRange.startDate : new Date(dateRange.startDate)) : new Date();
     const startOfAnchor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const next30Days = new Date(startOfAnchor.getTime() + 31 * 24 * 60 * 60 * 1000);
-    next30Days.setHours(23, 59, 59, 999);
+    // Use the end date from dateRange if available, otherwise default to 30 days
+    let next30Days;
+    if (dateRange?.endDate) {
+      const endDate = dateRange.endDate instanceof Date ? dateRange.endDate : new Date(dateRange.endDate);
+      next30Days = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+    } else {
+      next30Days = new Date(startOfAnchor.getTime() + 31 * 24 * 60 * 60 * 1000);
+      next30Days.setHours(23, 59, 59, 999);
+    }
 
     const toTime = (d) => {
       const date = new Date(d);
