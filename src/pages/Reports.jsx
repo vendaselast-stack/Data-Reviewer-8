@@ -139,11 +139,13 @@ export default function ReportsPage() {
     enabled: !!company?.id
   });
 
-  // Convert date to comparable format (YYYYMMDD as number)
+  // FIX: Normalize dates to YYYY-MM-DD at midnight to ignore timezone issues
   const dateToNumber = (d) => {
     if (!d) return 0;
     const date = new Date(d);
-    return date.getUTCFullYear() * 10000 + (date.getUTCMonth() + 1) * 100 + date.getUTCDate();
+    // Zero out the hours to ignore timezone differences
+    date.setHours(0, 0, 0, 0);
+    return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
   };
 
   // Filter transactions based on period and category
