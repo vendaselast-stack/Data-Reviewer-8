@@ -17,48 +17,58 @@ export default function WorkingCapitalAnalysis({ transactions, saleInstallments,
     const now = dateRange?.startDate ? (dateRange.startDate instanceof Date ? dateRange.startDate : new Date(dateRange.startDate)) : new Date();
     console.log('Capital de Giro - Data Ancora usada:', now);
     const startOfAnchor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const next30Days = new Date(startOfAnchor.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const next30Days = new Date(startOfAnchor.getTime() + 31 * 24 * 60 * 60 * 1000);
 
-    // Fallback: Calculate from transactions if installments are empty
+    // Initial variables for calculations
     let currentReceivables = 0;
     let currentPayables = 0;
-    
+
+    console.log('Filtros - Recebimentos (30d):', {
+      anchor: startOfAnchor.toISOString(),
+      end: next30Days.toISOString(),
+      installments: saleInstallments?.length || 0
+    });
+
     if (saleInstallments && saleInstallments.length > 0) {
-      // Current Assets (Receivables)
       currentReceivables = saleInstallments
         .filter(i => {
           if (i.paid) return false;
           const dueDate = new Date(i.due_date);
-          return dueDate >= startOfAnchor && dueDate <= next30Days;
+          const inRange = dueDate >= startOfAnchor && dueDate <= next30Days;
+          if (inRange) console.log('Recebimento encontrado:', i.due_date, i.amount);
+          return inRange;
         })
         .reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
     } else {
-      // Calculate from transactions with sale type and pending status
       currentReceivables = transactions
         .filter(t => {
           if ((t.type !== 'venda' && t.type !== 'income') || t.status !== 'pendente') return false;
           const transDate = new Date(t.date);
-          return transDate >= startOfAnchor && transDate <= next30Days;
+          const inRange = transDate >= startOfAnchor && transDate <= next30Days;
+          if (inRange) console.log('Transação Venda encontrada:', t.date, t.amount);
+          return inRange;
         })
         .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
     }
 
     if (purchaseInstallments && purchaseInstallments.length > 0) {
-      // Current Liabilities (Payables)
       currentPayables = purchaseInstallments
         .filter(i => {
           if (i.paid) return false;
           const dueDate = new Date(i.due_date);
-          return dueDate >= startOfAnchor && dueDate <= next30Days;
+          const inRange = dueDate >= startOfAnchor && dueDate <= next30Days;
+          if (inRange) console.log('Pagamento encontrado:', i.due_date, i.amount);
+          return inRange;
         })
         .reduce((sum, i) => sum + parseFloat(i.amount || 0), 0);
     } else {
-      // Calculate from transactions with purchase type and pending status
       currentPayables = transactions
         .filter(t => {
           if ((t.type !== 'compra' && t.type !== 'expense') || t.status !== 'pendente') return false;
           const transDate = new Date(t.date);
-          return transDate >= startOfAnchor && transDate <= next30Days;
+          const inRange = transDate >= startOfAnchor && transDate <= next30Days;
+          if (inRange) console.log('Transação Compra encontrada:', t.date, t.amount);
+          return inRange;
         })
         .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
     }
