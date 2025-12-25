@@ -29,6 +29,8 @@ export default function SuppliersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [sortColumn, setSortColumn] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
   
   const { company } = useAuth();
   const queryClient = useQueryClient();
@@ -139,17 +141,40 @@ export default function SuppliersPage() {
       .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
   };
 
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column) => {
+    if (sortColumn !== column) return ' ▼▲';
+    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+  };
+
   const filteredSuppliers = (suppliers || [])
     .filter(s => 
       s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       s.email?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    // Sort by ID descending to show newest first
     .sort((a, b) => {
-      if (typeof a.id === 'string' && typeof b.id === 'string') {
-        return b.id.localeCompare(a.id);
+      let aVal, bVal;
+      
+      switch(sortColumn) {
+        case 'name':
+          aVal = (a.name || '').toLowerCase();
+          bVal = (b.name || '').toLowerCase();
+          return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        case 'purchases':
+          aVal = getSupplierPurchases(a.id);
+          bVal = getSupplierPurchases(b.id);
+          return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        default:
+          return 0;
       }
-      return (b.id || 0) - (a.id || 0);
     });
 
   const startIndex = (currentPage - 1) * pageSize;
@@ -198,10 +223,10 @@ export default function SuppliersPage() {
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="pl-6 text-left">Nome</TableHead>
+                <TableHead className="pl-6 text-left cursor-pointer hover:bg-slate-100 select-none" onClick={() => handleSort('name')}>Nome{getSortIcon('name')}</TableHead>
                 <TableHead className="text-left">Contato</TableHead>
                 <TableHead className="text-left">Desde</TableHead>
-                <TableHead className="text-right">Total em Compras</TableHead>
+                <TableHead className="text-right cursor-pointer hover:bg-slate-100 select-none" onClick={() => handleSort('purchases')}>Total em Compras{getSortIcon('purchases')}</TableHead>
                 <TableHead className="text-right pr-6">Ações</TableHead>
               </TableRow>
             </TableHeader>
