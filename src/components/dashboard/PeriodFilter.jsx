@@ -217,8 +217,8 @@ export default function PeriodFilter({
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground font-medium">Selecione o período desejado</p>
                 <div className="text-sm font-medium text-foreground">
-                  {dateRange.from ? (
-                    dateRange.to ? (
+                  {dateRange?.from ? (
+                    dateRange?.to ? (
                       <>
                         <span className="text-primary">{format(dateRange.from, 'dd/MM/yyyy')}</span>
                         {' até '}
