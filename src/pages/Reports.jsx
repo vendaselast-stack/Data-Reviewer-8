@@ -565,6 +565,7 @@ Forneça:
                 purchases={purchases}
                 purchaseInstallments={purchaseInstallments}
                 dateRange={dateRange}
+                categories={categories}
               />
               {(() => {
                 // Calculate metrics with fallbacks
