@@ -1,5 +1,5 @@
 import { InvokeLLM, UploadFile, ExtractDataFromUploadedFile } from '@/api/integrations';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,11 @@ export default function WhatIfAnalysis({ transactions, saleInstallments, purchas
     receivableDelay: '0',
     payableDelay: '0'
   });
+
+  // Reset scenarios when inputs change
+  useEffect(() => {
+    setScenarios(null);
+  }, [scenarioInputs.revenueIncrease, scenarioInputs.expenseIncrease, scenarioInputs.receivableDelay, scenarioInputs.payableDelay]);
 
   const calculateBaselineScenario = () => {
     const now = new Date();
@@ -280,7 +285,13 @@ Forneça análise detalhada e recomendações estratégicas.`;
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={scenarios.baseline}>
+                  <LineChart data={scenarios.baseline.map((item, idx) => ({
+                    ...item,
+                    baseBalance: scenarios.baseline[idx]?.cumulativeBalance,
+                    withChangesBalance: scenarios.withChanges[idx]?.cumulativeBalance,
+                    optimisticBalance: scenarios.optimistic[idx]?.cumulativeBalance,
+                    pessimisticBalance: scenarios.pessimistic[idx]?.cumulativeBalance
+                  }))}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis tickFormatter={(value) => `R$${(value/1000).toFixed(0)}k`} />
@@ -288,9 +299,30 @@ Forneça análise detalhada e recomendações estratégicas.`;
                     <Legend />
                     <Line 
                       type="monotone" 
-                      dataKey="cumulativeBalance" 
+                      dataKey="baseBalance" 
                       stroke="#64748b" 
-                      name="Base (Acumulado)"
+                      name="Base"
+                      strokeWidth={2}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="withChangesBalance" 
+                      stroke="#6366f1" 
+                      name="Com Alterações"
+                      strokeWidth={2}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="optimisticBalance" 
+                      stroke="#10b981" 
+                      name="Otimista"
+                      strokeWidth={2}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="pessimisticBalance" 
+                      stroke="#ef4444" 
+                      name="Pessimista"
                       strokeWidth={2}
                     />
                   </LineChart>
