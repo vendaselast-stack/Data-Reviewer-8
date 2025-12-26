@@ -7,6 +7,7 @@ import {
   insertSupplierSchema,
   insertCategorySchema,
   insertTransactionSchema,
+  insertBankStatementItemSchema,
   insertCashFlowSchema,
   insertSaleSchema,
   insertPurchaseSchema,
