@@ -9,11 +9,17 @@ import { toast } from 'sonner';
 import { addMonths, parseISO, differenceInMonths } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-export default function DebtAnalysis({ transactions, purchases, purchaseInstallments, dateRange }) {
+export default function DebtAnalysis({ transactions, purchases, purchaseInstallments, dateRange, categories = [] }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
 
   const calculateDebtMetrics = () => {
+    // Create a map of categoryId to category name
+    const categoryMap = {};
+    categories.forEach(cat => {
+      categoryMap[cat.id] = cat.name || 'Sem Categoria';
+    });
+
     // Use ONLY filtered transactions (already filtered by dateRange)
     const compras = Array.isArray(transactions) 
       ? transactions.filter(t => t.type === 'compra' || t.type === 'expense')
@@ -36,12 +42,22 @@ export default function DebtAnalysis({ transactions, purchases, purchaseInstallm
     const monthlyDebtPayment = totalDebt / 3;
     const debtServiceRatio = avgMonthlyRevenue > 0 ? (monthlyDebtPayment / avgMonthlyRevenue) * 100 : 0;
 
-    // Debt by category from transactions
+    // Debt by category from transactions - use categoryId mapping
     const debtByCategory = {};
     compras.forEach(t => {
-      const category = t.category || 'Sem Categoria';
+      let categoryName = 'Sem Categoria';
+      
+      // Try to map by categoryId first
+      if (t.categoryId && categoryMap[t.categoryId]) {
+        categoryName = categoryMap[t.categoryId];
+      } 
+      // Fallback to category string if available
+      else if (t.category) {
+        categoryName = t.category;
+      }
+      
       const amount = Math.abs(parseFloat(t.amount || 0));
-      debtByCategory[category] = (debtByCategory[category] || 0) + amount;
+      debtByCategory[categoryName] = (debtByCategory[categoryName] || 0) + amount;
     });
 
     return {
