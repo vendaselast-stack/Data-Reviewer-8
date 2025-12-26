@@ -190,50 +190,47 @@ export default function TransactionsPage() {
     document.body.removeChild(link);
   };
 
-  // Filter Logic
-  const txArray = Array.isArray(transactions) ? transactions : (transactions?.data || []);
-  const filteredTransactions = txArray
-    .filter(t => {
-      // Filter by status
-      if (statusFilter === 'paid') {
-        const isPaidOrPartial = t.status === 'pago' || t.status === 'completed' || t.status === 'parcial';
-        if (!isPaidOrPartial) return false;
-      } else if (statusFilter === 'pending') {
-        const isPending = t.status === 'pendente';
-        if (!isPending) return false;
-      }
-      // 'all' shows everything
-      
-      // For paid transactions, use paymentDate; for pending, use date (due date)
-      const isPaid = t.status === 'pago' || t.status === 'completed';
-      const relevantDate = isPaid && t.paymentDate ? t.paymentDate : t.date;
-      
-      // Extract date string (YYYY-MM-DD) from ISO format
-      const tDateStr = relevantDate.split('T')[0];
-      const tDate = new Date(tDateStr + 'T00:00:00Z').getTime();
-      
-      // Compare dates directly in UTC
-      const startTime = dateRange.startDate.getTime();
-      const endTime = dateRange.endDate.getTime();
-      
-      const typeMap = { 'income': 'venda', 'expense': 'compra', 'all': 'all' };
-      const mappedType = typeMap[typeFilter] || typeFilter;
-      const matchesType = mappedType === 'all' || t.type === mappedType;
-      
-      // Match by category name or ID since t.category might be either
-      const matchesCategory = categoryFilter === 'all' || 
-                             t.category === categoryFilter || 
-                             categories.find(c => c.id === t.categoryId)?.name === categoryFilter ||
-                             categories.find(c => c.name === t.category)?.id === categoryFilter;
+    const txArray = Array.isArray(transactions) ? transactions : [];
+    const filteredTransactions = txArray
+      .filter(t => {
+        if (!t) return false;
+        // Filter by status
+        if (statusFilter === 'paid') {
+          const isPaidOrPartial = t.status === 'pago' || t.status === 'completed' || t.status === 'parcial';
+          if (!isPaidOrPartial) return false;
+        } else if (statusFilter === 'pending') {
+          const isPending = t.status === 'pendente';
+          if (!isPending) return false;
+        }
+        
+        const isPaid = t.status === 'pago' || t.status === 'completed';
+        const relevantDate = isPaid && t.paymentDate ? t.paymentDate : t.date;
+        
+        if (!relevantDate) return false;
+        
+        const tDateStr = relevantDate.split('T')[0];
+        const tDate = new Date(tDateStr + 'T00:00:00Z').getTime();
+        
+        const startTime = dateRange?.startDate?.getTime() || 0;
+        const endTime = dateRange?.endDate?.getTime() || Infinity;
+        
+        const typeMap = { 'income': 'venda', 'expense': 'compra', 'all': 'all' };
+        const mappedType = typeMap[typeFilter] || typeFilter;
+        const matchesType = mappedType === 'all' || t.type === mappedType;
+        
+        const matchesCategory = categoryFilter === 'all' || 
+                               t.category === categoryFilter || 
+                               categories?.find(c => c.id === t.categoryId)?.name === categoryFilter ||
+                               categories?.find(c => c.name === t.category)?.id === categoryFilter;
 
-      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            (t.category && t.category.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesDate = tDate >= startTime && tDate <= endTime;
+        const matchesSearch = (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              (t.category && t.category.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesDate = tDate >= startTime && tDate <= endTime;
 
-      const matchesPaymentMethod = paymentMethodFilter === 'all' || t.paymentMethod === paymentMethodFilter;
+        const matchesPaymentMethod = paymentMethodFilter === 'all' || t.paymentMethod === paymentMethodFilter;
 
-      return matchesType && matchesCategory && matchesSearch && matchesDate && matchesPaymentMethod;
-    })
+        return matchesType && matchesCategory && matchesSearch && matchesDate && matchesPaymentMethod;
+      })
     .sort((a, b) => {
       // Sort by relevant date (paymentDate for paid, date for pending)
       const aIsPaid = a.status === 'pago' || a.status === 'completed';
@@ -253,12 +250,19 @@ export default function TransactionsPage() {
     const endTime = dateRange.endDate.getTime();
 
     txArray.forEach(t => {
+      if (!t) return;
       // For paid transactions, use paymentDate; for pending, use date (due date)
       const isPaid = t.status === 'pago' || t.status === 'completed';
       const relevantDate = isPaid && t.paymentDate ? t.paymentDate : t.date;
+      
+      if (!relevantDate) return;
+      
       const tDateStr = relevantDate.split('T')[0]; // Get YYYY-MM-DD only
       const tDate = new Date(tDateStr + 'T00:00:00Z').getTime();
       const amount = (parseFloat(t.amount) || 0) + (parseFloat(t.interest) || 0);
+
+      const startTime = dateRange?.startDate?.getTime() || 0;
+      const endTime = dateRange?.endDate?.getTime() || Infinity;
 
       if (tDate < startTime) {
         // Transaction is before the selected period -> contributes to opening balance
