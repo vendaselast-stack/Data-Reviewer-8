@@ -13,6 +13,16 @@ export default function BankReconciliation({ open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("unmatched");
 
+  // Fetch categories to use as default
+  const { data: categories = [] } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/categories');
+      if (!res.ok) throw new Error('Falha ao carregar categorias');
+      return res.json();
+    }
+  });
+
   // Fetch bank statement items
   const { data: bankItems = [], isLoading: isLoadingItems } = useQuery({
     queryKey: ['/api/bank/items'],
@@ -61,6 +71,7 @@ export default function BankReconciliation({ open, onOpenChange }) {
 
   const createTransactionMutation = useMutation({
     mutationFn: async (item) => {
+      const defaultCategory = categories.length > 0 ? categories[0].id : null;
       const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -70,7 +81,7 @@ export default function BankReconciliation({ open, onOpenChange }) {
           type: parseFloat(item.amount) > 0 ? 'income' : 'expense',
           date: item.date,
           status: 'completed',
-          categoryId: 1 // Default category
+          categoryId: defaultCategory
         })
       });
       if (!res.ok) throw new Error('Erro ao criar transação');
