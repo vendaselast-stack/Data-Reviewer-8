@@ -129,11 +129,13 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
           paymentDate: paymentDate
         });
       } else {
+        // Pre-select first category when opening new transaction form
+        const defaultCategoryId = categories.length > 0 ? categories[0].id : '';
         setFormData({
           description: '',
           amount: '',
           type: 'venda',
-          categoryId: '',
+          categoryId: defaultCategoryId,
           date: new Date(),
           installments: 1,
           installment_amount: '',
