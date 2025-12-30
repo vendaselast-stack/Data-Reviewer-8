@@ -47,6 +47,7 @@ import {
   createAuditLog,
   hashPassword,
 } from "./auth";
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { setupVite } from "./vite";
 import { z } from "zod";
 import { db } from "./db";
@@ -2624,6 +2625,31 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (error) {
       console.error("Payment checkout error:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : "Payment processing failed" });
+    }
+  });
+
+  // Process payment from Brick
+  app.post("/api/payment/process", async (req, res) => {
+    try {
+      const mercadoPagoAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+      if (!mercadoPagoAccessToken) {
+        return res.status(500).json({ error: "Payment service not configured" });
+      }
+
+      const client = new MercadoPagoConfig({ accessToken: mercadoPagoAccessToken });
+      const payment = new Payment(client);
+
+      const paymentResponse = await payment.create({
+        body: req.body,
+      });
+
+      res.json(paymentResponse);
+    } catch (error: any) {
+      console.error("Payment processing error:", error);
+      res.status(400).json({ 
+        error: error.message || "Payment failed",
+        details: error.cause || error
+      });
     }
   });
 
