@@ -65,7 +65,7 @@ export default function PaymentSuccess() {
                 },
                 backUrls: {
                   'error': window.location.origin + '/checkout',
-                  'return': window.location.origin + '/login'
+                  'return': window.location.origin + '/'
                 }
               }}
             />
