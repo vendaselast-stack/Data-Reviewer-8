@@ -126,6 +126,7 @@ export const companies = pgTable("companies", {
   document: text("document").notNull().unique(),
   subscriptionStatus: text("subscription_status").notNull().default("active"), // active, suspended, cancelled
   paymentStatus: text("payment_status").notNull().default("pending"), // pending, approved, rejected, cancelled
+  subscriptionPlan: text("subscription_plan").notNull().default("basic"), // basic, pro, enterprise
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -379,7 +380,12 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   createdAt: true,
   companyId: true,
 }).extend({
-  cnpj: z.string().optional(),
+  cnpj: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  contact: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+  status: z.string().optional(),
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({

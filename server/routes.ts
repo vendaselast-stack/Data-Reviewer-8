@@ -53,7 +53,7 @@ import crypto from 'crypto';
 import { setupVite } from "./vite";
 import { z } from "zod";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 import OFX from "node-ofx-parser";
 import { parse } from "date-fns";
@@ -113,12 +113,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const subscriptionPlan = plan || "pro";
       try {
         await db.insert(subscriptions).values({
-          id: crypto.randomUUID(),
           companyId: company.id,
           plan: subscriptionPlan,
           status: "pending",
-          startDate: new Date(),
-        });
+        } as any);
       } catch (e) {
         console.warn("Could not create subscription:", e);
         // Continue anyway - subscription can be created later
@@ -129,16 +127,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         await db.update(companies).set({ 
           subscriptionPlan: subscriptionPlan,
           paymentStatus: "pending"
-        }).where(eq(companies.id, company.id));
+        } as any).where(eq(companies.id, company.id));
       } catch (e: any) {
         console.warn("Could not update company subscription info:", e);
-        // If column doesn't exist, we already added it via SQL, but let's be safe
-        if (e.message?.includes('column "payment_status" does not exist')) {
+        if (e.message?.includes('column "payment_status" does not exist') || e.message?.includes('column "subscription_plan" does not exist')) {
            await db.execute(sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS payment_status text NOT NULL DEFAULT 'pending'`);
+           await db.execute(sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_plan text NOT NULL DEFAULT 'basic'`);
            await db.update(companies).set({ 
              subscriptionPlan: subscriptionPlan,
              paymentStatus: "pending"
-           }).where(eq(companies.id, company.id));
+           } as any).where(eq(companies.id, company.id));
         }
       }
 
@@ -383,11 +381,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.patch("/api/customers/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      console.log("PATCH /api/customers/" + req.params.id + " body:", req.body);
       const data = insertCustomerSchema.partial().parse(req.body);
       const customer = await storage.updateCustomer(req.user.companyId, req.params.id, data);
       res.json(customer);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid customer data" });
+    } catch (error: any) {
+      console.error("PATCH /api/customers error:", error);
+      res.status(400).json({ 
+        error: "Invalid customer data", 
+        details: error.errors || error.message 
+      });
     }
   });
 
