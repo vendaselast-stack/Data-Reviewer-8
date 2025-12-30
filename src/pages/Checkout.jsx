@@ -101,9 +101,39 @@ export default function Checkout() {
 
         const result = await response.json();
         if (response.ok && (result.status === 'approved' || result.id)) {
-          toast.success('Pagamento aprovado! Redirecionando...');
-          setLocation(`/payment-success?payment_id=${result.id || result.data?.id}`);
-          resolve();
+          toast.success('Pagamento processado! Confirmando status...');
+          
+          // Polling logic to confirm payment status
+          let attempts = 0;
+          const maxAttempts = 10; // 50 seconds total
+          const pollInterval = setInterval(async () => {
+            attempts++;
+            try {
+              const statusCheck = await fetch('/api/auth/payment-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user?.username })
+              });
+              const statusData = await statusCheck.json();
+              
+              if (statusData.isPaid) {
+                clearInterval(pollInterval);
+                toast.success('Pagamento confirmado com sucesso!');
+                setLocation(`/payment-success?payment_id=${result.id || result.data?.id}`);
+                resolve();
+              }
+            } catch (e) {
+              console.error("Polling error:", e);
+            }
+
+            if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              toast.info('O pagamento está sendo processado. Você será redirecionado em instantes.');
+              setLocation(`/payment-success?payment_id=${result.id || result.data?.id}`);
+              resolve();
+            }
+          }, 5000);
+          
         } else {
           const errorMsg = result.error || 'Erro ao processar pagamento';
           toast.error(errorMsg);

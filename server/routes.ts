@@ -130,8 +130,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           subscriptionPlan: subscriptionPlan,
           paymentStatus: "pending"
         }).where(eq(companies.id, company.id));
-      } catch (e) {
+      } catch (e: any) {
         console.warn("Could not update company subscription info:", e);
+        // If column doesn't exist, we already added it via SQL, but let's be safe
+        if (e.message?.includes('column "payment_status" does not exist')) {
+           await db.execute(sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS payment_status text NOT NULL DEFAULT 'pending'`);
+           await db.update(companies).set({ 
+             subscriptionPlan: subscriptionPlan,
+             paymentStatus: "pending"
+           }).where(eq(companies.id, company.id));
+        }
       }
 
       // Generate token
@@ -2788,9 +2796,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       console.log("✅ Sending to MP API:", JSON.stringify(paymentBody, null, 2));
 
-      const paymentResponse = await payment.create({
-        body: paymentBody,
-      });
+      // Retry logic for Mercado Pago API
+      let paymentResponse;
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          paymentResponse = await payment.create({
+            body: paymentBody,
+          });
+          break;
+        } catch (err: any) {
+          retries--;
+          console.error(`⚠️ MP API Retry (${3 - retries}/3):`, err.message);
+          if (retries === 0) throw err;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
 
       // If payment approved, update company and create subscription immediately
       if (paymentResponse.status === 'approved' && companyId) {
