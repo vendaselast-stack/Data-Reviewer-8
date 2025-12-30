@@ -70,7 +70,7 @@ export default function Signup() {
 
     try {
       setLoading(true);
-      const data = await signup(
+      await signup(
         formData.companyName,
         formData.companyDocument,
         formData.username,
@@ -79,13 +79,11 @@ export default function Signup() {
         formData.name,
         formData.plan
       );
-      const userName = data.user?.name || "usuário";
-      toast.success(`Bem vindo, ${userName}! Redirecionando para checkout...`);
       
-      // Redirecionar para checkout com o plano selecionado
-      setTimeout(() => {
-        setLocation(`/checkout?plan=${formData.plan}&email=${formData.email}&company=${formData.companyName}`);
-      }, 1000);
+      // O signup já salva no localStorage e seta isAuthenticated
+      // O App.jsx agora vai redirecionar automaticamente para /checkout
+      // baseado no status da assinatura da empresa
+      toast.success("Conta criada! Redirecionando para pagamento...");
     } catch (error) {
       toast.error(error.message);
     } finally {
