@@ -2638,14 +2638,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(500).json({ error: "Payment service not configured" });
       }
 
+      console.log("📥 Payment Brick Data Received:", JSON.stringify(req.body, null, 2));
+
       const client = new MercadoPagoConfig({ accessToken: mercadoPagoAccessToken });
       const payment = new Payment(client);
 
-      // The Payment Brick sends data in a format that needs to be validated and sent to MP
-      // Extract payment data and build the proper format for MP API v2
-      const { token, amount, payer, paymentMethodId, issuerId, installments, description } = req.body;
+      // The Payment Brick sends data - check the actual structure received
+      // Try to extract token from various possible field names
+      let token = req.body.token || req.body.formData?.token;
+      const amount = req.body.amount;
+      const payer = req.body.payer;
+      const paymentMethodId = req.body.paymentMethodId || req.body.selectedPaymentMethod;
+      const issuerId = req.body.issuerId;
+      const installments = req.body.installments || 1;
+      const description = req.body.description;
 
       if (!token) {
+        console.error("❌ No token found in request body. Structure:", Object.keys(req.body));
         return res.status(400).json({ error: "Payment token is required" });
       }
 
@@ -2665,6 +2674,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       Object.keys(paymentBody).forEach(key => 
         paymentBody[key] === undefined && delete paymentBody[key]
       );
+
+      console.log("✅ Sending to MP API:", JSON.stringify(paymentBody, null, 2));
 
       const paymentResponse = await payment.create({
         body: paymentBody,
