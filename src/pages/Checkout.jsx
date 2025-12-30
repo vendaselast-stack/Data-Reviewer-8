@@ -225,8 +225,8 @@ export default function Checkout() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-6 lg:space-y-8">
-                  <div className="p-4 lg:p-6 bg-slate-50 lg:bg-slate-50 rounded-xl lg:rounded-2xl border border-slate-200 shadow-sm lg:shadow-inner">
+                <div className="space-y-3 lg:space-y-4">
+                  <div className="p-2 lg:p-3 bg-slate-50 lg:bg-slate-50 rounded-xl lg:rounded-2xl border border-slate-200 shadow-sm lg:shadow-inner">
                     <Payment
                       initialization={initialization}
                       onSubmit={onSubmit}
@@ -262,7 +262,7 @@ export default function Checkout() {
                     />
                   </div>
 
-                  <div className="text-center px-4">
+                  <div className="text-center px-4 pt-2">
                     <p className="text-[10px] lg:text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
                       Ao finalizar, você aceita nossos <a href="#" className="underline text-[#2563eb]">Termos</a> e <a href="#" className="underline text-[#2563eb]">Privacidade</a>.
                       <br className="lg:hidden" /> O pagamento é processado pelo Mercado Pago.
