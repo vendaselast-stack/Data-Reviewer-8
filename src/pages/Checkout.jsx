@@ -76,15 +76,15 @@ export default function Checkout() {
       address: {
         zipCode: '00000000'
       }
-    },
-    processingMode: 'aggregator'
+    }
   };
 
   const onSubmit = async (cardFormData) => {
     return new Promise(async (resolve, reject) => {
       try {
         setIsProcessing(true);
-        toast.loading('Processando pagamento...');
+        toast.dismiss();
+        toast.loading('Processando assinatura...');
         
         // Ensure we send the exact structure expected by the backend
         // and include all BIN-related info from Mercado Pago Brick
@@ -94,8 +94,6 @@ export default function Checkout() {
           plan: selectedPlan,
           companyName: company?.name,
           email: user?.email,
-          // Convert amount to cents for the current backend logic if needed, 
-          // but the backend is now being updated to handle both.
           amount: selectedPlan ? Math.round(PLANS[selectedPlan].price * 100) : 10000
         };
 
@@ -114,14 +112,14 @@ export default function Checkout() {
           const paymentId = result.id || result.data?.id;
           const status = result.status || result.data?.status;
 
-          if (status === 'approved') {
-            toast.success('Pagamento aprovado com sucesso!');
+          if (status === 'approved' || status === 'authorized' || status === 'active') {
+            toast.success('Assinatura ativada com sucesso!');
             setLocation(`/payment-success?payment_id=${paymentId}`);
             resolve();
             return;
           }
 
-          toast.success('Pagamento processado! Confirmando status...');
+          toast.success('Processando assinatura... Confirmando status...');
           
           // Polling logic ONLY if not approved immediately
           let attempts = 0;
@@ -138,7 +136,7 @@ export default function Checkout() {
               
               if (statusData.isPaid) {
                 clearInterval(pollInterval);
-                toast.success('Pagamento confirmado!');
+                toast.success('Assinatura confirmada!');
                 setLocation(`/payment-success?payment_id=${paymentId}`);
                 resolve();
               }
@@ -154,13 +152,13 @@ export default function Checkout() {
           }, 5000);
           
         } else {
-          const errorMsg = result.error || 'Erro ao processar pagamento';
+          const errorMsg = result.message || result.error || 'Erro ao processar assinatura';
           toast.error(errorMsg);
           reject(errorMsg);
         }
       } catch (error) {
         console.error('Payment error:', error);
-        toast.error('Erro ao processar pagamento');
+        toast.error('Erro ao processar assinatura');
         reject(error);
       } finally {
         setIsProcessing(false);
