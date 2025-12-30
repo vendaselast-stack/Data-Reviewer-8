@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { ArrowLeft, Check, Lock } from 'lucide-react';
+import { ArrowLeft, Check, Lock, Loader } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 
 const PLANS = {
@@ -35,14 +35,16 @@ const PLANS = {
 export default function Checkout() {
   const [, setLocation] = useLocation();
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const bricksRef = useRef(null);
-  const [bricksInstance, setBricksInstance] = useState(null);
+  const paymentBricksContainerRef = useRef(null);
+  const [preferenceId, setPreferenceId] = useState(null);
+  const [bricksReady, setBricksReady] = useState(false);
   const [formData, setFormData] = useState({
     companyName: '',
     email: '',
     phone: '',
   });
   const [loading, setLoading] = useState(false);
+  const [initializingPayment, setInitializingPayment] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -64,14 +66,119 @@ export default function Checkout() {
     if (company) setFormData(prev => ({ ...prev, companyName: company }));
   }, []);
 
+  // Inicializar Payment Brick quando plano é selecionado
+  useEffect(() => {
+    if (!selectedPlan || selectedPlan === 'enterprise' || preferenceId) return;
+
+    const initPaymentBrick = async () => {
+      try {
+        setInitializingPayment(true);
+
+        // Step 1: Criar preferência no backend
+        const response = await fetch('/api/payment/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            plan: selectedPlan,
+            amount: PLANS[selectedPlan].price,
+            companyName: formData.companyName || 'Customer',
+            email: formData.email || 'customer@example.com',
+            phone: formData.phone,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao inicializar pagamento');
+        }
+
+        const data = await response.json();
+        if (data.preferenceId) {
+          setPreferenceId(data.preferenceId);
+        }
+      } catch (error) {
+        console.error('Payment Brick init error:', error);
+        toast.error('Erro ao carregar formulário de pagamento');
+      } finally {
+        setInitializingPayment(false);
+      }
+    };
+
+    initPaymentBrick();
+  }, [selectedPlan, formData.companyName, formData.email]);
+
+  // Renderizar Payment Brick quando preferenceId está pronto
+  useEffect(() => {
+    if (!preferenceId || !paymentBricksContainerRef.current || bricksReady) return;
+
+    const renderPaymentBrick = async () => {
+      try {
+        if (!window.MercadoPago) {
+          console.error('Mercado Pago SDK não carregado');
+          return;
+        }
+
+        const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
+        if (!publicKey) {
+          toast.error('Chave pública do Mercado Pago não configurada');
+          return;
+        }
+
+        window.MercadoPago.setPublishableKey(publicKey);
+
+        const bricks = window.MercadoPago.Bricks();
+        
+        await bricks.create('payment', {
+          initialization: {
+            amount: PLANS[selectedPlan].price,
+            preferenceId: preferenceId,
+          },
+          callbacks: {
+            onReady: () => {
+              console.log('Payment Brick pronto');
+              setBricksReady(true);
+            },
+            onSubmit: async (formData) => {
+              console.log('Payment Brick submitted:', formData);
+              return new Promise((resolve) => {
+                // O pagamento foi submetido
+                setTimeout(() => {
+                  resolve();
+                }, 100);
+              });
+            },
+            onError: (error) => {
+              console.error('Payment Brick error:', error);
+              toast.error('Erro ao processar pagamento: ' + (error?.message || 'Desconhecido'));
+            },
+            onFetching: (resource) => {
+              console.log('Fetching resource:', resource);
+            },
+          },
+          customization: {
+            visual: {
+              style: {
+                theme: 'dark',
+              },
+            },
+          },
+        });
+      } catch (error) {
+        console.error('Error rendering Payment Brick:', error);
+        toast.error('Erro ao carregar formulário de pagamento');
+      }
+    };
+
+    renderPaymentBrick();
+  }, [preferenceId, selectedPlan, bricksReady]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handlePaymentSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handlePaymentBrickSubmit = async () => {
     if (!selectedPlan) {
       toast.error('Selecione um plano');
       return;
@@ -83,47 +190,14 @@ export default function Checkout() {
       return;
     }
 
-    if (!formData.companyName || !formData.email) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    setLoading(true);
+    // O Payment Brick cuidará do submit
     try {
-      // Enviar para backend para processar com SDK do Mercado Pago
-      const response = await fetch('/api/payment/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan: selectedPlan,
-          amount: PLANS[selectedPlan].price,
-          companyName: formData.companyName,
-          email: formData.email,
-          phone: formData.phone,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao processar pagamento');
-      }
-
-      const data = await response.json();
-      
-      if (data.preferenceUrl) {
-        // Redirecionar para Mercado Pago
-        toast.success('Redirecionando para Mercado Pago...');
-        window.location.href = data.preferenceUrl;
-      } else {
-        toast.error('Erro ao processar pagamento');
+      const submitButton = document.querySelector('[data-testid="brick-submit"]');
+      if (submitButton) {
+        submitButton.click();
       }
     } catch (error) {
-      console.error('Payment error:', error);
-      toast.error(error.message || 'Erro ao processar pagamento');
-    } finally {
-      setLoading(false);
+      toast.error('Erro ao processar pagamento');
     }
   };
 
@@ -283,23 +357,35 @@ export default function Checkout() {
                     </div>
                   </div>
 
-                  {/* Informação de Pagamento */}
+                  {/* Payment Brick Container */}
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Método de Pagamento</h3>
-                    <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mb-4">
-                      <p className="text-sm text-blue-300 mb-2">
-                        Ao clicar em "Pagar", você será redirecionado para o Mercado Pago onde poderá:
-                      </p>
-                      <ul className="text-sm text-blue-300 space-y-1 list-disc list-inside">
-                        <li>Pagar com cartão de crédito/débito</li>
-                        <li>Usar Pix ou transferência bancária</li>
-                        <li>Parcelar em até 12x</li>
-                      </ul>
-                    </div>
+                    
+                    {initializingPayment ? (
+                      <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-8 text-center">
+                        <Loader className="w-6 h-6 animate-spin text-blue-400 mx-auto mb-2" />
+                        <p className="text-sm text-slate-400">Carregando formulário de pagamento...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div 
+                          ref={paymentBricksContainerRef}
+                          id="paymentBricksContainer"
+                          className="mb-4 bg-slate-900/50 rounded-lg p-4 border border-slate-700/50"
+                        >
+                          {!bricksReady && (
+                            <div className="text-center py-12 text-slate-400">
+                              <Loader className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">Inicializando Payment Brick...</p>
+                            </div>
+                          )}
+                        </div>
 
-                    <p className="text-xs text-slate-500">
-                      Sua transação será processada de forma 100% segura pelo Mercado Pago. Não armazenamos dados de cartão.
-                    </p>
+                        <p className="text-xs text-slate-500">
+                          Formulário de pagamento seguro do Mercado Pago. Aceita: Cartão de Crédito, Débito, Pix e Transferência.
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   {/* Termos */}
@@ -308,14 +394,22 @@ export default function Checkout() {
                       Ao clicar em "Pagar", você concorda com nossos termos de serviço e a renovação automática da assinatura.
                     </p>
 
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3 text-lg rounded-lg"
-                      data-testid="button-pay-checkout"
-                    >
-                      {loading ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
-                    </Button>
+                    <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
+                      <button 
+                        type="button"
+                        id="paymentBricksSubmit"
+                        data-testid="brick-submit"
+                        className="hidden"
+                      />
+                      <Button
+                        onClick={handlePaymentBrickSubmit}
+                        disabled={initializingPayment || !bricksReady}
+                        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3 text-lg rounded-lg disabled:opacity-50"
+                        data-testid="button-pay-checkout"
+                      >
+                        {initializingPayment ? 'Carregando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
+                      </Button>
+                    </div>
                   </div>
                 </form>
               )}
