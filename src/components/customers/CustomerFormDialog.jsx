@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus } from 'lucide-react';
 import CreateCategoryModal from '../transactions/CreateCategoryModal';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatPhoneNumber } from '@/utils/masks';
+import { formatPhoneNumber, formatCNPJ } from '@/utils/masks';
 
 export default function CustomerFormDialog({ open, onOpenChange, customer = null, onSubmit, isLoading = false, categories = [] }) {
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', cnpj: '' });
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -19,10 +19,11 @@ export default function CustomerFormDialog({ open, onOpenChange, customer = null
       setFormData({
         name: customer.name || '',
         email: customer.email || '',
-        phone: customer.phone || ''
+        phone: customer.phone || '',
+        cnpj: customer.cnpj || ''
       });
     } else if (open && !customer) {
-      setFormData({ name: '', email: '', phone: '' });
+      setFormData({ name: '', email: '', phone: '', cnpj: '' });
     }
   }, [open, customer]);
 
@@ -47,6 +48,15 @@ export default function CustomerFormDialog({ open, onOpenChange, customer = null
                 value={formData.name} 
                 onChange={e => setFormData({...formData, name: e.target.value})} 
                 required 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>CNPJ</Label>
+              <Input 
+                value={formData.cnpj} 
+                onChange={e => setFormData({...formData, cnpj: formatCNPJ(e.target.value)})}
+                placeholder="00.000.000/0000-00"
+                maxLength="18"
               />
             </div>
             <div className="space-y-2">

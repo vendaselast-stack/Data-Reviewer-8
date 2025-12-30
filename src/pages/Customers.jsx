@@ -123,7 +123,8 @@ export default function CustomersPage() {
   const filteredCustomers = customers
     .filter(c => 
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      c.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.cnpj?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     // Sort by ID descending to show newest first
     .sort((a, b) => {
@@ -195,6 +196,7 @@ export default function CustomersPage() {
                                 </TableCell>
                                 <TableCell className="text-left">
                                     <div className="flex flex-col text-sm text-slate-500 gap-1">
+                                        {c.cnpj && <div className="font-medium text-slate-700">{c.cnpj}</div>}
                                         {c.email && <div className="flex items-center gap-2"><Mail className="w-3 h-3" /> {c.email}</div>}
                                         {c.phone && <div className="flex items-center gap-2"><Phone className="w-3 h-3" /> {c.phone}</div>}
                                     </div>
