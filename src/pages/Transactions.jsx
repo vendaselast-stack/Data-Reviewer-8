@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Transaction, Category } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,14 +55,14 @@ export default function TransactionsPage() {
 
   const { data: categories } = useQuery({
     queryKey: ['/api/categories', company?.id],
-    queryFn: () => fetch(`/api/categories`).then(res => res.json()),
+    queryFn: () => apiRequest('/api/categories'),
     initialData: [],
     enabled: !!company?.id
   });
 
   const { data: transactionsData, isLoading } = useQuery({
     queryKey: ['/api/transactions', company?.id],
-    queryFn: () => fetch(`/api/transactions`).then(res => res.json()),
+    queryFn: () => apiRequest('/api/transactions'),
     initialData: [],
     enabled: !!company?.id
   });
