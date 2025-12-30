@@ -199,8 +199,9 @@ export default function SuppliersPage() {
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="pl-6 text-left">Nome</TableHead>
-                <TableHead className="text-left">Contato</TableHead>
-                <TableHead className="text-left">Desde</TableHead>
+                <TableHead className="text-left">CNPJ</TableHead>
+                <TableHead className="text-left">Email</TableHead>
+                <TableHead className="text-left">Telefone</TableHead>
                 <TableHead className="text-right">Total em Compras</TableHead>
                 <TableHead className="text-right pr-6">Ações</TableHead>
               </TableRow>
@@ -214,20 +215,17 @@ export default function SuppliersPage() {
                         <div className="w-10 h-10 rounded-full bg-blue-100 text-primary600 flex items-center justify-center font-semibold">
                           {s.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <span className="font-medium text-slate-900 block">{s.name}</span>
-                          {s.cnpj && <span className="text-xs text-slate-500">{s.cnpj}</span>}
-                        </div>
+                        <span className="font-medium text-slate-900">{s.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-left">
-                      <div className="flex flex-col text-sm text-slate-500 gap-1">
-                        {s.email && <div className="flex items-center gap-2"><Mail className="w-3 h-3" /> {s.email}</div>}
-                        {s.phone && <div className="flex items-center gap-2"><Phone className="w-3 h-3" /> {s.phone}</div>}
-                      </div>
+                      {s.cnpj ? <span className="font-medium text-slate-700">{s.cnpj}</span> : <span className="text-slate-400">-</span>}
                     </TableCell>
-                    <TableCell className="text-slate-500 text-sm text-left">
-                      -
+                    <TableCell className="text-left">
+                      {s.email ? <div className="flex items-center gap-2 text-sm text-slate-700"><Mail className="w-3 h-3" /> {s.email}</div> : <span className="text-slate-400">-</span>}
+                    </TableCell>
+                    <TableCell className="text-left">
+                      {s.phone ? <div className="flex items-center gap-2 text-sm text-slate-700"><Phone className="w-3 h-3" /> {s.phone}</div> : <span className="text-slate-400">-</span>}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="text-primary600 font-semibold">
@@ -275,7 +273,7 @@ export default function SuppliersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-slate-500">
+                  <TableCell colSpan={6} className="text-center py-10 text-slate-500">
                     Nenhum fornecedor encontrado.
                   </TableCell>
                 </TableRow>
