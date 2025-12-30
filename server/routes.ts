@@ -2614,11 +2614,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const preference = await mpResponse.json();
 
       // Note: Subscription will be created/updated when payment webhook is confirmed
-      // For now, we just return the preference to redirect user to Mercado Pago checkout
+      // Return preferenceId for Payment Brick integration
       res.json({
         success: true,
         preferenceId: preference.id,
-        preferenceUrl: preference.init_point
+        init_point: preference.init_point // Keep this for reference
       });
 
     } catch (error) {
