@@ -51,6 +51,17 @@ function AppContent() {
     );
   }
 
+  // Se estiver autenticado mas a empresa não estiver ativa, força checkout
+  if (company && company.subscriptionStatus !== "active") {
+    return (
+      <Switch>
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/payment-success" component={PaymentSuccess} />
+        <Route component={Checkout} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/access-denied" component={AccessDenied} />
