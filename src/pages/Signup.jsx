@@ -87,7 +87,7 @@ export default function Signup() {
         // baseado no status da assinatura da empresa
         toast.success("Conta criada! Redirecionando para pagamento...");
       }
-    } catch (error: any) {
+    } catch (error) {
       // Handle duplicate company scenarios
       const errorMsg = error.message || "";
       if (errorMsg.includes("409") || errorMsg.includes("DUPLICATE")) {

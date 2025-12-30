@@ -78,7 +78,14 @@ export default function Checkout() {
         const response = await fetch('/api/payment/process', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cardFormData), // Sending the exact body structure expected by the backend and MP SDK
+          body: JSON.stringify({
+            ...cardFormData,
+            companyId: company?.id,
+            plan: selectedPlan,
+            companyName: company?.name,
+            email: user?.email,
+            amount: selectedPlan ? Math.round(PLANS[selectedPlan].price * 100) : 10000
+          }),
         });
 
         const result = await response.json();
