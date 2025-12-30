@@ -94,6 +94,23 @@ export default function Signup() {
         if (errorMsg.includes("DUPLICATE_PAID")) {
           toast.error("Essa empresa já possui um cadastro ativo com pagamento confirmado");
         } else if (errorMsg.includes("DUPLICATE_PENDING")) {
+          // SALVAR NO LOCALSTORAGE ANTES DE REDIRECIONAR
+          const auth = localStorage.getItem("auth");
+          if (auth) {
+            try {
+              const parsed = JSON.parse(auth);
+              localStorage.setItem("auth", JSON.stringify({
+                ...parsed,
+                company: { ...parsed.company },
+                user: { ...parsed.user },
+                plan: formData.plan,
+                token: null,
+                paymentPending: true
+              }));
+            } catch (e) {
+              console.error("Error saving auth to localStorage:", e);
+            }
+          }
           // Redirect to checkout for existing company
           toast.success("Cadastro encontrado! Redirecionando para completar pagamento...");
           setTimeout(() => setLocation("/checkout?plan=" + formData.plan), 1500);
