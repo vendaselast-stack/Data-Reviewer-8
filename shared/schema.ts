@@ -149,7 +149,7 @@ export const subscriptions = pgTable("subscriptions", {
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").references(() => companies.id, { onDelete: "cascade" }), // NULL for super admin
-  username: text("username").notNull(),
+  username: text("username").notNull().unique(),
   email: text("email"),
   password: text("password").notNull(),
   name: text("name"),
