@@ -375,18 +375,14 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Invitation = typeof invitations.$inferSelect;
 export type InsertInvitation = z.infer<typeof insertInvitationSchema>;
 
-export const insertCustomerSchema = createInsertSchema(customers).omit({
-  id: true,
-  createdAt: true,
-  companyId: true,
-}).extend({
+export const insertCustomerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  cnpj: z.union([z.string(), z.null()]).optional(),
-  email: z.union([z.string(), z.null()]).optional(),
-  phone: z.union([z.string(), z.null()]).optional(),
-  contact: z.union([z.string(), z.null()]).optional(),
-  category: z.union([z.string(), z.null()]).optional(),
-  status: z.string().optional(),
+  cnpj: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  contact: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+  status: z.string().default("ativo").optional(),
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({
