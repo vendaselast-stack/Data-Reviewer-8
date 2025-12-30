@@ -369,7 +369,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/customers", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const data = insertCustomerSchema.parse(req.body);
+      const cleanData: any = {};
+      for (const [key, value] of Object.entries(req.body)) {
+        cleanData[key] = (value === '' || value === undefined) ? null : value;
+      }
+      const data = insertCustomerSchema.parse(cleanData);
       const customer = await storage.createCustomer(req.user.companyId, data);
       res.status(201).json(customer);
     } catch (error: any) {
