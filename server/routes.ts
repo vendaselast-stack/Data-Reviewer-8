@@ -2779,21 +2779,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(500).send("Internal Server Error");
     }
   });
-            } catch (err) {
-              console.error('Error updating subscription on rejection:', err);
-            }
-          } else {
-            console.log(`⏳ Payment ${payment.status} for plan: ${plan} - Company: ${companyName}`);
-          }
-        }
-      }
-
-      res.json({ received: true });
-    } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(500).json({ error: "Webhook processing failed" });
-    }
-  });
 
   // 404 fallback
   app.all("/api/*", (req, res) => {
