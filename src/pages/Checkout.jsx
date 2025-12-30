@@ -249,7 +249,7 @@ export default function Checkout() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="flex flex-col-reverse lg:grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
             <Card className="p-6 md:p-8 border border-slate-200">
@@ -447,7 +447,7 @@ export default function Checkout() {
           {/* Summary Sidebar */}
           <div className="lg:col-span-1">
             {/* Mobile Compact Summary */}
-            <Card className="lg:hidden p-4 mb-6 border border-slate-200 bg-white">
+            <Card className="lg:hidden p-4 mb-8 border border-slate-200 bg-white">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs text-slate-500 uppercase font-semibold">Plano selecionado</p>
