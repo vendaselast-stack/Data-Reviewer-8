@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const signup = async (companyName, companyDocument, username, email, password, name) => {
+  const signup = async (companyName, companyDocument, username, email, password, name, plan) => {
     try {
       setError(null);
       const res = await fetch("/api/auth/signup", {
@@ -41,19 +41,29 @@ export function AuthProvider({ children }) {
           email,
           password,
           name,
+          plan,
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
+        // Handle duplicate scenarios specially
+        if (data.type === "DUPLICATE_PAID") {
+          const error = new Error("DUPLICATE_PAID: " + (data.error || "Company already exists"));
+          throw error;
+        } else if (data.type === "DUPLICATE_PENDING") {
+          const error = new Error("DUPLICATE_PENDING: " + (data.error || "Company exists with pending payment"));
+          error.companyId = data.companyId;
+          throw error;
+        }
         throw new Error(data.error || "Signup failed");
       }
 
-      const data = await res.json();
       setToken(data.token);
       setUser(data.user);
       setCompany(data.company);
-      localStorage.setItem("auth", JSON.stringify(data));
+      localStorage.setItem("auth", JSON.stringify({ ...data, plan }));
       return data;
     } catch (err) {
       setError(err.message);

@@ -2728,6 +2728,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const issuerId = req.body.issuerId;
       const installments = req.body.installments || 1;
       const description = req.body.description;
+      const companyId = req.body.companyId;
+      const plan = req.body.plan;
+      const companyName = req.body.companyName;
+      const email = req.body.email;
 
       if (!token) {
         console.error("❌ No token found in request body. Structure:", Object.keys(req.body));
@@ -2756,6 +2760,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const paymentResponse = await payment.create({
         body: paymentBody,
       });
+
+      // If payment approved, update company immediately
+      if (paymentResponse.status === 'approved' && companyId) {
+        try {
+          await db.update(companies).set({ 
+            paymentStatus: 'approved',
+            plan: plan || 'pro'
+          }).where(eq(companies.id, companyId));
+          console.log(`✅ Company ${companyId} payment updated to approved`);
+        } catch (updateErr) {
+          console.error("Warning: Failed to update company payment status:", updateErr);
+          // Continue anyway - webhook will also update
+        }
+      }
 
       res.json(paymentResponse);
     } catch (error: any) {
