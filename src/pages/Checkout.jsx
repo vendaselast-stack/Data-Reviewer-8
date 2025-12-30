@@ -409,13 +409,9 @@ export default function Checkout() {
                   </Button>
                 </form>
 
-                {/* Security Info */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-semibold text-blue-900">Transação 100% Segura</p>
-                    <p className="text-blue-700">Seus dados são criptografados e processados de forma segura pelo Mercado Pago</p>
-                  </div>
+                {/* Privacy Info */}
+                <div className="text-center text-xs text-slate-500 pt-2">
+                  <p>Ao prosseguir, você concorda com nossos <a href="#" className="text-slate-600 hover:text-slate-700 underline">Termos de Serviço</a> e <a href="#" className="text-slate-600 hover:text-slate-700 underline">Política de Privacidade</a></p>
                 </div>
               </div>
             </Card>
