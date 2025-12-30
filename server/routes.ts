@@ -2788,59 +2788,57 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         payer: {
           email: req.body.payer?.email || req.body.formData?.payer?.email || email || 'customer@example.com',
           identification: req.body.payer?.identification || req.body.formData?.payer?.identification || undefined
+        },
+        additional_info: {
+          items: [{
+            id: plan || 'pro',
+            title: `Assinatura ${plan || 'pro'}`,
+            quantity: 1,
+            unit_price: Number(req.body.transaction_amount || req.body.formData?.transaction_amount || (Number(amount) / 100))
+          }]
         }
       };
 
-      // Handle Subscription (Recurrence) using Preapproval API
-      const subscriptionBody = {
-        reason: description || 'HUA Analytics Subscription',
-        payer_email: req.body.payer?.email || req.body.formData?.payer?.email || email,
-        card_token_id: req.body.token || req.body.formData?.token,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: 'months',
-          transaction_amount: Number(req.body.transaction_amount || req.body.formData?.transaction_amount || (Number(amount) / 100)),
-          currency_id: 'BRL'
-        },
-        back_url: `${req.protocol}://${req.get('host')}/payment-success`,
-        status: 'authorized'
-      };
+      console.log("✅ Sending to MP API (v1/payments):", JSON.stringify(paymentBody, null, 2));
 
-      console.log("✅ Sending to MP Subscriptions API:", JSON.stringify(subscriptionBody, null, 2));
-
-      const subResponse = await fetch("https://api.mercadopago.com/preapproval", {
+      const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": req.body.token || Date.now().toString()
         },
-        body: JSON.stringify(subscriptionBody)
+        body: JSON.stringify(paymentBody)
       });
 
-      const result = await subResponse.json();
+      const result = await mpResponse.json();
       
-      if (!subResponse.ok) {
-        console.error("❌ MP Subscriptions API Error:", result);
-        return res.status(subResponse.status).json(result);
+      if (!mpResponse.ok) {
+        console.error("❌ MP API Error:", result);
+        return res.status(mpResponse.status).json(result);
       }
 
-      // If authorized, update database immediately
-      if (result.status === 'authorized' || result.status === 'active') {
-        if (companyId) {
+      // If approved, update database immediately
+      if (result.status === 'approved' && companyId) {
+        try {
+          // Update company payment status
           await db.update(companies).set({ 
             paymentStatus: 'approved'
           }).where(eq(companies.id, companyId));
           
+          // Create or update subscription
           const existingSub = await db.query.subscriptions.findFirst({
             where: (subs) => eq(subs.companyId, companyId)
           });
           
           if (existingSub) {
+            // Update existing subscription
             await db.update(subscriptions).set({
               plan: plan || 'pro',
               status: 'active'
             }).where(eq(subscriptions.companyId, companyId));
           } else {
+            // Create new subscription
             await db.insert(subscriptions).values({
               companyId,
               plan: plan || 'pro',
@@ -2848,11 +2846,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
               amount: (Number(req.body.transaction_amount || req.body.formData?.transaction_amount || (Number(amount) / 100))).toString()
             });
           }
+          
+          console.log(`✅ Company ${companyId} payment updated to approved with plan ${plan}`);
+        } catch (updateErr) {
+          console.error("Warning: Failed to update company/subscription:", updateErr);
+          // Continue anyway - webhook will also update
         }
-        return res.json({ ...result, status: 'approved' }); // Return 'approved' for frontend compatibility
       }
 
-      return res.json(result);
+      res.json(result);
     } catch (error: any) {
       console.error("Payment processing error:", error);
       res.status(400).json({ 
