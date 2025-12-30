@@ -381,23 +381,23 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   companyId: true,
 }).extend({
   name: z.string().min(1, "Nome é obrigatório"),
-  cnpj: z.string().nullable().optional().or(z.literal('')),
-  email: z.string().nullable().optional().or(z.literal('')),
-  phone: z.string().nullable().optional().or(z.literal('')),
-  contact: z.string().nullable().optional().or(z.literal('')),
-  category: z.string().nullable().optional().or(z.literal('')),
+  cnpj: z.string().nullable().optional().or(z.literal('')).default(null),
+  email: z.string().nullable().optional().or(z.literal('')).default(null),
+  phone: z.string().nullable().optional().or(z.literal('')).default(null),
+  contact: z.string().nullable().optional().or(z.literal('')).default(null),
+  category: z.string().nullable().optional().or(z.literal('')).default(null),
   status: z.string().optional().default('ativo'),
-}).refine(
-  (data) => {
-    // Converter strings vazias para null
-    if (data.cnpj === '') data.cnpj = null;
-    if (data.email === '') data.email = null;
-    if (data.phone === '') data.phone = null;
-    if (data.contact === '') data.contact = null;
-    if (data.category === '') data.category = null;
-    return true;
-  }
-);
+}).transform((data) => {
+  // Converter strings vazias para null
+  return {
+    ...data,
+    cnpj: data.cnpj === '' ? null : data.cnpj,
+    email: data.email === '' ? null : data.email,
+    phone: data.phone === '' ? null : data.phone,
+    contact: data.contact === '' ? null : data.contact,
+    category: data.category === '' ? null : data.category,
+  };
+});
 
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({
   id: true,
