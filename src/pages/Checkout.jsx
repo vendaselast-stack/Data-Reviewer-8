@@ -73,12 +73,9 @@ export default function Checkout() {
   const [cardData, setCardData] = useState({
     cardNumber: '',
     cardholderName: user?.name || '',
-    cardholderDocument: '',
-    cardholderDocumentType: 'CPF',
     expiryMonth: '',
     expiryYear: '',
-    cvv: '',
-    email: user?.email || ''
+    cvv: ''
   });
   const [cardErrors, setCardErrors] = useState({});
 
@@ -110,8 +107,7 @@ export default function Checkout() {
     if (user) {
       setCardData(prev => ({
         ...prev,
-        cardholderName: user.name || '',
-        email: user.email || ''
+        cardholderName: user.name || ''
       }));
     }
   }, [user]);
@@ -143,10 +139,8 @@ export default function Checkout() {
     const cleanNumber = cardData.cardNumber.replace(/\s/g, '');
     if (!cleanNumber || cleanNumber.length < 13) errors.cardNumber = 'Cartão inválido';
     if (!cardData.cardholderName) errors.cardholderName = 'Nome obrigatório';
-    if (!cardData.cardholderDocument) errors.cardholderDocument = 'Documento obrigatório';
     if (!cardData.expiryMonth || !cardData.expiryYear) errors.expiry = 'Data obrigatória';
     if (!cardData.cvv || cardData.cvv.length < 3) errors.cvv = 'CVV inválido';
-    if (!cardData.email) errors.email = 'Email obrigatório';
     setCardErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -168,17 +162,17 @@ export default function Checkout() {
       let payload = {
         companyId: company?.id,
         plan: selectedPlan,
-        email: paymentMethod === 'credit_card' ? cardData.email : user?.email,
+        email: user?.email,
         total_amount: PLANS[selectedPlan].price.toFixed(2),
         payment_method_id: paymentMethod,
         recurring: true,
         payer: {
-          email: paymentMethod === 'credit_card' ? cardData.email : user?.email,
-          first_name: paymentMethod === 'credit_card' ? cardData.cardholderName?.split(' ')[0] : (user?.name?.split(' ')[0] || ''),
-          last_name: paymentMethod === 'credit_card' ? cardData.cardholderName?.split(' ').slice(1).join(' ') : (user?.name?.split(' ').slice(1).join(' ') || ''),
+          email: user?.email,
+          first_name: cardData.cardholderName?.split(' ')[0] || '',
+          last_name: cardData.cardholderName?.split(' ').slice(1).join(' ') || '',
           identification: {
-            type: cardData.cardholderDocumentType,
-            number: cardData.cardholderDocument
+            type: 'CPF',
+            number: ''
           }
         }
       };
@@ -370,53 +364,6 @@ export default function Checkout() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Document */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700">Tipo de documento</label>
-                            <select
-                              name="cardholderDocumentType"
-                              value={cardData.cardholderDocumentType}
-                              onChange={handleCardInputChange}
-                              className="w-full px-4 py-3 text-sm rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                              data-testid="select-doc-type"
-                            >
-                              <option value="CPF">CPF</option>
-                              <option value="CNPJ">CNPJ</option>
-                            </select>
-                          </div>
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700">Documento do titular</label>
-                            <input
-                              name="cardholderDocument"
-                              value={cardData.cardholderDocument}
-                              onChange={handleCardInputChange}
-                              placeholder="9.999.999-9"
-                              className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.cardholderDocument ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
-                              data-testid="input-document"
-                            />
-                            {cardErrors.cardholderDocument && <p className="text-red-600 text-xs">{cardErrors.cardholderDocument}</p>}
-                          </div>
-                        </div>
-
-                        {/* Email Section */}
-                        <div className="pt-4 border-t border-slate-200">
-                          <h4 className="text-sm font-medium text-slate-900 mb-4">Preencha seus dados</h4>
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700">E-mail</label>
-                            <input
-                              name="email"
-                              type="email"
-                              value={cardData.email}
-                              onChange={handleCardInputChange}
-                              placeholder="exemplo@email.com"
-                              className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
-                              data-testid="input-email"
-                            />
-                            {cardErrors.email && <p className="text-red-600 text-xs">{cardErrors.email}</p>}
                           </div>
                         </div>
                       </div>
