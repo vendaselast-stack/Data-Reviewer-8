@@ -2662,6 +2662,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const xRequestId = req.headers['x-request-id'] as string;
       const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
+      // Handle IPN Fallback
+      const topic = req.query.topic as string;
+      const resourceId = req.query.id as string;
+
+      if (topic && resourceId) {
+        console.log(`ℹ️ Received IPN: topic=${topic}, id=${resourceId}`);
+        // For IPN, we respond immediately and then process
+        res.status(200).json({ received: true });
+
+        // Process in background
+        (async () => {
+          try {
+            const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
+              headers: {
+                'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+              }
+            });
+            if (mpResponse.ok) {
+              const payment = await mpResponse.json();
+              if (payment.status === 'approved') {
+                const plan = payment.external_reference;
+                console.log(`✅ IPN: Payment approved for plan: ${plan}`);
+              }
+            }
+          } catch (e) {
+            console.error("IPN background processing error:", e);
+          }
+        })();
+        return;
+      }
+
       if (secret && xSignature) {
         const parts = xSignature.split(',');
         let ts = '';
