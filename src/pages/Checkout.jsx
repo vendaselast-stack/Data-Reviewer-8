@@ -124,8 +124,6 @@ export default function Checkout() {
       processedValue = value.replace(/\D/g, '').slice(0, 4);
     } else if (name === 'cvv') {
       processedValue = value.replace(/\D/g, '').slice(0, 4);
-    } else if (name === 'cardholderDocument') {
-      processedValue = value.replace(/\D/g, '').slice(0, 14);
     }
     
     setCardData(prev => ({ ...prev, [name]: processedValue }));
@@ -184,9 +182,7 @@ export default function Checkout() {
             cardholderName: cardData.cardholderName,
             cardExpirationMonth: cardData.expiryMonth,
             cardExpirationYear: cardData.expiryYear,
-            securityCode: cardData.cvv,
-            identificationType: cardData.cardholderDocumentType,
-            identificationNumber: cardData.cardholderDocument
+            securityCode: cardData.cvv
           });
           payload.token = cardToken.id;
           payload.payment_method_id = 'master';
@@ -260,24 +256,25 @@ export default function Checkout() {
               <div className="space-y-8">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">Escolha a forma de pagamento</h2>
-                  <p className="text-slate-500">Selecione o método que preferir</p>
+                  <p className="text-slate-500">Clique para expandir</p>
                 </div>
 
-                {/* Payment Method Selection - Tabs */}
-                <div className="space-y-3 p-6 bg-white rounded-lg border border-slate-200">
-                  <h3 className="font-semibold text-slate-900 text-sm uppercase">Meios de pagamento</h3>
-                  <div className="space-y-3">
-                    {[
-                      { id: 'credit_card', label: 'Cartão de crédito', desc: 'Sem acréscimo', icon: CreditCard },
-                      { id: 'pix', label: 'PIX', desc: 'Pagamento imediato', icon: Wallet2 },
-                      { id: 'boleto', label: 'Boleto', desc: 'Prazo de 3 dias', icon: Barcode }
-                    ].map(({ id, label, desc, icon: Icon }) => (
-                      <label
-                        key={id}
-                        className={`flex items-start gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                {/* Payment Method Selection - Expandable Tabs */}
+                <form onSubmit={handlePayment} className="space-y-3">
+                  {[
+                    { id: 'credit_card', label: 'Cartão de crédito', desc: 'Sem acréscimo', icon: CreditCard },
+                    { id: 'pix', label: 'PIX', desc: 'Pagamento imediato', icon: Wallet2 },
+                    { id: 'boleto', label: 'Boleto', desc: 'Prazo de 3 dias', icon: Barcode }
+                  ].map(({ id, label, desc, icon: Icon }) => (
+                    <div key={id} className="border border-slate-200 rounded-lg overflow-hidden">
+                      {/* Tab Header */}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod(paymentMethod === id ? null : id)}
+                        className={`w-full flex items-start gap-4 p-4 transition-all ${
                           paymentMethod === id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                            ? 'bg-blue-50'
+                            : 'bg-white hover:bg-slate-50'
                         }`}
                         data-testid={`button-payment-method-${id}`}
                       >
@@ -286,131 +283,159 @@ export default function Checkout() {
                           name="payment-method"
                           value={id}
                           checked={paymentMethod === id}
-                          onChange={() => setPaymentMethod(id)}
+                          onChange={() => {}}
                           className="w-5 h-5 mt-1 cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <Icon className={`w-6 h-6 flex-shrink-0 mt-0.5 ${paymentMethod === id ? 'text-blue-600' : 'text-slate-400'}`} />
-                        <div className="flex-1">
+                        <div className="flex-1 text-left">
                           <p className={`font-medium ${paymentMethod === id ? 'text-blue-900' : 'text-slate-900'}`}>{label}</p>
                           <p className="text-xs text-slate-500">{desc}</p>
                         </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                      </button>
 
-                <form onSubmit={handlePayment} className="space-y-8">
-                  {/* Card Form - Professional Style */}
-                  {paymentMethod === 'credit_card' && (
-                    <div className="p-8 bg-white rounded-lg border border-slate-300 shadow-sm">
-                      {/* Card Header with Brands */}
-                      <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
-                        <h3 className="font-semibold text-slate-900">Cartão de crédito ou débito</h3>
-                        <div className="flex gap-2">
-                          {Object.entries(CardBrands).map(([brand, icon]) => (
-                            <div key={brand} className="hover:opacity-80 transition-opacity">
-                              {icon}
+                      {/* Tab Content - Cartão de Crédito */}
+                      {paymentMethod === id && id === 'credit_card' && (
+                        <div className="border-t border-slate-200 p-6 bg-white space-y-5">
+                          {/* Card Header with Brands */}
+                          <div className="flex items-center justify-between mb-6 pb-6 border-b border-slate-200">
+                            <h3 className="font-semibold text-slate-900">Cartão de crédito ou débito</h3>
+                            <div className="flex gap-2">
+                              {Object.entries(CardBrands).map(([brand, icon]) => (
+                                <div key={brand} className="hover:opacity-80 transition-opacity">
+                                  {icon}
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-5">
-                        {/* Card Number */}
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium text-slate-700">Número do cartão</label>
-                          <input
-                            name="cardNumber"
-                            value={cardData.cardNumber}
-                            onChange={handleCardInputChange}
-                            placeholder="1234 1234 1234 1234"
-                            className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.cardNumber ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono`}
-                            maxLength="19"
-                            data-testid="input-card-number"
-                          />
-                          {cardErrors.cardNumber && <p className="text-red-600 text-xs">{cardErrors.cardNumber}</p>}
-                        </div>
-
-                        {/* Cardholder Name */}
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium text-slate-700">Nome do titular como aparece no cartão</label>
-                          <input
-                            name="cardholderName"
-                            value={cardData.cardholderName}
-                            onChange={handleCardInputChange}
-                            placeholder="Maria Santos Pereira"
-                            className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.cardholderName ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
-                            data-testid="input-cardholder-name"
-                          />
-                          {cardErrors.cardholderName && <p className="text-red-600 text-xs">{cardErrors.cardholderName}</p>}
-                        </div>
-
-                        {/* Expiry and CVV */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700">Data de vencimento</label>
-                            <input
-                              name="expiryMonth"
-                              value={cardData.expiryMonth}
-                              onChange={handleCardInputChange}
-                              placeholder="mm/yy"
-                              maxLength="5"
-                              className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.expiry ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
-                              data-testid="input-expiry"
-                            />
                           </div>
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700">Código de segurança</label>
-                            <div className="relative">
+
+                          {/* Card Form Fields */}
+                          <div className="space-y-5">
+                            {/* Card Number */}
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium text-slate-700">Número do cartão</label>
                               <input
-                                name="cvv"
-                                value={cardData.cvv}
+                                name="cardNumber"
+                                value={cardData.cardNumber}
                                 onChange={handleCardInputChange}
-                                placeholder="123"
-                                maxLength="4"
-                                className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.cvv ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono`}
-                                data-testid="input-cvv"
+                                placeholder="1234 1234 1234 1234"
+                                className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.cardNumber ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono`}
+                                maxLength="19"
+                                data-testid="input-card-number"
                               />
-                              <svg className="absolute right-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
+                              {cardErrors.cardNumber && <p className="text-red-600 text-xs">{cardErrors.cardNumber}</p>}
+                            </div>
+
+                            {/* Cardholder Name */}
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium text-slate-700">Nome do titular como aparece no cartão</label>
+                              <input
+                                name="cardholderName"
+                                value={cardData.cardholderName}
+                                onChange={handleCardInputChange}
+                                placeholder="Maria Santos Pereira"
+                                className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.cardholderName ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
+                                data-testid="input-cardholder-name"
+                              />
+                              {cardErrors.cardholderName && <p className="text-red-600 text-xs">{cardErrors.cardholderName}</p>}
+                            </div>
+
+                            {/* Expiry and CVV */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-slate-700">Data de vencimento</label>
+                                <input
+                                  name="expiryMonth"
+                                  value={cardData.expiryMonth}
+                                  onChange={handleCardInputChange}
+                                  placeholder="mm/yy"
+                                  maxLength="5"
+                                  className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.expiry ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
+                                  data-testid="input-expiry"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-slate-700">Código de segurança</label>
+                                <div className="relative">
+                                  <input
+                                    name="cvv"
+                                    value={cardData.cvv}
+                                    onChange={handleCardInputChange}
+                                    placeholder="123"
+                                    maxLength="4"
+                                    className={`w-full px-4 py-3 text-sm rounded border ${cardErrors.cvv ? 'border-red-500 bg-red-50' : 'border-slate-300'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono`}
+                                    data-testid="input-cvv"
+                                  />
+                                  <svg className="absolute right-3 top-3 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                              </div>
                             </div>
                           </div>
+
+                          {/* Submit Button for Card */}
+                          <Button
+                            type="submit"
+                            disabled={isProcessing}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-base font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-6"
+                            data-testid="button-complete-payment"
+                          >
+                            <Lock className="w-4 h-4" />
+                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
+                          </Button>
                         </div>
-                      </div>
-                    </div>
-                  )}
+                      )}
 
-                  {paymentMethod === 'pix' && (
-                    <div className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200 text-center">
-                      <Wallet2 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-                      <p className="text-lg font-semibold text-slate-900">PIX Instantâneo</p>
-                      <p className="text-slate-600 mt-2">Você receberá um QR Code para confirmar o pagamento</p>
-                    </div>
-                  )}
+                      {/* Tab Content - PIX */}
+                      {paymentMethod === id && id === 'pix' && (
+                        <div className="border-t border-slate-200 p-6 bg-white space-y-5">
+                          <div className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200 text-center">
+                            <Wallet2 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+                            <p className="text-lg font-semibold text-slate-900">PIX Instantâneo</p>
+                            <p className="text-slate-600 mt-2">Você receberá um QR Code para confirmar o pagamento</p>
+                          </div>
 
-                  {paymentMethod === 'boleto' && (
-                    <div className="p-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200 text-center">
-                      <Barcode className="w-16 h-16 text-amber-600 mx-auto mb-4" />
-                      <p className="text-lg font-semibold text-slate-900">Boleto Bancário</p>
-                      <p className="text-slate-600 mt-2">Você receberá o código para pagar em seu banco</p>
-                    </div>
-                  )}
+                          {/* Submit Button for PIX */}
+                          <Button
+                            type="submit"
+                            disabled={isProcessing}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-base font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            data-testid="button-complete-payment"
+                          >
+                            <Lock className="w-4 h-4" />
+                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
+                          </Button>
+                        </div>
+                      )}
 
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    disabled={isProcessing}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-base font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                    data-testid="button-complete-payment"
-                  >
-                    <Lock className="w-4 h-4" />
-                    {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
-                  </Button>
+                      {/* Tab Content - Boleto */}
+                      {paymentMethod === id && id === 'boleto' && (
+                        <div className="border-t border-slate-200 p-6 bg-white space-y-5">
+                          <div className="p-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200 text-center">
+                            <Barcode className="w-16 h-16 text-amber-600 mx-auto mb-4" />
+                            <p className="text-lg font-semibold text-slate-900">Boleto Bancário</p>
+                            <p className="text-slate-600 mt-2">Você receberá o código para pagar em seu banco</p>
+                          </div>
+
+                          {/* Submit Button for Boleto */}
+                          <Button
+                            type="submit"
+                            disabled={isProcessing}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 text-base font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            data-testid="button-complete-payment"
+                          >
+                            <Lock className="w-4 h-4" />
+                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </form>
 
                 {/* Privacy Info */}
-                <div className="text-center text-xs text-slate-500 pt-2">
+                <div className="text-center text-xs text-slate-500">
                   <p>Ao prosseguir, você concorda com nossos <a href="#" className="text-slate-600 hover:text-slate-700 underline">Termos de Serviço</a> e <a href="#" className="text-slate-600 hover:text-slate-700 underline">Política de Privacidade</a></p>
                 </div>
               </div>
