@@ -194,7 +194,7 @@ export default function Checkout() {
             className="flex items-center gap-2 text-slate-500 hover:text-[#2563eb] mb-8 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
-            <span>Voltar para Planos</span>
+            <span>Voltar para Início</span>
           </button>
         </div>
 
@@ -241,7 +241,7 @@ export default function Checkout() {
                     
                     <Button 
                       variant="outline" 
-                      onClick={() => setLocation('/#pricing')} 
+                      onClick={() => setLocation('/')} 
                       className="w-full mt-6 border-slate-300 lg:border-[#2563eb]/30 text-slate-600 lg:text-[#2563eb] hover:bg-slate-50 lg:hover:bg-[#2563eb] lg:hover:text-white transition-all rounded-lg"
                     >
                       Alterar Plano
