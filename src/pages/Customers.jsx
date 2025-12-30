@@ -78,7 +78,9 @@ export default function CustomersPage() {
     onError: (error) => {
       console.error('Customer save error:', error);
       const errorMsg = error?.message || 'Erro ao salvar cliente';
-      toast.error(errorMsg, { duration: 5000 });
+      // Se houver detalhes do Zod, mostrar de forma mais amigável
+      const details = error?.details ? `: ${JSON.stringify(error.details)}` : '';
+      toast.error(`${errorMsg}${details}`, { duration: 8000 });
     }
   });
 

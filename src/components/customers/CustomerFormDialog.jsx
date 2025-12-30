@@ -29,7 +29,17 @@ export default function CustomerFormDialog({ open, onOpenChange, customer = null
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Garantir que campos vazios sejam enviados como null para o backend
+    // Isso evita erros de validação Zod se o schema esperar string ou null
+    const payload = {
+      name: formData.name.trim(),
+      cnpj: formData.cnpj?.trim() || null,
+      email: formData.email?.trim() || null,
+      phone: formData.phone?.trim() || null,
+    };
+
+    onSubmit(payload);
   };
 
   const isEditing = !!customer;
