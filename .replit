@@ -57,6 +57,7 @@ DATABASE_URL = "postgresql://neondb_owner:npg_NvCa6n1hGZBo@ep-bold-surf-acxc3vye
 VITE_OPENAI_API_KEY = "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"
 VITE_GROQ = "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"
 Public_Key = "TEST-b451766f-a43e-498b-9441-38d6ac0ce68e"
+Access_Token = "TEST-480170991685621-122922-242361804774376ec1ad15e2cc323035-1220647240"
 
 [agent]
 integrations = ["javascript_database:1.0.0"]
