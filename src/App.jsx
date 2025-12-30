@@ -65,6 +65,11 @@ function AppContent() {
     );
   }
 
+  // Página de sucesso não deve ter o layout lateral
+  if (window.location.pathname === "/payment-success") {
+    return <PaymentSuccess />;
+  }
+
   return (
     <Switch>
       <Route path="/access-denied" component={AccessDenied} />
