@@ -14,15 +14,15 @@ import AcceptInvite from "@/pages/AcceptInvite.jsx";
 import AccessDenied from "@/pages/AccessDenied.jsx";
 
 function AppContent() {
-  const { isAuthenticated, company, loading } = useAuth();
+  const { isAuthenticated, company, loading, token, paymentPending } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (token) {
       const initializeData = async () => {
         try {
           await fetch("/api/categories", {
             headers: {
-              Authorization: `Bearer ${JSON.parse(localStorage.getItem("auth") || "{}").token}`,
+              Authorization: `Bearer ${token}`,
             },
           });
         } catch (error) {
@@ -31,13 +31,29 @@ function AppContent() {
       };
       initializeData();
     }
-  }, [isAuthenticated]);
+  }, [token]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  if (!isAuthenticated) {
+  // Verificar se está em página pública (sem window dependency)
+  const isPublicPage = typeof window !== 'undefined' ? 
+    ["/", "/payment-success", "/accept-invite"].includes(window.location.pathname) : 
+    false;
+
+  // Se está logado mas com pagamento pendente, força checkout
+  if ((isAuthenticated || paymentPending) && company && company.paymentStatus !== "approved" && !isPublicPage) {
+    return (
+      <Switch>
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/payment-success" component={PaymentSuccess} />
+        <Route component={Checkout} />
+      </Switch>
+    );
+  }
+
+  if (!isAuthenticated && !paymentPending) {
     return (
       <Switch>
         <Route path="/" component={Home} />
@@ -47,20 +63,6 @@ function AppContent() {
         <Route path="/payment-success" component={PaymentSuccess} />
         <Route path="/accept-invite" component={AcceptInvite} />
         <Route component={Home} />
-      </Switch>
-    );
-  }
-
-  // Se estiver autenticado mas o pagamento não estiver aprovado, força checkout
-  // Exceto para a página inicial (Home) e páginas de sucesso/invite
-  const isPublicPage = ["/", "/payment-success", "/accept-invite"].includes(window.location.pathname);
-
-  if (isAuthenticated && company && company.paymentStatus !== "approved" && !isPublicPage) {
-    return (
-      <Switch>
-        <Route path="/checkout" component={Checkout} />
-        <Route path="/payment-success" component={PaymentSuccess} />
-        <Route component={Checkout} />
       </Switch>
     );
   }

@@ -2888,10 +2888,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           if (payment.status === 'approved') {
             console.log(`✅ Payment approved for plan: ${plan} - Company: ${companyName} (${email})`);
             
-            // Find company by email and update subscription
+            // Find company by looking up via email metadata or payment email
             try {
+              // Try to find company by getting all companies and matching by email (from metadata)
+              // OR we can look it up via the payment record if needed
+              let company = null;
+              
+              // First try: find by user email (from payment metadata)
               const companies_list = await storage.getCompanies();
-              const company = companies_list.find(c => c.email === email);
+              const users_list = await db.query.users.findMany();
+              const user = users_list.find(u => u.email === email);
+              
+              if (user && user.companyId) {
+                company = companies_list.find(c => c.id === user.companyId);
+              }
+              
+              // Fallback: search by company name if email didn't work
+              if (!company && companyName) {
+                company = companies_list.find(c => c.name === companyName);
+              }
               
               if (company) {
                 // Update company paymentStatus to approved

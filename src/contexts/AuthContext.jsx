@@ -140,6 +140,9 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Check if payment is pending from localStorage
+  const paymentPending = typeof window !== 'undefined' ? localStorage.getItem("auth") ? JSON.parse(localStorage.getItem("auth"))?.paymentPending : false : false;
+
   return (
     <AuthContext.Provider
       value={{
@@ -155,7 +158,8 @@ export function AuthProvider({ children }) {
         login,
         logout,
         updateUser,
-        isAuthenticated: !!token,
+        isAuthenticated: !!token || paymentPending,
+        paymentPending,
       }}
     >
       {children}
