@@ -106,12 +106,22 @@ export default function Checkout() {
         });
 
         const result = await response.json();
-        if (response.ok && (result.status === 'approved' || result.id)) {
+        if (response.ok) {
+          const paymentId = result.id || result.data?.id;
+          const status = result.status || result.data?.status;
+
+          if (status === 'approved') {
+            toast.success('Pagamento aprovado com sucesso!');
+            setLocation(`/payment-success?payment_id=${paymentId}`);
+            resolve();
+            return;
+          }
+
           toast.success('Pagamento processado! Confirmando status...');
           
-          // Polling logic to confirm payment status
+          // Polling logic ONLY if not approved immediately
           let attempts = 0;
-          const maxAttempts = 10; // 50 seconds total
+          const maxAttempts = 12; // 1 minute total
           const pollInterval = setInterval(async () => {
             attempts++;
             try {
@@ -124,8 +134,8 @@ export default function Checkout() {
               
               if (statusData.isPaid) {
                 clearInterval(pollInterval);
-                toast.success('Pagamento confirmado com sucesso!');
-                setLocation(`/payment-success?payment_id=${result.id || result.data?.id}`);
+                toast.success('Pagamento confirmado!');
+                setLocation(`/payment-success?payment_id=${paymentId}`);
                 resolve();
               }
             } catch (e) {
@@ -134,8 +144,7 @@ export default function Checkout() {
 
             if (attempts >= maxAttempts) {
               clearInterval(pollInterval);
-              toast.info('O pagamento está sendo processado. Você será redirecionado em instantes.');
-              setLocation(`/payment-success?payment_id=${result.id || result.data?.id}`);
+              setLocation(`/payment-success?payment_id=${paymentId}`);
               resolve();
             }
           }, 5000);
