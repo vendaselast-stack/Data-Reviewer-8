@@ -1553,6 +1553,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(403).json({ error: "Você não tem permissão para gerenciar usuários" });
       }
 
+      const { email, role = "operational", permissions = {}, name, password } = req.body;
+      const companyId = req.user.companyId;
+      const targetCompanyId = companyId;
+
+      if (!email?.trim() || !name?.trim() || !password?.trim()) {
+        return res.status(400).json({ error: "Email, Nome e Senha são obrigatórios" });
+      }
+
       if (password) {
         // Criar usuário diretamente
         const hashedPassword = await hashPassword(password);
