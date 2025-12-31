@@ -13,8 +13,9 @@ export const queryClient = new QueryClient({
 });
 
 export async function apiRequest(
+  method: string,
   url: string,
-  options: RequestInit = {}
+  data?: any
 ): Promise<any> {
   const token = localStorage.getItem("auth")
     ? JSON.parse(localStorage.getItem("auth") || "{}").token
@@ -22,7 +23,6 @@ export async function apiRequest(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) || {}),
   };
 
   if (token) {
@@ -30,8 +30,9 @@ export async function apiRequest(
   }
 
   const response = await fetch(url, {
-    ...options,
+    method,
     headers,
+    body: data ? JSON.stringify(data) : undefined,
   });
 
   if (response.status === 401) {

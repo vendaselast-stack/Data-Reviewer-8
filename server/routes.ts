@@ -1570,78 +1570,76 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   // ========== INVITATIONS ==========
   app.post("/api/invitations", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
+      console.log("[DEBUG] POST /api/invitations reached");
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
       const isAdmin = req.user.role === "admin";
-      const userPermissions = req.user.permissions || {};
-      const canManageUsers = !!userPermissions[PERMISSIONS.MANAGE_USERS];
+      // Manually parse permissions if it's a string
+      let userPermissions: any = {};
+      try {
+        userPermissions = req.user.permissions ? 
+          (typeof req.user.permissions === 'string' ? JSON.parse(req.user.permissions) : req.user.permissions) : 
+          {};
+      } catch (e) {
+        console.error("Error parsing user permissions:", e);
+      }
+      
+      const canManageUsers = isAdmin || !!userPermissions[PERMISSIONS.MANAGE_USERS];
 
-      if (!isAdmin && !canManageUsers) {
+      if (!canManageUsers) {
         return res.status(403).json({ error: "Você não tem permissão para gerenciar usuários" });
       }
 
       const { email, role = "operational", permissions = {}, name, password } = req.body;
       const targetCompanyId = req.user.companyId;
 
-      console.log(`[DEBUG] POST /api/invitations - targetCompanyId: ${targetCompanyId}, role: ${role}, email: ${email}`);
+      console.log(`[DEBUG] POST /api/invitations - data:`, { targetCompanyId, role, email, name });
 
       if (!email?.trim() || !name?.trim() || !password?.trim()) {
-        console.log(`[DEBUG] POST /api/invitations - Missing fields:`, { email, name, password: !!password });
         return res.status(400).json({ error: "Email, Nome e Senha são obrigatórios" });
       }
 
       const normalizedEmail = email.toLowerCase().trim();
       const existingUser = await findUserByEmail(normalizedEmail);
       if (existingUser) {
-        console.log(`[DEBUG] POST /api/invitations - User already exists: ${normalizedEmail}`);
         return res.status(400).json({ error: "Este email já está cadastrado" });
       }
 
-      if (password) {
-        console.log(`[DEBUG] POST /api/invitations - Creating user directly: ${normalizedEmail} for company: ${targetCompanyId}`);
-        // Criar usuário diretamente
-        const hashedPassword = await hashPassword(password);
-        
-        // Use a transaction to ensure atomic insert and log result
-        const [newUser] = await db.insert(users).values({
-          username: normalizedEmail,
-          email: normalizedEmail,
-          name: name.trim(),
-          password: hashedPassword,
-          role: role || 'operational',
-          companyId: targetCompanyId,
-          status: 'active'
-        }).returning();
+      const hashedPassword = await hashPassword(password);
+      
+      const [newUser] = await db.insert(users).values({
+        username: normalizedEmail,
+        email: normalizedEmail,
+        name: name.trim(),
+        password: hashedPassword,
+        role: role || 'operational',
+        companyId: targetCompanyId,
+        status: 'active'
+      }).returning();
 
-        console.log(`[DEBUG] User insertion result:`, { id: newUser.id, email: newUser.email, companyId: newUser.companyId });
+      console.log(`[DEBUG] User created:`, newUser.id);
 
-        // Add permissions outside transaction using storage interface
-        let permsToSave = permissions;
-        if (role !== "admin") {
-          const defaultPerms = {
-            view_transactions: true,
-            create_transactions: true,
-            import_bank: true,
-            view_customers: true,
-            manage_customers: true,
-            view_suppliers: true,
-            manage_suppliers: true,
-            price_calc: true
-          };
-          permsToSave = { ...defaultPerms, ...permissions };
-          
-          console.log(`[DEBUG] Setting permissions for user ${newUser.id}:`, permsToSave);
-          await storage.updateUserPermissions(targetCompanyId, newUser.id, permsToSave);
-        }
-
-        // Fetch the user again to ensure we have all fields (including default values from DB)
-        const result = await storage.getUser(targetCompanyId, newUser.id);
-
-        return res.status(201).json(result);
+      let permsToSave = permissions;
+      if (role !== "admin") {
+        const defaultPerms = {
+          view_transactions: true,
+          create_transactions: true,
+          import_bank: true,
+          view_customers: true,
+          manage_customers: true,
+          view_suppliers: true,
+          manage_suppliers: true,
+          price_calc: true
+        };
+        permsToSave = { ...defaultPerms, ...permissions };
+        await storage.updateUserPermissions(targetCompanyId, newUser.id, permsToSave);
       }
-    } catch (error) {
+
+      const result = await storage.getUser(targetCompanyId, newUser.id);
+      return res.status(201).json(result);
+    } catch (error: any) {
       console.error("Error in POST /api/invitations:", error);
-      res.status(500).json({ error: "Falha ao criar convite/usuário" });
+      res.status(500).json({ error: error.message || "Falha ao criar usuário" });
     }
   });
 

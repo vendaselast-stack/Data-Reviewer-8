@@ -82,15 +82,11 @@ export default function UserManagement() {
 
   const inviteMutation = useMutation({
     mutationFn: async (data) => {
-      return apiRequest("POST", "/api/invitations", {
-        ...data,
-        companyId: currentUser.companyId,
-      });
+      return apiRequest("POST", "/api/invitations", data);
     },
     onSuccess: () => {
       console.log("[DEBUG] Invitation mutation SUCCESS.");
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setIsInviteOpen(false);
       toast({ title: "Sucesso", description: "Usuário criado com sucesso!" });
     },
