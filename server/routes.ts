@@ -1554,11 +1554,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       const { email, role = "operational", permissions = {}, name, password } = req.body;
-      const companyId = req.user.companyId;
-      const targetCompanyId = companyId;
+      const targetCompanyId = req.user.companyId;
 
       if (!email?.trim() || !name?.trim() || !password?.trim()) {
         return res.status(400).json({ error: "Email, Nome e Senha são obrigatórios" });
+      }
+
+      const existingUser = await findUserByEmail(email.toLowerCase().trim());
+      if (existingUser) {
+        return res.status(400).json({ error: "Este email já está cadastrado" });
       }
 
       if (password) {
@@ -1579,14 +1583,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         if (role !== "admin") {
           if (Object.keys(permsToSave).length === 0 && role === "operational") {
             permsToSave = {
-              [PERMISSIONS.VIEW_TRANSACTIONS]: true,
-              [PERMISSIONS.CREATE_TRANSACTIONS]: true,
-              [PERMISSIONS.IMPORT_BANK]: true,
-              [PERMISSIONS.VIEW_CUSTOMERS]: true,
-              [PERMISSIONS.MANAGE_CUSTOMERS]: true,
-              [PERMISSIONS.VIEW_SUPPLIERS]: true,
-              [PERMISSIONS.MANAGE_SUPPLIERS]: true,
-              [PERMISSIONS.PRICE_CALC]: true,
+              "VIEW_TRANSACTIONS": true,
+              "CREATE_TRANSACTIONS": true,
+              "IMPORT_BANK": true,
+              "VIEW_CUSTOMERS": true,
+              "MANAGE_CUSTOMERS": true,
+              "VIEW_SUPPLIERS": true,
+              "MANAGE_SUPPLIERS": true,
+              "PRICE_CALC": true,
             };
           }
           await storage.updateUserPermissions(targetCompanyId, newUser.id, permsToSave);
