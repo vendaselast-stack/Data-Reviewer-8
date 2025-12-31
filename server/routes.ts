@@ -1622,8 +1622,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         // Add permissions outside transaction using storage interface
         let permsToSave = permissions;
         if (role !== "admin") {
-          const roleKey = role as keyof typeof DEFAULT_PERMISSIONS;
-          const defaultPerms = DEFAULT_PERMISSIONS[roleKey] || {};
+          const defaultPerms = {
+            view_transactions: true,
+            create_transactions: true,
+            import_bank: true,
+            view_customers: true,
+            manage_customers: true,
+            view_suppliers: true,
+            manage_suppliers: true,
+            price_calc: true
+          };
           permsToSave = { ...defaultPerms, ...permissions };
           
           console.log(`[DEBUG] Setting permissions for user ${newUser.id}:`, permsToSave);
