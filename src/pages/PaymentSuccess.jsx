@@ -4,6 +4,8 @@ import { initMercadoPago, StatusScreen } from '@mercadopago/sdk-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Inicializa o SDK fora do componente para evitar múltiplas inicializações
 const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
@@ -15,16 +17,41 @@ export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(true);
   const [paymentId, setPaymentId] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get('payment_id') || params.get('paymentId');
+    const status = params.get('status');
+
     if (id) {
       setPaymentId(id);
+      
+      // Trigger confetti if payment is approved and not already celebrated
+      if (status === 'approved' && user) {
+        const hasCelebrated = localStorage.getItem(`celebrated_${user.id}`);
+        if (!hasCelebrated) {
+          const duration = 3 * 1000;
+          const animationEnd = Date.now() + duration;
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+          const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+          const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) return clearInterval(interval);
+
+            const particleCount = 50 * (timeLeft / duration);
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+          }, 250);
+
+          localStorage.setItem(`celebrated_${user.id}`, 'true');
+        }
+      }
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const initialization = {
     paymentId: paymentId,
