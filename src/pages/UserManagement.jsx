@@ -96,8 +96,7 @@ export default function UserManagement() {
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async ({ userId, permissions }) => {
-      const res = await apiRequest("PATCH", `/api/users/${userId}/permissions`, { permissions });
-      return res.json();
+      return apiRequest("PATCH", `/api/users/${userId}/permissions`, { permissions });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
