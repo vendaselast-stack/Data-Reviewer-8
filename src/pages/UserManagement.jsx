@@ -57,10 +57,12 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: usersData, isLoading } = useQuery({
     queryKey: ["/api/users"],
     queryFn: () => apiRequest("GET", "/api/users"),
   });
+
+  const users = Array.isArray(usersData) ? usersData : [];
 
   const inviteMutation = useMutation({
     mutationFn: async (data) => {
