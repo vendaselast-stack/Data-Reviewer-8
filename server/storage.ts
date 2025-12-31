@@ -598,7 +598,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserPermissions(companyId: string, userId: string, permissions: Record<string, boolean>): Promise<User> {
-    const result = await db.update(users).set({ permissions: JSON.stringify(permissions) }).where(and(eq(users.companyId, companyId), eq(users.id, userId))).returning();
+    const permissionsString = JSON.stringify(permissions);
+    const result = await db.update(users).set({ permissions: permissionsString }).where(and(eq(users.companyId, companyId), eq(users.id, userId))).returning();
     return result[0];
   }
 
