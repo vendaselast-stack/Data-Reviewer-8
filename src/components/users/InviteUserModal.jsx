@@ -42,6 +42,11 @@ export default function InviteUserModal({ open, onOpenChange, onInvite }) {
     }
     setLoading(true);
     try {
+      console.log("[DEBUG] InviteUserModal calling onInvite with:", {
+        email: inviteData.email,
+        name: inviteData.name,
+        role: inviteData.role
+      });
       await onInvite({
         email: inviteData.email,
         role: inviteData.role,
