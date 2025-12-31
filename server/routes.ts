@@ -1553,43 +1553,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(403).json({ error: "Você não tem permissão para gerenciar usuários" });
       }
 
-      const { email, role = "operational", permissions = {}, name, password } = req.body;
-      const companyId = req.user.companyId;
+      if (password) {
+        // Criar usuário diretamente
+        const hashedPassword = await hashPassword(password);
+        const [newUser] = await db.insert(users).values({
+          username: email.toLowerCase().trim(),
+          email: email.toLowerCase().trim(),
+          name: name.trim(),
+          password: hashedPassword,
+          role: role || 'operational',
+          companyId: targetCompanyId,
+          status: 'ativo'
+        }).returning();
 
-      if (!email?.trim() || !name?.trim() || !password?.trim()) {
-        return res.status(400).json({ error: "Email, Nome e Senha são obrigatórios" });
-      }
-
-      const existingUser = await findUserByEmail(email.toLowerCase().trim());
-      if (existingUser) {
-        return res.status(400).json({ error: "Este email já está cadastrado" });
-      }
-
-      const username = email.toLowerCase().trim();
-      const user = await createUser(companyId, username, email.toLowerCase().trim(), password, name.trim(), role);
-
-      let permsToSave = permissions;
-      if (role !== "admin") {
-        if (Object.keys(permsToSave).length === 0 && role === "operational") {
-          permsToSave = {
-            [PERMISSIONS.VIEW_TRANSACTIONS]: true,
-            [PERMISSIONS.CREATE_TRANSACTIONS]: true,
-            [PERMISSIONS.IMPORT_BANK]: true,
-            [PERMISSIONS.VIEW_CUSTOMERS]: true,
-            [PERMISSIONS.MANAGE_CUSTOMERS]: true,
-            [PERMISSIONS.VIEW_SUPPLIERS]: true,
-            [PERMISSIONS.MANAGE_SUPPLIERS]: true,
-            [PERMISSIONS.PRICE_CALC]: true,
-          };
+        // Add permissions if provided or defaults
+        let permsToSave = permissions;
+        if (role !== "admin") {
+          if (Object.keys(permsToSave).length === 0 && role === "operational") {
+            permsToSave = {
+              [PERMISSIONS.VIEW_TRANSACTIONS]: true,
+              [PERMISSIONS.CREATE_TRANSACTIONS]: true,
+              [PERMISSIONS.IMPORT_BANK]: true,
+              [PERMISSIONS.VIEW_CUSTOMERS]: true,
+              [PERMISSIONS.MANAGE_CUSTOMERS]: true,
+              [PERMISSIONS.VIEW_SUPPLIERS]: true,
+              [PERMISSIONS.MANAGE_SUPPLIERS]: true,
+              [PERMISSIONS.PRICE_CALC]: true,
+            };
+          }
+          await storage.updateUserPermissions(targetCompanyId, newUser.id, permsToSave);
         }
-        await storage.updateUserPermissions(companyId, user.id, permsToSave);
-      }
 
-      return res.status(201).json({ 
-        id: user.id, 
-        message: "Usuário criado com sucesso",
-        user: { id: user.id, email: user.email, name: user.name, role: user.role }
-      });
+        return res.status(201).json({
+          ...newUser,
+          message: "Usuário criado com sucesso"
+        });
+      }
     } catch (error) {
       console.error("Error in POST /api/invitations:", error);
       res.status(500).json({ error: "Falha ao criar convite/usuário" });
