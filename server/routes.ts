@@ -1449,11 +1449,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const currentCompanyId = req.user.companyId;
-      console.log(`[DEBUG] GET /api/users - Fetching users for companyId: ${currentCompanyId}`);
+      console.log(`[DEBUG] GET /api/users - Fetching users for companyId: ${currentCompanyId}, User: ${req.user.username}`);
       
+      if (!currentCompanyId) {
+        console.warn(`[WARN] GET /api/users - User ${req.user.username} has no companyId`);
+        return res.json([]);
+      }
+
       // Query users for this company
       const usersList = await db.select().from(users).where(eq(users.companyId, currentCompanyId)).orderBy(desc(users.createdAt));
-      console.log(`[DEBUG] GET /api/users - Found ${usersList.length} users:`, usersList.map(u => ({ email: u.email, id: u.id })));
+      console.log(`[DEBUG] GET /api/users - Found ${usersList.length} users for company ${currentCompanyId}:`, usersList.map(u => ({ email: u.email, id: u.id, companyId: u.companyId })));
       
       const formattedUsers = usersList.map(u => {
         let perms: any = {};
@@ -1530,7 +1535,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Create user
       const user = await createUser(companyId, normalizedEmail, normalizedEmail, password, name.trim(), role);
 
-      console.log(`[DEBUG] User created: ${user.id} for company: ${companyId}`);
+      console.log(`[DEBUG] User created: ${user.id} for company: ${companyId} (Normalized Email: ${normalizedEmail})`);
 
       // Se for super admin criando usuário, ele pode estar criando em outra empresa
       // O findUserByEmail já deve ter validado unicidade global do email/username

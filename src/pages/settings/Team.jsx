@@ -51,18 +51,17 @@ export default function TeamPage() {
   const [permissions, setPermissions] = useState({});
 
   // Fetch team members
-  const { data: teamMembers = [], isLoading } = useQuery({
-    queryKey: ['/api/users', company?.id],
-    queryFn: async () => {
-      const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
-      const res = await fetch('/api/users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Failed to fetch team');
-      return res.json();
-    },
-    enabled: !!company?.id,
-  });
+    const { data: teamMembers = [], isLoading } = useQuery({
+      queryKey: ['/api/users'],
+      queryFn: async () => {
+        const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
+        const res = await fetch('/api/users', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to fetch team');
+        return res.json();
+      },
+    });
 
   const createUserMutation = useMutation({
     mutationFn: async (data) => {
@@ -90,7 +89,7 @@ export default function TeamPage() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', company?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       toast.success('Membro adicionado com sucesso!');
       resetForm();
       setIsAddOpen(false);
@@ -140,7 +139,7 @@ export default function TeamPage() {
       if (!res.ok) throw new Error('Failed to update user');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', company?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       toast.success('Permissões atualizadas!');
       setIsEditOpen(false);
       setEditingUser(null);
@@ -159,7 +158,7 @@ export default function TeamPage() {
       if (!res.ok) throw new Error('Failed to delete user');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', company?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       toast.success('Membro removido!');
     },
     onError: () => toast.error('Erro ao remover membro'),
