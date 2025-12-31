@@ -55,11 +55,14 @@ export default function TeamPage() {
       queryKey: ['/api/users'],
       queryFn: async () => {
         const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
+        console.log("[DEBUG] Fetching team members for companyId:", company?.id);
         const res = await fetch('/api/users', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error('Failed to fetch team');
-        return res.json();
+        const data = await res.json();
+        console.log("[DEBUG] Team members received:", data);
+        return data;
       },
     });
 
