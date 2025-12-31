@@ -1583,21 +1583,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const { email, role = "operational", permissions = {}, name, password } = req.body;
       const targetCompanyId = req.user.companyId;
 
+      console.log(`[DEBUG] POST /api/invitations - targetCompanyId: ${targetCompanyId}, role: ${role}, email: ${email}`);
+
       if (!email?.trim() || !name?.trim() || !password?.trim()) {
+        console.log(`[DEBUG] POST /api/invitations - Missing fields:`, { email, name, password: !!password });
         return res.status(400).json({ error: "Email, Nome e Senha são obrigatórios" });
       }
 
-      const existingUser = await findUserByEmail(email.toLowerCase().trim());
+      const normalizedEmail = email.toLowerCase().trim();
+      const existingUser = await findUserByEmail(normalizedEmail);
       if (existingUser) {
+        console.log(`[DEBUG] POST /api/invitations - User already exists: ${normalizedEmail}`);
         return res.status(400).json({ error: "Este email já está cadastrado" });
       }
 
       if (password) {
+        console.log(`[DEBUG] POST /api/invitations - Creating user directly: ${normalizedEmail} for company: ${targetCompanyId}`);
         // Criar usuário diretamente
         const hashedPassword = await hashPassword(password);
         const [newUser] = await db.insert(users).values({
-          username: email.toLowerCase().trim(),
-          email: email.toLowerCase().trim(),
+          username: normalizedEmail,
+          email: normalizedEmail,
           name: name.trim(),
           password: hashedPassword,
           role: role || 'operational',
@@ -1605,23 +1611,31 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           status: 'active'
         }).returning();
 
-        console.log(`[DEBUG] User created via invitation: ${newUser.id} for company: ${newUser.companyId}`);
+        console.log(`[DEBUG] User successfully created in DB:`, { id: newUser.id, email: newUser.email, companyId: newUser.companyId });
 
         // Add permissions if provided or defaults
         let permsToSave = permissions;
         if (role !== "admin") {
-          if (Object.keys(permsToSave).length === 0 && role === "operational") {
-            permsToSave = {
-              "VIEW_TRANSACTIONS": true,
-              "CREATE_TRANSACTIONS": true,
-              "IMPORT_BANK": true,
-              "VIEW_CUSTOMERS": true,
-              "MANAGE_CUSTOMERS": true,
-              "VIEW_SUPPLIERS": true,
-              "MANAGE_SUPPLIERS": true,
-              "PRICE_CALC": true,
-            };
-          }
+          const defaultPerms = DEFAULT_PERMISSIONS[role as keyof typeof DEFAULT_PERMISSIONS] || {};
+          permsToSave = { ...defaultPerms, ...permissions };
+          
+          console.log(`[DEBUG] Setting permissions for user ${newUser.id}:`, permsToSave);
+          await storage.updateUserPermissions(targetCompanyId, newUser.id, permsToSave);
+        }
+
+        return res.status(201).json({
+          ...newUser,
+          message: "Usuário criado com sucesso"
+        });
+      }
+
+        // Add permissions if provided or defaults
+        let permsToSave = permissions;
+        if (role !== "admin") {
+          const defaultPerms = DEFAULT_PERMISSIONS[role as keyof typeof DEFAULT_PERMISSIONS] || {};
+          permsToSave = { ...defaultPerms, ...permissions };
+          
+          console.log(`[DEBUG] Setting permissions for user ${newUser.id}:`, permsToSave);
           await storage.updateUserPermissions(targetCompanyId, newUser.id, permsToSave);
         }
 

@@ -60,6 +60,7 @@ export default function UserManagement() {
   const { data: usersData, isLoading, error } = useQuery({
     queryKey: ["/api/users"],
     queryFn: async () => {
+      console.log("[DEBUG] UserManagement fetching from /api/users...");
       const response = await fetch("/api/users", {
         headers: {
           Authorization: `Bearer ${JSON.parse(localStorage.getItem('auth') || '{}').token}`
@@ -69,12 +70,15 @@ export default function UserManagement() {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch users");
       }
-      return response.json();
+      const data = await response.json();
+      console.log("[DEBUG] UserManagement received data:", data);
+      return data;
     },
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
+    retry: false,
   });
 
   if (error) {
@@ -91,6 +95,7 @@ export default function UserManagement() {
       });
     },
     onSuccess: () => {
+      console.log("[DEBUG] Invitation mutation SUCCESS. Invalidating queries...");
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       // Forçar limpeza total para garantir refetch
@@ -384,7 +389,10 @@ export default function UserManagement() {
       <InviteUserModal 
         open={isInviteOpen} 
         onOpenChange={setIsInviteOpen}
-        onInvite={(data) => inviteMutation.mutateAsync(data)}
+        onInvite={(data) => {
+          console.log("[DEBUG] UserManagement calling onInvite:", data);
+          return inviteMutation.mutateAsync(data);
+        }}
       />
 
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
