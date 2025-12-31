@@ -1658,7 +1658,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
 
       // Prevent admin from deleting themselves
-      if (req.params.userId === req.user.id) {
+      if (req.params.userId === req.user?.id) {
         return res.status(400).json({ error: "Você não pode excluir sua própria conta" });
       }
 
@@ -1669,7 +1669,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       await db.delete(invitations).where(eq(invitations.createdBy, req.params.userId));
       await db.delete(invitations).where(eq(invitations.acceptedBy, req.params.userId));
 
-      await storage.deleteUser(req.user.companyId, req.params.userId);
+      await storage.deleteUser(req.user!.companyId, req.params.userId);
       res.json({ message: "User deleted" });
     } catch (error) {
       console.error("Delete user error:", error);
