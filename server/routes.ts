@@ -2699,32 +2699,32 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // Step 3: Create test users with companyId
       console.log('👤 Criando usuários de teste...');
-      const testCredentials = [
-        { 
-          username: 'superadmin', 
-          password: 'senha123456', 
-          email: 'superadmin@huaconsultoria.com', 
-          role: 'admin',
-          name: 'Super Admin',
-          isSuperAdmin: true
-        },
-        { 
-          username: 'admin', 
-          password: 'senha123456', 
-          email: 'admin@huaconsultoria.com', 
-          role: 'admin',
-          name: 'Admin HUA',
-          isSuperAdmin: false
-        },
-        { 
-          username: 'gerente', 
-          password: 'senha123456', 
-          email: 'gerente@huaconsultoria.com', 
-          role: 'manager',
-          name: 'Gerente HUA',
-          isSuperAdmin: false
-        }
-      ];
+    const testCredentials = [
+      { 
+        username: 'superadmin', 
+        password: 'senha123456', 
+        email: 'superadmin@admin.com', 
+        role: 'admin',
+        name: 'Super Admin',
+        isSuperAdmin: true
+      },
+      { 
+        username: 'admin', 
+        password: 'senha123456', 
+        email: 'admin@admin.com', 
+        role: 'admin',
+        name: 'Admin HUA',
+        isSuperAdmin: false
+      },
+      { 
+        username: 'gerente', 
+        password: 'senha123456', 
+        email: 'gerente@huaconsultoria.com', 
+        role: 'manager',
+        name: 'Gerente HUA',
+        isSuperAdmin: false
+      }
+    ];
 
       const createdUsers = [];
       for (const cred of testCredentials) {
@@ -2803,14 +2803,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           { 
             username: 'superadmin', 
             password: 'senha123456', 
-            email: 'superadmin@huaconsultoria.com', 
+            email: 'superadmin@admin.com', 
             role: 'admin',
             name: 'Super Admin'
           },
           { 
             username: 'admin', 
             password: 'senha123456', 
-            email: 'admin@huaconsultoria.com', 
+            email: 'admin@admin.com', 
             role: 'admin',
             name: 'Admin HUA'
           },
