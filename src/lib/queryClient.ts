@@ -40,11 +40,28 @@ export async function apiRequest(
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    let errorMessage = `HTTP ${response.status}`;
+    try {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const error = await response.json();
+        errorMessage = error.error || errorMessage;
+      } else {
+        // Se não for JSON, logar o texto para debug mas não tentar parsear como JSON
+        const text = await response.text();
+        console.error("Non-JSON error response:", text.substring(0, 100));
+      }
+    } catch (e) {
+      console.error("Error parsing error response:", e);
+    }
+    throw new Error(errorMessage);
   }
 
-  return response.json();
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+  return response.text();
 }
 
 export const fetcher = async (url: string) => {
