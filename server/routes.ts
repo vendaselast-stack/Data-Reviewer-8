@@ -1368,6 +1368,60 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ========== USER MANAGEMENT ==========
+  app.get("/api/admin/users", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      
+      // Apenas Super Admin ou Admin podem ver todos os usuários
+      // No caso de Admin, ele vê apenas os da sua empresa (ajustado abaixo)
+      
+      let usersList;
+      if (req.user.isSuperAdmin) {
+        // Super Admin vê todos de todas as empresas
+        usersList = await db.select({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          name: users.name,
+          phone: users.phone,
+          role: users.role,
+          status: users.status,
+          createdAt: users.createdAt,
+          companyId: users.companyId,
+          companyName: companies.name,
+        })
+        .from(users)
+        .leftJoin(companies, eq(users.companyId, companies.id))
+        .orderBy(desc(users.createdAt));
+      } else if (req.user.role === 'admin') {
+        // Admin vê apenas os da sua empresa
+        usersList = await db.select({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          name: users.name,
+          phone: users.phone,
+          role: users.role,
+          status: users.status,
+          createdAt: users.createdAt,
+          companyId: users.companyId,
+          companyName: companies.name,
+        })
+        .from(users)
+        .leftJoin(companies, eq(users.companyId, companies.id))
+        .where(eq(users.companyId, req.user.companyId))
+        .orderBy(desc(users.createdAt));
+      } else {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      return res.json(usersList);
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
   app.get("/api/users", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
@@ -1462,7 +1516,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const username = email.toLowerCase().trim();
       const user = await createUser(companyId, username, email.toLowerCase().trim(), password, name.trim(), role);
 
-      console.log(`[DEBUG] User created: ${user.id}`);
+      console.log(`[DEBUG] User created: ${user.id} for company: ${companyId}`);
+
+      // Se for super admin criando usuário, ele pode estar criando em outra empresa
+      // O findUserByEmail já deve ter validado unicidade global do email/username
 
       // Add permissions if provided or defaults
       let permsToSave = permissions;
