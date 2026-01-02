@@ -1702,18 +1702,35 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
-      const isAdmin = req.user.role === "admin";
-      const userPermissions = req.user.permissions || {};
-      const canManageUsers = !!userPermissions[PERMISSIONS.MANAGE_USERS];
+      const isAdmin = req.user.role === "admin" || req.user.isSuperAdmin;
+      const userPermissions = (req.user as any).permissions || {};
+      const canManageUsers = !!userPermissions.manage_users || isAdmin;
 
-      if (!isAdmin && !canManageUsers) {
+      if (!canManageUsers) {
         return res.status(403).json({ error: "Você não tem permissão para gerenciar usuários" });
       }
 
       const { permissions } = req.body;
-      const permsObj = typeof permissions === 'string' ? JSON.parse(permissions) : permissions;
-      const updated = await storage.updateUserPermissions(req.user.companyId, req.params.userId, permsObj);
-      res.json({ message: "Permissions updated", user: updated });
+      const userId = req.params.userId;
+      
+      // Ensure permissions is a string for storage
+      const permsToSave = typeof permissions === 'object' ? JSON.stringify(permissions) : permissions;
+      
+      const updatedUser = await storage.updateUser(req.user.companyId, userId, { 
+        permissions: permsToSave 
+      });
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      res.json({
+        message: "Permissions updated",
+        user: {
+          ...updatedUser,
+          permissions: updatedUser.permissions ? JSON.parse(updatedUser.permissions) : {}
+        }
+      });
     } catch (error) {
       console.error("Update permissions error:", error);
       res.status(500).json({ error: "Failed to update permissions" });

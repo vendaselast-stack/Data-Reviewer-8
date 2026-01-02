@@ -626,6 +626,18 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async updateUserPermissions(companyId: string, userId: string, permissions: Record<string, boolean>): Promise<User> {
+    const permsString = JSON.stringify(permissions);
+    const result = await db
+      .update(users)
+      .set({ permissions: permsString })
+      .where(and(eq(users.companyId, companyId), eq(users.id, userId)))
+      .returning();
+    
+    if (!result[0]) throw new Error("User not found or not in company");
+    return result[0];
+  }
+
   async updateUser(companyId: string, userId: string, data: Partial<InsertUser>): Promise<User> {
     const result = await db.update(users).set(data).where(and(eq(users.companyId, companyId), eq(users.id, userId))).returning();
     return result[0];

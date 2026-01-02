@@ -97,23 +97,31 @@ export default function UserPermissionsPage() {
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);
-    let userPerms;
+    let userPerms = {};
     
     if (user.permissions) {
-      userPerms = JSON.parse(user.permissions);
+      try {
+        userPerms = typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions;
+      } catch (e) {
+        console.error("Error parsing user permissions", e);
+        userPerms = DEFAULT_PERMISSIONS[user.role] || {};
+      }
     } else {
       // Use default permissions based on user role
       userPerms = DEFAULT_PERMISSIONS[user.role] || {};
     }
     
-    setPermissions(userPerms);
+    setPermissions(userPerms || {});
   };
 
   const togglePermission = (permId) => {
-    setPermissions(prev => ({
-      ...prev,
-      [permId]: !prev[permId]
-    }));
+    setPermissions(prev => {
+      const currentPerms = typeof prev === 'string' ? JSON.parse(prev) : (prev || {});
+      return {
+        ...currentPerms,
+        [permId]: !currentPerms[permId]
+      };
+    });
   };
 
   const groupedPermissions = PERMISSIONS_LIST.reduce((acc, perm) => {
