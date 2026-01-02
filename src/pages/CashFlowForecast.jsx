@@ -168,6 +168,9 @@ export default function CashFlowForecastPage() {
     endDate: calculatedMax,
     label: 'Todo período'
   });
+  
+  const minDate = calculatedMin;
+  const maxDate = calculatedMax;
 
   // Update date range when data changes
   React.useEffect(() => {
