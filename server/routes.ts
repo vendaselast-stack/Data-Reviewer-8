@@ -342,6 +342,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         totalSales: Number(c.totalSales || 0)
       }));
       
+      console.log(`[DEBUG] GET /api/customers - First Customer Total:`, converted[0]?.totalSales);
       res.json(converted);
     } catch (error) {
       console.error("[ERROR] GET /api/customers:", error);

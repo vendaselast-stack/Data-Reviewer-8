@@ -155,25 +155,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomers(companyId: string): Promise<(Customer & { totalSales: number })[]> {
-    const result = await db
-      .select({
-        id: customers.id,
-        companyId: customers.companyId,
-        name: customers.name,
-        cnpj: customers.cnpj,
-        email: customers.email,
-        phone: customers.phone,
-        contact: customers.contact,
-        category: customers.category,
-        status: customers.status,
-        createdAt: customers.createdAt,
-        totalSales: sql<number>`(SELECT COALESCE(SUM(CAST(${transactions.amount} AS NUMERIC)), 0) FROM ${transactions} WHERE ${transactions.customerId} = ${customers.id} AND ${transactions.type} IN ('income', 'venda'))`.as('total_sales'),
-      })
-      .from(customers)
-      .where(eq(customers.companyId, companyId))
-      .orderBy(desc(sql`total_sales`));
+    const result = await db.execute(sql`
+      SELECT 
+        c.*,
+        COALESCE((
+          SELECT SUM(CAST(t.amount AS NUMERIC))
+          FROM transactions t
+          WHERE t.customer_id = c.id 
+          AND t.type IN ('income', 'venda')
+        ), 0) as total_sales
+      FROM customers c
+      WHERE c.company_id = ${companyId}
+      ORDER BY total_sales DESC
+    `);
     
-    return result as (Customer & { totalSales: number })[];
+    return result.rows.map(row => ({
+      ...row,
+      totalSales: Number(row.total_sales || 0)
+    })) as unknown as (Customer & { totalSales: number })[];
   }
 
   async getCustomer(companyId: string, id: string): Promise<Customer | undefined> {
