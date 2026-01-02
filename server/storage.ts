@@ -155,7 +155,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomers(companyId: string): Promise<(Customer & { totalSales: number })[]> {
-    console.log(`[DEBUG] getCustomers called for companyId: ${companyId}`);
     const result = await db
       .select({
         id: customers.id,
@@ -168,15 +167,12 @@ export class DatabaseStorage implements IStorage {
         category: customers.category,
         status: customers.status,
         createdAt: customers.createdAt,
-        totalSales: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.type} IN ('income', 'venda') THEN ${transactions.amount} ELSE 0 END), 0)`.mapWith(Number),
+        totalSales: sql<number>`COALESCE((SELECT SUM(${transactions.amount}) FROM ${transactions} WHERE ${transactions.customerId} = ${customers.id} AND ${transactions.type} IN ('income', 'venda')), 0)`.mapWith(Number),
       })
       .from(customers)
-      .leftJoin(transactions, eq(transactions.customerId, customers.id))
       .where(eq(customers.companyId, companyId))
-      .groupBy(customers.id)
-      .orderBy(desc(sql`total_sales`)); // Order by most valuable customers
+      .orderBy(desc(sql`total_sales`));
     
-    console.log(`[DEBUG] getCustomers result count: ${result.length}`);
     return result as (Customer & { totalSales: number })[];
   }
 
