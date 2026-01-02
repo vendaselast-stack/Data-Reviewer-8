@@ -33,13 +33,15 @@ export default function CustomersPage() {
   const { company } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: customers = [], isLoading } = useQuery({
+  const { data: customersData, isLoading } = useQuery({
     queryKey: ['/api/customers', company?.id],
     queryFn: () => Customer.list(),
     enabled: !!company?.id,
     staleTime: 1000 * 60 * 5, // Cache por 5 minutos
     refetchOnWindowFocus: true,
   });
+
+  const customers = Array.isArray(customersData) ? customersData : (customersData?.data || []);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['/api/categories', company?.id],
