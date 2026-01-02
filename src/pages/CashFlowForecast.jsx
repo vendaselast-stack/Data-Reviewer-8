@@ -36,38 +36,37 @@ export default function CashFlowForecastPage() {
   const { data: transactionsData } = useQuery({
     queryKey: ['/api/transactions', company?.id],
     queryFn: () => Transaction.list(),
-    initialData: [],
     enabled: !!company?.id,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
   const { data: saleInstallments } = useQuery({
     queryKey: ['/api/sale-installments', company?.id],
     queryFn: () => Installment.list(),
-    initialData: [],
-    enabled: !!company?.id
+    enabled: !!company?.id,
+    staleTime: 0,
   });
 
   const { data: purchaseInstallments, isLoading: loadingPurchases } = useQuery({
     queryKey: ['/api/purchase-installments', company?.id],
     queryFn: () => PurchaseInstallment.list(),
-    initialData: [],
-    enabled: !!company?.id
+    enabled: !!company?.id,
+    staleTime: 0,
   });
 
   const { data: sales, isLoading: loadingSales } = useQuery({
     queryKey: ['/api/sales', company?.id],
     queryFn: () => Sale.list(),
-    initialData: [],
-    enabled: !!company?.id
+    enabled: !!company?.id,
+    staleTime: 0,
   });
 
   const { data: purchases, isLoading: loadingPurchasesList } = useQuery({
     queryKey: ['/api/purchases', company?.id],
     queryFn: () => Purchase.list(),
-    initialData: [],
-    enabled: !!company?.id
+    enabled: !!company?.id,
+    staleTime: 0,
   });
 
   const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
@@ -192,7 +191,7 @@ export default function CashFlowForecastPage() {
     const end = endOfDay(dateRange.endDate);
     
     // If range is <= 60 days, use daily granularity for smoother charts
-    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diffDays <= 60) {
       const days = eachDayOfInterval({ start, end });
@@ -209,14 +208,13 @@ export default function CashFlowForecastPage() {
         if (isHistorical) {
           // Historical data - only completed transactions
           transactions.forEach(t => {
-            const tDateStr = t.date.split('T')[0];
-            const tDate = parseISO(tDateStr);
+            const tDate = parseISO(t.date);
             if (isWithinInterval(tDate, { start: dStart, end: dEnd })) {
               const amount = (parseFloat(t.amount) || 0) + (parseFloat(t.interest) || 0);
-              if ((t.type === 'venda' || t.type === 'income') && amount >= 0) {
+              if (t.type === 'venda' || t.type === 'income' || t.type === 'entrada') {
                 revenue += amount;
                 revenueDetails.push({ description: t.description, amount, date: t.date, category: t.type });
-              } else if (t.type === 'compra' && amount >= 0) {
+              } else if (t.type === 'compra' || t.type === 'expense' || t.type === 'saida') {
                 expense += amount;
                 expenseDetails.push({ description: t.description, amount, date: t.date, category: t.type });
               }
@@ -225,16 +223,15 @@ export default function CashFlowForecastPage() {
         } else {
           // Future data - pending transactions
           transactions.forEach(t => {
-            const tDateStr = t.date.split('T')[0];
-            const tDate = parseISO(tDateStr);
+            const tDate = parseISO(t.date);
             if (isWithinInterval(tDate, { start: dStart, end: dEnd })) {
               const isPending = t.status === 'pendente' || t.status === 'agendado' || t.status === 'pending';
               if (isPending) {
                 const amount = (parseFloat(t.amount) || 0) + (parseFloat(t.interest) || 0);
-                if ((t.type === 'venda' || t.type === 'income') && amount >= 0) {
+                if (t.type === 'venda' || t.type === 'income' || t.type === 'entrada') {
                   revenue += amount;
                   revenueDetails.push({ description: `${t.description} (Agendado)`, amount, date: t.date, category: t.type });
-                } else if (t.type === 'compra' && amount >= 0) {
+                } else if (t.type === 'compra' || t.type === 'expense' || t.type === 'saida') {
                   expense += amount;
                   expenseDetails.push({ description: `${t.description} (Agendado)`, amount, date: t.date, category: t.type });
                 }
@@ -272,11 +269,10 @@ export default function CashFlowForecastPage() {
       if (isHistorical) {
         // Historical data from completed transactions
         transactions.forEach(t => {
-          const tDateStr = t.date.split('T')[0];
-          const tDate = parseISO(tDateStr);
+          const tDate = parseISO(t.date);
           if (isWithinInterval(tDate, { start: monthStart, end: monthEnd })) {
             const amount = (parseFloat(t.amount) || 0) + (parseFloat(t.interest) || 0);
-            if ((t.type === 'venda' || t.type === 'income') && amount >= 0) {
+            if (t.type === 'venda' || t.type === 'income' || t.type === 'entrada') {
               revenue += amount;
               revenueDetails.push({
                 description: t.description,
@@ -284,7 +280,7 @@ export default function CashFlowForecastPage() {
                 date: t.date,
                 category: t.type
               });
-            } else if (t.type === 'compra' && amount >= 0) {
+            } else if (t.type === 'compra' || t.type === 'expense' || t.type === 'saida') {
               expense += amount;
               expenseDetails.push({
                 description: t.description,
@@ -299,13 +295,12 @@ export default function CashFlowForecastPage() {
         // Future projections from pending transactions and installments
         // First, add future transactions with pending/agendado status
         transactions.forEach(t => {
-          const tDateStr = t.date.split('T')[0];
-          const tDate = parseISO(tDateStr);
+          const tDate = parseISO(t.date);
           if (isWithinInterval(tDate, { start: monthStart, end: monthEnd })) {
             const isPending = t.status === 'pendente' || t.status === 'agendado' || t.status === 'pending';
             if (isPending) {
               const amount = (parseFloat(t.amount) || 0) + (parseFloat(t.interest) || 0);
-              if ((t.type === 'venda' || t.type === 'income') && amount >= 0) {
+              if (t.type === 'venda' || t.type === 'income' || t.type === 'entrada') {
                 revenue += amount;
                 revenueDetails.push({
                   description: `${t.description} (Agendado)`,
@@ -313,7 +308,7 @@ export default function CashFlowForecastPage() {
                   date: t.date,
                   category: t.type
                 });
-              } else if (t.type === 'compra' && amount >= 0) {
+              } else if (t.type === 'compra' || t.type === 'expense' || t.type === 'saida') {
                 expense += amount;
                 expenseDetails.push({
                   description: `${t.description} (Agendado)`,
@@ -390,13 +385,12 @@ export default function CashFlowForecastPage() {
   // Calculate opening balance (all transactions before start date)
   const openingBalance = transactions
     .filter(t => {
-      const tDateStr = t.date.split('T')[0];
-      const tDate = parseISO(tDateStr);
-      return tDate < dateRange.startDate;
+      const tDate = parseISO(t.date);
+      return tDate < startOfDay(dateRange.startDate);
     })
     .reduce((acc, t) => {
       const amount = (parseFloat(t.amount) || 0) + (parseFloat(t.interest) || 0);
-      return acc + ((t.type === 'venda' || t.type === 'income') ? amount : -amount);
+      return acc + ((t.type === 'venda' || t.type === 'income' || t.type === 'entrada') ? amount : -amount);
     }, 0);
 
   // Calculate cumulative balance
