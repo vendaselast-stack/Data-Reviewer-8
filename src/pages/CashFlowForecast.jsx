@@ -73,14 +73,6 @@ export default function CashFlowForecastPage() {
 
   const isLoading = !transactionsData || loadingPurchases || loadingSales || loadingPurchasesList;
 
-  if (isLoading || !company?.id) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   // Calculate min and max dates from all transactions and installments
   const getDateRange = () => {
     const today = startOfDay(new Date());
@@ -183,6 +175,14 @@ export default function CashFlowForecastPage() {
   const [expandedMonths, setExpandedMonths] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  if (isLoading || !company?.id) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const calculateCashFlow = () => {
     if (!dateRange || !dateRange.startDate || !dateRange.endDate) return [];
