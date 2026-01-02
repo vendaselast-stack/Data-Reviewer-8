@@ -121,28 +121,25 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = async () => {
-    // Clear state first
+  const logout = () => {
+    // Clear storage immediately to prevent re-authentication
+    localStorage.removeItem("auth");
+    sessionStorage.clear();
+
+    // Clear state
     setToken(null);
     setUser(null);
     setCompany(null);
     
-    // Clear storage
-    localStorage.clear();
-    sessionStorage.clear();
-
     // Redirect immediately
     if (typeof window !== 'undefined') {
-      window.location.replace('/login');
+      window.location.href = '/login';
     }
 
-    // Background cleanup
-    try {
-      const { queryClient } = await import("@/lib/queryClient");
+    // Background cleanup (optional and won't block redirect)
+    import("@/lib/queryClient").then(({ queryClient }) => {
       queryClient.clear();
-    } catch (e) {
-      // Ignore
-    }
+    }).catch(() => {});
   };
 
   const updateUser = (newUserData) => {
