@@ -18,9 +18,6 @@ const Header: React.FC = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 transition-all duration-300">
       <div className="container mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2.5 shrink-0 group transition-transform">
-          <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all">
-            <LogoIcon className="w-5 h-5 md:w-6 md:h-6 text-white" />
-          </div>
           <span className="text-lg md:text-xl font-black tracking-tighter text-slate-900">
             Hua<span className="text-blue-600 font-black">Consultoria</span>
           </span>
