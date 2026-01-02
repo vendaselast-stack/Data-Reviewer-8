@@ -125,8 +125,8 @@ export const companies = pgTable("companies", {
   name: text("name").notNull(),
   document: text("document").notNull().unique(),
   subscriptionStatus: text("subscription_status").notNull().default("active"), // active, suspended, cancelled
-  paymentStatus: text("payment_status").notNull().default("pending"), // pending, approved, rejected, cancelled
-  subscriptionPlan: text("subscription_plan").notNull().default("basic"), // basic, pro, enterprise
+  paymentStatus: text("payment_status").notNull().default("approved"), // pending, approved, rejected, cancelled
+  subscriptionPlan: text("subscription_plan").notNull().default("pro"), // basic, pro, enterprise
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
@@ -135,7 +135,7 @@ export const companies = pgTable("companies", {
 export const subscriptions = pgTable("subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-  plan: text("plan").notNull().default("basic"), // basic, pro, enterprise
+  plan: text("plan").notNull().default("pro"), // basic, pro, enterprise
   status: text("status").notNull().default("active"), // active, suspended, cancelled, blocked
   subscriberName: text("subscriber_name"), // Name of the person who purchased
   paymentMethod: text("payment_method"), // credit_card, debit_card, bank_transfer, pix, etc
