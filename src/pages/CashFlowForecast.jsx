@@ -151,13 +151,23 @@ export default function CashFlowForecastPage() {
     return { minDate, maxDate };
   };
 
-  const { minDate, maxDate } = getDateRange();
+  const { minDate: calculatedMin, maxDate: calculatedMax } = getDateRange();
 
   const [dateRange, setDateRange] = useState({
-    startDate: minDate,
-    endDate: maxDate,
+    startDate: calculatedMin,
+    endDate: calculatedMax,
     label: 'Todo período'
   });
+
+  // Update date range when data changes
+  React.useEffect(() => {
+    const { minDate, maxDate } = getDateRange();
+    setDateRange({
+      startDate: minDate,
+      endDate: maxDate,
+      label: 'Todo período'
+    });
+  }, [transactionsData, saleInstallments, purchaseInstallments]);
   const [expandedMonths, setExpandedMonths] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
