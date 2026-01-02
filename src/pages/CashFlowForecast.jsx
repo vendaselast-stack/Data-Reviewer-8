@@ -49,21 +49,21 @@ export default function CashFlowForecastPage() {
     enabled: !!company?.id
   });
 
-  const { data: purchaseInstallments } = useQuery({
+  const { data: purchaseInstallments, isLoading: loadingPurchases } = useQuery({
     queryKey: ['/api/purchase-installments', company?.id],
     queryFn: () => PurchaseInstallment.list(),
     initialData: [],
     enabled: !!company?.id
   });
 
-  const { data: sales } = useQuery({
+  const { data: sales, isLoading: loadingSales } = useQuery({
     queryKey: ['/api/sales', company?.id],
     queryFn: () => Sale.list(),
     initialData: [],
     enabled: !!company?.id
   });
 
-  const { data: purchases } = useQuery({
+  const { data: purchases, isLoading: loadingPurchasesList } = useQuery({
     queryKey: ['/api/purchases', company?.id],
     queryFn: () => Purchase.list(),
     initialData: [],
@@ -72,7 +72,9 @@ export default function CashFlowForecastPage() {
 
   const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
 
-  if (loading || !company?.id) {
+  const isLoading = !transactionsData || loadingPurchases || loadingSales || loadingPurchasesList;
+
+  if (isLoading || !company?.id) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
