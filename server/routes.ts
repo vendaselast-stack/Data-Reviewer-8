@@ -110,36 +110,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Create user (admin role for first user)
       const user = await createUser(company.id, username, email, password, name, "admin");
 
-      // Create subscription record with the plan
+      // Auto-approve for now or handle trial
       const subscriptionPlan = plan || "pro";
-      try {
-        await db.insert(subscriptions).values({
-          companyId: company.id,
-          plan: subscriptionPlan,
-          status: "pending",
-        } as any);
-      } catch (e) {
-        console.warn("Could not create subscription:", e);
-        // Continue anyway - subscription can be created later
-      }
+      await db.insert(subscriptions).values({
+        companyId: company.id,
+        plan: subscriptionPlan,
+        status: "active",
+      } as any);
 
-      // Update company with subscription plan
-      try {
-        await db.update(companies).set({ 
-          subscriptionPlan: subscriptionPlan,
-          paymentStatus: "pending"
-        } as any).where(eq(companies.id, company.id));
-      } catch (e: any) {
-        console.warn("Could not update company subscription info:", e);
-        if (e.message?.includes('column "payment_status" does not exist') || e.message?.includes('column "subscription_plan" does not exist')) {
-           await db.execute(sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS payment_status text NOT NULL DEFAULT 'pending'`);
-           await db.execute(sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS subscription_plan text NOT NULL DEFAULT 'basic'`);
-           await db.update(companies).set({ 
-             subscriptionPlan: subscriptionPlan,
-             paymentStatus: "pending"
-           } as any).where(eq(companies.id, company.id));
-        }
-      }
+      await db.update(companies).set({ 
+        subscriptionPlan: subscriptionPlan,
+        paymentStatus: "approved"
+      } as any).where(eq(companies.id, company.id));
 
       // Generate token
       const token = generateToken({

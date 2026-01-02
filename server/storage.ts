@@ -155,7 +155,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomers(companyId: string): Promise<(Customer & { totalSales: number })[]> {
-    // Get all customers with their total sales calculated in real-time via SQL aggregation
     const result = await db
       .select({
         id: customers.id,
@@ -174,7 +173,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(transactions, eq(transactions.customerId, customers.id))
       .where(eq(customers.companyId, companyId))
       .groupBy(customers.id)
-      .orderBy(desc(customers.createdAt));
+      .orderBy(desc(sql`total_sales`)); // Order by most valuable customers
     
     return result as (Customer & { totalSales: number })[];
   }
