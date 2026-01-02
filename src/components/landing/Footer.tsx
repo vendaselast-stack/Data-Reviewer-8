@@ -32,8 +32,8 @@ const Footer: React.FC = () => {
           {/* Brand Column */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-6 md:mb-8">
-              <div className="p-2 bg-white rounded-xl shadow-lg shadow-blue-500/20">
-                <LogoIcon className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
+              <div className="p-1.5 bg-white rounded-lg shadow-lg shadow-blue-500/20">
+                <LogoIcon className="w-6 h-6 md:w-7 md:h-7 text-blue-600" />
               </div>
               <span className="text-xl md:text-2xl font-bold tracking-tighter uppercase italic">
                 HUA<span className="text-blue-400">CONSULTORIA</span>

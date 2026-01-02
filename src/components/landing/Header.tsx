@@ -19,7 +19,9 @@ const Header: React.FC = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
       <div className="container mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2 shrink-0">
-          <LogoIcon className="w-8 h-8 md:w-10 md:h-10 text-blue-600" />
+          <div className="p-1.5 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20">
+            <LogoIcon className="w-6 h-6 md:w-7 md:h-7 text-white" />
+          </div>
           <a href="/" className="text-lg md:text-xl font-extrabold tracking-tight text-slate-900 uppercase">
             HUA<span className="text-blue-600">CONSULTORIA</span>
           </a>
