@@ -335,9 +335,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/customers", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      console.log(`[DEBUG] GET /api/customers - User: ${req.user.id}, Company: ${req.user.companyId}`);
       const customers = await storage.getCustomers(req.user.companyId);
+      console.log(`[DEBUG] GET /api/customers - Found ${customers.length} customers`);
       res.json(customers);
     } catch (error) {
+      console.error("[DEBUG] GET /api/customers - Error:", error);
       res.status(500).json({ error: "Failed to fetch customers" });
     }
   });
@@ -559,11 +562,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       let transactions;
       if (startDate && endDate) {
-        transactions = await storage.getTransactionsByDateRange(
-          companyId, 
-          new Date(startDate as string), 
-          new Date(endDate as string)
-        );
+        // Normalizar datas para cobrir o dia inteiro
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        
+        transactions = await storage.getTransactionsByDateRange(companyId, start, end);
       } else if (shift) {
         transactions = await storage.getTransactionsByShift(companyId, shift as string);
       } else {
