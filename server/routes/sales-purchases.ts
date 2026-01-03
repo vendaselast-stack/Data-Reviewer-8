@@ -69,6 +69,7 @@ export function registerSalesPurchasesRoutes(app: Express) {
             installmentGroup: installmentGroupId,
             shift: 'default'
           };
+          console.log("[Sales Debug] Creating custom transaction:", transactionData);
           await storage.createTransaction(req.user.companyId, transactionData as any);
         }
       } else {
@@ -95,6 +96,7 @@ export function registerSalesPurchasesRoutes(app: Express) {
             installmentGroup: installmentGroupId,
             shift: 'default'
           };
+          console.log("[Sales Debug] Creating default transaction:", transactionData);
           await storage.createTransaction(req.user.companyId, transactionData as any);
         }
       }
