@@ -125,7 +125,7 @@ export function registerSalesPurchasesRoutes(app: Express) {
         supplierId,
         purchaseDate: new Date(purchaseDate),
         totalAmount: String(totalAmount),
-        installmentCount: installmentCount || 1,
+        installmentCount: parseInt(installmentCount) || 1,
         status: status || 'pago',
         paidAmount: status === 'pago' ? String(totalAmount) : '0',
         description: description || 'Compra sem descrição',
