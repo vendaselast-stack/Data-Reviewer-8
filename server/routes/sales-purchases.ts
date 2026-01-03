@@ -75,7 +75,8 @@ export function registerSalesPurchasesRoutes(app: Express) {
       } else {
         const count = parseInt(installmentCount) || 1;
         const totalValue = parseFloat(totalAmount);
-        const amountPerInstallment = totalValue / count;
+        const amountPerInstallment = Math.floor((totalValue / count) * 100) / 100;
+        const lastInstallmentAmount = (totalValue - (amountPerInstallment * (count - 1))).toFixed(2);
         
         for (let i = 0; i < count; i++) {
           const dueDate = new Date(saleDate);
@@ -83,11 +84,14 @@ export function registerSalesPurchasesRoutes(app: Express) {
           const currentDueDate = new Date(dueDate);
           currentDueDate.setMonth(currentDueDate.getMonth() + i);
           
+          const isLast = i === count - 1;
+          const currentAmount = isLast ? lastInstallmentAmount : amountPerInstallment.toFixed(2);
+
           const transactionData = {
             companyId: req.user.companyId,
             type: 'income',
             description: count > 1 ? `${description || 'Venda'} (${i + 1}/${count})` : (description || 'Venda'),
-            amount: String(amountPerInstallment.toFixed(2)),
+            amount: String(currentAmount),
             date: currentDueDate,
             status: status === 'pago' ? 'pago' : 'pendente',
             categoryId,
@@ -156,17 +160,21 @@ export function registerSalesPurchasesRoutes(app: Express) {
       } else {
         const count = parseInt(installmentCount) || 1;
         const totalValue = parseFloat(totalAmount);
-        const amountPerInstallment = totalValue / count;
+        const amountPerInstallment = Math.floor((totalValue / count) * 100) / 100;
+        const lastInstallmentAmount = (totalValue - (amountPerInstallment * (count - 1))).toFixed(2);
         
         for (let i = 0; i < count; i++) {
           const dueDate = new Date(purchaseDate);
           dueDate.setMonth(dueDate.getMonth() + i);
           
+          const isLast = i === count - 1;
+          const currentAmount = isLast ? lastInstallmentAmount : amountPerInstallment.toFixed(2);
+
           const transactionData = {
             companyId: req.user.companyId,
             type: 'expense',
             description: count > 1 ? `${description || 'Compra'} (${i + 1}/${count})` : (description || 'Compra'),
-            amount: String(amountPerInstallment.toFixed(2)),
+            amount: String(currentAmount),
             date: dueDate,
             status: status === 'pago' ? 'pago' : 'pendente',
             categoryId,

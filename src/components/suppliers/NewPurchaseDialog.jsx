@@ -160,9 +160,12 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
 
     createPurchaseMutation.mutate({
       ...formData,
-      total_amount: Number(formData.total_amount),
+      total_amount: Number(String(formData.total_amount).replace(/\./g, '').replace(',', '.')),
       installments: Number(formData.installments),
-      customInstallments: customInstallments.length > 0 ? customInstallments : null
+      customInstallments: customInstallments.length > 0 ? customInstallments.map(inst => ({
+        ...inst,
+        amount: Number(String(inst.amount).replace(/\./g, '').replace(',', '.'))
+      })) : null
     });
   };
 
