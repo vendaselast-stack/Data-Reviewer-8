@@ -9,6 +9,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Check if payment is pending from state and localStorage
+  const [isPaymentPending, setIsPaymentPending] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const auth = localStorage.getItem("auth");
+    if (!auth) return false;
+    try {
+      return JSON.parse(auth).paymentPending || false;
+    } catch (e) {
+      return false;
+    }
+  });
+
   // Load from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem("auth");
@@ -18,6 +30,9 @@ export function AuthProvider({ children }) {
         // Only set token if not pending payment
         if (!parsed.paymentPending) {
           setToken(parsed.token);
+          setIsPaymentPending(false);
+        } else {
+          setIsPaymentPending(true);
         }
         setUser(parsed.user);
         setCompany(parsed.company);
@@ -63,8 +78,8 @@ export function AuthProvider({ children }) {
       // If signup is successful, we set the state but mark as payment pending
       setUser(data.user);
       setCompany(data.company);
+      setIsPaymentPending(true);
       // We don't set the token yet to prevent dashboard access
-      // setToken(data.token); 
       
       localStorage.setItem("auth", JSON.stringify({ 
         user: data.user, 
@@ -100,6 +115,7 @@ export function AuthProvider({ children }) {
       if (data.paymentPending) {
         setUser(data.user);
         setCompany(data.company);
+        setIsPaymentPending(true);
         // Store pending payment info
         localStorage.setItem("auth", JSON.stringify({
           user: data.user,
@@ -113,6 +129,7 @@ export function AuthProvider({ children }) {
       setToken(data.token);
       setUser(data.user);
       setCompany(data.company);
+      setIsPaymentPending(false);
       localStorage.setItem("auth", JSON.stringify(data));
       
       // Invalidate queries to refresh data after login
@@ -135,6 +152,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     setCompany(null);
+    setIsPaymentPending(false);
 
     // Clear storage
     localStorage.removeItem("auth");
@@ -160,8 +178,8 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Check if payment is pending from localStorage
-  const paymentPending = typeof window !== 'undefined' ? localStorage.getItem("auth") ? JSON.parse(localStorage.getItem("auth"))?.paymentPending : false : false;
+  // Remove the old constant that wasn't reactive
+  // const paymentPending = ...
 
   return (
     <AuthContext.Provider
@@ -178,8 +196,8 @@ export function AuthProvider({ children }) {
         login,
         logout,
         updateUser,
-        isAuthenticated: !!token || paymentPending,
-        paymentPending,
+        isAuthenticated: !!token || isPaymentPending,
+        paymentPending: isPaymentPending,
       }}
     >
       {children}

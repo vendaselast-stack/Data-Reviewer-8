@@ -117,7 +117,7 @@ function AppContent() {
     ["/", "/payment-success", "/accept-invite", "/terms", "/privacy", "/login", "/signup", "/checkout"].includes(window.location.pathname) : 
     false;
 
-  // Bloqueio rigoroso: se autenticado (ou pendente) e pagamento não aprovado, SÓ pode ver checkout/pagamento
+  // Bloqueio rigoroso: se pagamento não aprovado, NUNCA renderiza MainApp nem Layout
   if ((isAuthenticated || paymentPending) && company && company.paymentStatus !== "approved") {
     if (!isPublicPage) {
       if (typeof window !== 'undefined') {
@@ -125,6 +125,18 @@ function AppContent() {
         return null;
       }
     }
+    
+    // Força a renderização APENAS das rotas permitidas para quem não pagou
+    return (
+      <Switch>
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/payment-success" component={PaymentSuccess} />
+        <Route path="/accept-invite" component={AcceptInvite} />
+        <Route path="/terms" component={TermsOfUse} />
+        <Route path="/privacy" component={PrivacyPolicy} />
+        <Route component={Checkout} />
+      </Switch>
+    );
   }
 
   if (!isAuthenticated && !paymentPending) {
