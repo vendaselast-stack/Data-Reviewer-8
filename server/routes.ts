@@ -54,7 +54,7 @@ import crypto from 'crypto';
 import { setupVite } from "./vite";
 import { z } from "zod";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 
 import OFX from "node-ofx-parser";
 import { parse } from "date-fns";
@@ -1100,7 +1100,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Debug log
       console.log(`[CANCEL_PAYMENT] Attempting to cancel payment for sale ${saleId} in company ${companyId}`);
 
-      const sale = await storage.getSale(companyId, saleId);
+      // Usar db.select diretamente para garantir que o filtro por companyId seja aplicado corretamente
+      const [sale] = await db.select().from(sales).where(and(eq(sales.companyId, companyId), eq(sales.id, saleId))).limit(1);
+
       if (!sale) {
         console.warn(`[CANCEL_PAYMENT] Sale ${saleId} NOT FOUND for company ${companyId}`);
         return res.status(404).json({ error: "Sale not found" });
