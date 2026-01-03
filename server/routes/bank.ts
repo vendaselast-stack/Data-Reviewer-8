@@ -8,8 +8,10 @@ export function registerBankRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const items = await storage.getBankStatementItems(req.user.companyId);
+      console.log(`[Bank API] Retornando ${items.length} itens para empresa ${req.user.companyId}`);
       res.json(items);
     } catch (error) {
+      console.error("[Bank API] Erro ao buscar itens:", error);
       res.status(500).json({ error: "Failed to fetch bank statement items" });
     }
   });
