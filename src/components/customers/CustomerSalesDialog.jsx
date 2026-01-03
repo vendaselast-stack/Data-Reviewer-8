@@ -110,8 +110,7 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     mutationFn: async ({ saleId, paidAmount, interest, paymentDate, paymentMethod }) => {
       
       // Get the transaction first to check the amount
-      const getResponse = await fetch(`/api/transactions/${saleId}`);
-      const currentTransaction = await getResponse.json();
+      const currentTransaction = await apiRequest(`/api/transactions/${saleId}`);
       
       // Determine status based on paid amount vs total amount
       const totalAmount = parseFloat(currentTransaction.amount || 0);
@@ -133,9 +132,8 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
       // IMPORTANT: Do NOT update 'date' field - that's the due date and must remain unchanged
       // IMPORTANT: Do NOT update 'description' - keep the base description to maintain grouping
       // Only update paymentDate (when payment was made), status, paidAmount, and interest
-      const response = await fetch(`/api/transactions/${saleId}`, {
+      const transaction = await apiRequest(`/api/transactions/${saleId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: status,
           paidAmount: paidAmount ? paidAmount.toString() : undefined,
@@ -144,17 +142,11 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
           paymentMethod: paymentMethod
         })
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Falha ao confirmar pagamento');
-      }
-      const transaction = await response.json();
       
       // Then create corresponding cash flow entry (using payment date, not due date)
       const totalReceived = parseFloat(paidAmount || 0) + parseFloat(interest || 0);
-      const cashFlowResponse = await fetch('/api/cash-flow', {
+      await apiRequest('/api/cash-flow', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: formattedPaymentDate,
           inflow: totalReceived.toFixed(2),
@@ -164,9 +156,6 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
           shift: transaction.shift || 'manhã'
         })
       });
-      
-      if (!cashFlowResponse.ok) {
-      }
       
       return transaction;
     },
@@ -188,36 +177,29 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
     mutationFn: async (saleId) => {
       
       // Get the transaction to know the amount to reverse
-      const transactionRes = await fetch(`/api/transactions/${saleId}`);
-      const transaction = await transactionRes.json();
+      const transaction = await apiRequest(`/api/transactions/${saleId}`);
       
       // Revert the transaction status (description stays the same)
-      const response = await fetch(`/api/transactions/${saleId}`, {
+      const result = await apiRequest(`/api/transactions/${saleId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           status: 'pendente', 
           paidAmount: undefined, 
           interest: '0'
         })
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Falha ao cancelar pagamento');
-      }
       
       // Delete corresponding cash flow entry
       try {
-        const cashFlowsRes = await fetch('/api/cash-flow');
-        const cashFlows = await cashFlowsRes.json();
+        const cashFlows = await apiRequest('/api/cash-flow');
         const relatedCashFlow = cashFlows.find(cf => cf.description?.includes(transaction.description));
         if (relatedCashFlow) {
-          await fetch(`/api/cash-flow/${relatedCashFlow.id}`, { method: 'DELETE' });
+          await apiRequest(`/api/cash-flow/${relatedCashFlow.id}`, { method: 'DELETE' });
         }
       } catch (err) {
       }
       
-      return response.json();
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions', customer?.id] });
