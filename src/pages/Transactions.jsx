@@ -64,7 +64,7 @@ export default function TransactionsPage() {
     initialData: [],
     enabled: !!company?.id,
     staleTime: 0,
-    gcTime: 0, // Ensure no data is kept in cache
+    gcTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
