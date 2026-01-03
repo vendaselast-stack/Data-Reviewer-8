@@ -24,4 +24,14 @@ export function registerTransactionRoutes(app: Express) {
       res.status(400).json({ error: error.message || "Invalid transaction data" });
     }
   });
+
+  app.delete("/api/transactions/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      await storage.deleteTransaction(req.user.companyId, req.params.id);
+      res.sendStatus(204);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete transaction" });
+    }
+  });
 }
