@@ -120,13 +120,14 @@ function AppContent() {
   // Bloqueio rigoroso: se pagamento não aprovado, NUNCA renderiza MainApp nem Layout
   if ((isAuthenticated || paymentPending) && company && company.paymentStatus !== "approved") {
     const isAllowedPage = typeof window !== 'undefined' ? 
-      ["/checkout", "/payment-success", "/terms", "/privacy"].includes(window.location.pathname) : 
+      ["/", "/checkout", "/payment-success", "/terms", "/privacy"].includes(window.location.pathname) : 
       false;
 
     // Se estiver em uma página permitida, renderiza ela normalmente
     if (isAllowedPage) {
       return (
         <Switch>
+          <Route path="/" component={LandingPage} />
           <Route path="/checkout" component={Checkout} />
           <Route path="/payment-success" component={PaymentSuccess} />
           <Route path="/terms" component={TermsOfUse} />
