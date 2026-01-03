@@ -119,6 +119,9 @@ function AppContent() {
 
   // Bloqueio rigoroso: se pagamento não aprovado, NUNCA renderiza MainApp nem Layout
   if ((isAuthenticated || paymentPending) && company && company.paymentStatus !== "approved") {
+    // Se o pagamento foi aprovado recentemente mas o estado global ainda não atualizou,
+    // podemos ter um pequeno delay. O dispatch Event('storage') no PaymentSuccess ajuda.
+    
     const isAllowedPage = typeof window !== 'undefined' ? 
       ["/", "/checkout", "/payment-success", "/terms", "/privacy"].includes(window.location.pathname) : 
       false;
