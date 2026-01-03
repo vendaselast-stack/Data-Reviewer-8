@@ -919,7 +919,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       
-      const { customerId, saleDate, totalAmount, status, description, category, paymentMethod, installments, customInstallments, paymentDate } = req.body;
+      const { customerId, saleDate, totalAmount, status, description, categoryId, paymentMethod, installments, customInstallments, paymentDate } = req.body;
       
       const sale = await db.transaction(async (tx) => {
         // Create the sale record
@@ -933,7 +933,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         }).returning();
         
         // Create a corresponding transaction record so it appears in the transactions page
-        await tx.insert(transactions).values({
+        const [newTransaction] = await tx.insert(transactions).values({
           companyId: req.user!.companyId,
           customerId: customerId,
           type: "venda",
@@ -942,12 +942,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           date: new Date(saleDate),
           paymentDate: status === 'pago' ? new Date(paymentDate || saleDate) : null,
           description: description || `Venda #${newSale.id.substring(0, 8)}`,
-          shift: "Geral", // Default shift
+          shift: "Geral", 
           status: status === 'pago' ? 'pago' : 'pendente',
           paymentMethod: paymentMethod,
-          categoryId: null, // We might want to look up category ID by name if needed
+          categoryId: categoryId || null,
           isReconciled: false
-        });
+        }).returning();
 
         // Also update cash flow if it is paid
         if (status === 'pago') {
@@ -956,9 +956,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
             date: new Date(paymentDate || saleDate),
             inflow: String(totalAmount),
             outflow: "0",
-            balance: String(totalAmount), // This balance logic might be simplified, usually it should be cumulative
-            description: description || `Venda #${newSale.id.substring(0, 8)}`,
-            shift: "Geral"
+            balance: "0", // Balance should ideally be calculated or cumulative, setting 0 as placeholder if schema requires
+            description: description || `Recebimento Venda #${newSale.id.substring(0, 8)}`,
+            shift: "Geral",
+            transactionId: parseInt(newTransaction.id) // Link to transaction if possible
           });
         }
 
