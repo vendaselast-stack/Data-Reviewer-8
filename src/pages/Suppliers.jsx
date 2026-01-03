@@ -195,14 +195,14 @@ export default function SuppliersPage() {
                   <TableRow key={s.id} className="hover:bg-slate-50/50 group">
                     <TableCell className="pl-6 text-left">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-primary600 flex items-center justify-center font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
                           {s.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="font-medium text-slate-900">{s.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-left">
-                      {s.cnpj ? <span className="font-medium text-slate-700">{s.cnpj}</span> : <span className="text-slate-400">-</span>}
+                      {s.cnpj ? <span className="font-medium text-slate-700">{formatCNPJ(s.cnpj)}</span> : <span className="text-slate-400">-</span>}
                     </TableCell>
                     <TableCell className="text-left">
                       {s.email ? <div className="flex items-center gap-2 text-sm text-slate-700"><Mail className="w-3 h-3" /> {s.email}</div> : <span className="text-slate-400">-</span>}
@@ -211,7 +211,7 @@ export default function SuppliersPage() {
                       {s.phone ? <div className="flex items-center gap-2 text-sm text-slate-700"><Phone className="w-3 h-3" /> {s.phone}</div> : <span className="text-slate-400">-</span>}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="text-primary600 font-semibold">
+                      <div className="text-primary font-semibold">
                         R$ {getSupplierPurchases(s.id).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </div>
                     </TableCell>
