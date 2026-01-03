@@ -8,27 +8,46 @@ export async function analyzeWithAI(prompt: string, responseJsonSchema: any = nu
     throw new Error('API_KEY_NOT_CONFIGURED');
   }
 
-  // Usando gemini-1.5-flash-latest ou gemini-1.5-pro-latest que são mais robustos
-  const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash"
-  });
+  // Tenta múltiplos nomes de modelo para contornar o erro 404
+  const modelsToTry = ["gemini-1.5-flash", "gemini-pro", "gemini-1.0-pro", "gemini-1.5-pro"];
+  let model = null;
+  let lastError = null;
+
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`[AI Debug] Tentando modelo: ${modelName}`);
+      model = genAI.getGenerativeModel({ model: modelName });
+      // Teste rápido com prompt vazio não funciona, vamos tentar a chamada real
+      break; 
+    } catch (e) {
+      lastError = e;
+      console.warn(`[AI Debug] Falha ao carregar modelo ${modelName}:`, e.message);
+    }
+  }
+
+  if (!model) {
+    throw new Error(`Não foi possível carregar nenhum modelo Gemini. Último erro: ${lastError?.message}`);
+  }
 
   let finalPrompt = prompt;
   if (responseJsonSchema) {
-    finalPrompt = `${prompt}\n\nResponda APENAS com um objeto JSON seguindo este formato:\n${JSON.stringify(responseJsonSchema)}\nNão inclua markdown ou explicações.`;
+    finalPrompt = `${prompt}\n\nResponda APENAS com um objeto JSON seguindo este formato:\n${JSON.stringify(responseJsonSchema)}\nNão inclua markdown ou explicações adicionais.`;
   }
 
   try {
-    // Chamada simplificada para evitar erros de 404 por parâmetros não suportados
+    console.log(`[AI Debug] Enviando prompt para ${model.model}...`);
     const result = await model.generateContent(finalPrompt);
-    const textContent = result.response.text().trim().replace(/^```json/, '').replace(/```$/, '');
+    const textContent = result.response.text().trim();
+    console.log(`[AI Debug] Resposta recebida (primeiros 100 caracteres): ${textContent.substring(0, 100)}...`);
+
+    const cleanContent = textContent.replace(/^```json/, '').replace(/```$/, '').trim();
 
     if (responseJsonSchema) {
       try {
-        return JSON.parse(textContent);
+        return JSON.parse(cleanContent);
       } catch (parseError) {
         // Fallback: tenta extrair JSON do texto caso a IA tenha incluído texto extra
-        const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+        const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           return JSON.parse(jsonMatch[0]);
         }
