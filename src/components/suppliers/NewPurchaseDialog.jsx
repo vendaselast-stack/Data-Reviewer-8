@@ -96,6 +96,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
         queryClient.refetchQueries({ queryKey: ['/api/transactions'] }),
         queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] }),
         queryClient.refetchQueries({ queryKey: ['/api/suppliers'] }),
+        queryClient.refetchQueries({ queryKey: ['/api/suppliers', company?.id] }),
         queryClient.invalidateQueries({ queryKey: ['/api/suppliers', company?.id] })
       ]);
 

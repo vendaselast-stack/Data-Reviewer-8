@@ -125,10 +125,9 @@ export default function SuppliersPage() {
     enabled: !!company?.id,
   });
 
-  const getSupplierPurchases = (supplierId) => {
-    return (purchasesData || [])
-      .filter(p => p.supplierId === supplierId)
-      .reduce((acc, p) => acc + parseFloat(p.amount || 0), 0);
+  // Get supplier purchases from the totalPurchases field calculated by the backend
+  const getSupplierPurchases = (supplier) => {
+    return supplier?.totalPurchases || 0;
   };
 
   const filteredSuppliers = (suppliers || [])
@@ -225,7 +224,7 @@ export default function SuppliersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="text-primary font-semibold">
-                        R$ {getSupplierPurchases(s.id).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(s.totalPurchases || 0)}
                       </div>
                     </TableCell>
                     <TableCell className="text-right pr-6">
