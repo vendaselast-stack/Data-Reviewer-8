@@ -453,9 +453,18 @@ export default function TransactionsPage() {
                                 <TableCell className="font-medium text-slate-600 pl-6 text-left">
                                     {/* For paid transactions, show payment date; otherwise show due date */}
                                     {(() => {
-                                      const isPaid = t.status === 'pago' || t.status === 'completed';
-                                      const dateToDisplay = isPaid && t.paymentDate ? t.paymentDate : t.date;
-                                      return format(parseISO(dateToDisplay.split('T')[0] + 'T12:00:00Z'), "dd/MM/yyyy", { locale: ptBR });
+                                      try {
+                                        const isPaid = t.status === 'pago' || t.status === 'completed';
+                                        const dateToDisplay = isPaid && t.paymentDate ? t.paymentDate : t.date;
+                                        if (!dateToDisplay) return '-';
+                                        
+                                        // Ensure dateToDisplay is a string before splitting
+                                        const dateStr = typeof dateToDisplay === 'string' ? dateToDisplay : new Date(dateToDisplay).toISOString();
+                                        return format(parseISO(dateStr.split('T')[0] + 'T12:00:00Z'), "dd/MM/yyyy", { locale: ptBR });
+                                      } catch (e) {
+                                        console.error("Date formatting error:", e, t);
+                                        return '-';
+                                      }
                                     })()}
                                 </TableCell>
                                 <TableCell className="font-medium text-slate-900 text-left">
