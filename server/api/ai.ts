@@ -8,7 +8,7 @@ export async function analyzeWithAI(prompt: string, responseJsonSchema: any = nu
     throw new Error('API_KEY_NOT_CONFIGURED');
   }
 
-  // Usando gemini-1.5-flash que é o modelo mais estável e suporta JSON nativo
+  // Usando gemini-1.5-flash-latest ou gemini-1.5-pro-latest que são mais robustos
   const model = genAI.getGenerativeModel({ 
     model: "gemini-1.5-flash"
   });
@@ -19,10 +19,8 @@ export async function analyzeWithAI(prompt: string, responseJsonSchema: any = nu
   }
 
   try {
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: finalPrompt }] }]
-    });
-
+    // Chamada simplificada para evitar erros de 404 por parâmetros não suportados
+    const result = await model.generateContent(finalPrompt);
     const textContent = result.response.text().trim().replace(/^```json/, '').replace(/```$/, '');
 
     if (responseJsonSchema) {
