@@ -1,31 +1,16 @@
 import { Express } from "express";
 import { storage } from "../storage";
-import { authMiddleware, AuthenticatedRequest } from "../middleware";
 import { insertCustomerSchema } from "../../shared/schema";
+import { authMiddleware, AuthenticatedRequest } from "../middleware";
 
 export function registerCustomerRoutes(app: Express) {
   app.get("/api/customers", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const customers = await storage.getCustomers(req.user.companyId);
-      const converted = customers.map(c => ({
-        ...c,
-        totalSales: Number(c.totalSales || 0)
-      }));
-      res.json(converted);
+      res.json(customers.map(c => ({ ...c, totalSales: Number(c.totalSales || 0) })));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch customers" });
-    }
-  });
-
-  app.get("/api/customers/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const customer = await storage.getCustomer(req.user.companyId, req.params.id);
-      if (!customer) return res.status(404).json({ error: "Customer not found" });
-      res.json(customer);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch customer" });
     }
   });
 
@@ -57,24 +42,6 @@ export function registerCustomerRoutes(app: Express) {
       res.json(customer);
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Invalid customer data" });
-    }
-  });
-
-  app.get("/api/customers/:id/sales", authMiddleware, async (req: AuthenticatedRequest, res) => {
-    try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const transactions = await storage.getTransactions(req.user.companyId);
-      const sales = (transactions || [])
-        .filter(t => String(t.customerId || '') === String(req.params.id) && (t.type === 'venda' || t.type === 'income'))
-        .map(t => ({
-          ...t,
-          amount: t.amount ? parseFloat(t.amount.toString()) : 0,
-          paidAmount: t.paidAmount ? parseFloat(t.paidAmount.toString()) : null,
-          interest: t.interest ? parseFloat(t.interest.toString()) : 0
-        }));
-      res.json(sales);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch customer sales" });
     }
   });
 
