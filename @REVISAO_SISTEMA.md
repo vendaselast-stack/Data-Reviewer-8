@@ -23,5 +23,11 @@
 - [x] Otimizada a atualização da interface (Transactions.jsx) para invalidar o cache do TanStack Query imediatamente após a exclusão, garantindo que a lista seja atualizada.
 - [x] Adicionado um `useEffect` para forçar a atualização dos dados ao entrar na página de transações, evitando dados em cache (stale data).
 
+## Correção: Compras de Fornecedores (Descrição e Parcelas)
+- [x] Corrigido o backend (`server/routes/sales-purchases.ts`) para usar a descrição enviada pelo usuário em vez de um código gerado.
+- [x] Implementada a lógica de parcelamento no backend: agora, ao registrar uma compra com múltiplas parcelas, o sistema cria uma transação individual para cada parcela com a data de vencimento correta.
+- [x] Adicionado suporte a `installmentGroup` e numeração de parcelas (ex: "Compra (1/3)") para melhor organização no histórico financeiro.
+- [x] Corrigido o cálculo de valores e datas para parcelas customizadas.
+
 ## Status Atual
-Navegação restaurada e fluida entre todos os módulos principais. O sistema agora entra diretamente no Dashboard após o sucesso do login e a exclusão de transações está refletindo imediatamente na interface.
+Navegação restaurada e fluida entre todos os módulos principais. O sistema agora entra diretamente no Dashboard após o sucesso do login. A exclusão de transações está refletindo imediatamente e o registro de compras de fornecedores agora salva a descrição corretamente e gera as parcelas financeiras de forma precisa.
