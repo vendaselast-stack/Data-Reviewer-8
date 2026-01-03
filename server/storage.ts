@@ -319,8 +319,15 @@ export class DatabaseStorage implements IStorage {
 
   // Transaction operations
   async createTransaction(companyId: string, data: InsertTransaction): Promise<Transaction> {
-    const result = await db.insert(transactions).values({ ...data, companyId } as any).returning();
-    return result[0];
+    console.log("[Storage Debug] Creating transaction in DB:", { ...data, companyId });
+    try {
+      const result = await db.insert(transactions).values({ ...data, companyId } as any).returning();
+      console.log("[Storage Debug] Transaction created successfully:", result[0].id);
+      return result[0];
+    } catch (error) {
+      console.error("[Storage Error] Failed to create transaction:", error);
+      throw error;
+    }
   }
 
   async getTransactions(companyId: string): Promise<Transaction[]> {
