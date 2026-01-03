@@ -117,9 +117,16 @@ export default function SuppliersPage() {
   };
 
   const getSupplierPurchases = (supplierId) => {
-    return transactions
-      .filter(t => t.supplierId === supplierId && t.type === 'compra')
-      .reduce((acc, t) => acc + parseFloat(t.amount || 0), 0);
+    // Look at purchases table instead of transactions for total
+    const purchasesQuery = useQuery({
+      queryKey: ['/api/purchases', company?.id],
+      enabled: !!company?.id
+    });
+    
+    const purchases = Array.isArray(purchasesQuery.data) ? purchasesQuery.data : [];
+    return purchases
+      .filter(p => p.supplierId === supplierId)
+      .reduce((acc, p) => acc + parseFloat(p.amount || 0), 0);
   };
 
   const filteredSuppliers = (suppliers || [])
