@@ -36,7 +36,7 @@ export default function BankReconciliation({ open, onOpenChange }) {
   });
 
   // Fetch bank statement items
-  const { data: bankItems = [], isLoading: isLoadingItems } = useQuery({
+  const { data: bankItems = [], isLoading: isLoadingItems, refetch: refetchBankItems } = useQuery({
     queryKey: ['/api/bank/items'],
     queryFn: () => apiRequest('GET', '/api/bank/items'),
     enabled: open
@@ -50,6 +50,12 @@ export default function BankReconciliation({ open, onOpenChange }) {
     }
   }, [bankItems]);
 
+  // Atualizar lista após upload bem-sucedido
+  useEffect(() => {
+    if (open) {
+      refetchBankItems();
+    }
+  }, [open, refetchBankItems]);
   const [selectedBankItemId, setSelectedBankItemId] = useState(null);
   const { data: suggestions = [], isLoading: isLoadingSuggestions } = useQuery({
     queryKey: ['/api/bank/suggest', selectedBankItemId],

@@ -23,6 +23,7 @@ export default function BankStatementUpload({ open, onOpenChange, onExtracted })
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/bank/items'] });
+      queryClient.refetchQueries({ queryKey: ['/api/bank/items'] });
       const newCount = Array.isArray(data.newItems) ? data.newItems.length : (data.newItems ? 1 : 0);
       const duplicateCount = data.duplicateCount || 0;
       let message = `${newCount} nova${newCount !== 1 ? 's' : ''} transação${newCount !== 1 ? 's' : ''} importada${newCount !== 1 ? 's' : ''}`;
