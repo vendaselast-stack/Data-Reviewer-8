@@ -10,11 +10,6 @@ export async function analyzeWithAI(prompt: string, responseJsonSchema: any = nu
 
   const model = genAI.getGenerativeModel({ 
     model: "gemini-1.5-flash",
-    generationConfig: {
-      temperature: 0.5,
-      maxOutputTokens: 2048,
-      responseMimeType: responseJsonSchema ? "application/json" : "text/plain"
-    }
   });
 
   let finalPrompt = prompt;
@@ -23,11 +18,7 @@ export async function analyzeWithAI(prompt: string, responseJsonSchema: any = nu
   }
 
   try {
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
-      systemInstruction: "Você é um assistente financeiro experiente para o mercado brasileiro. Forneça análises detalhadas, precisas e profissionais em português brasileiro. Quando solicitado JSON, retorne apenas o objeto JSON sem explicações adicionais."
-    });
-
+    const result = await model.generateContent(finalPrompt);
     const textContent = result.response.text().trim();
 
     if (responseJsonSchema) {
