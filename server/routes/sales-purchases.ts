@@ -138,17 +138,17 @@ export function registerSalesPurchasesRoutes(app: Express) {
       const purchase = await storage.createPurchase(req.user.companyId, purchaseData as any);
       
       // Also create a transaction for the total amount to ensure it shows up in reports/supplier totals
-      await storage.createTransaction(req.user.companyId, {
-        type: 'compra',
-        category: 'Compra',
-        amount: String(totalAmount),
-        date: new Date(purchaseDate),
-        description: description || `Compra - ${purchase.id}`,
-        status: 'pendente',
-        supplierId: supplierId,
-        companyId: req.user.companyId,
-        shift: 'Normal' // Added missing required field
-      } as any);
+      // await storage.createTransaction(req.user.companyId, {
+      //   type: 'compra',
+      //   category: 'Compra',
+      //   amount: String(totalAmount),
+      //   date: new Date(purchaseDate),
+      //   description: description || `Compra - ${purchase.id}`,
+      //   status: 'pendente',
+      //   supplierId: supplierId,
+      //   companyId: req.user.companyId,
+      //   shift: 'Normal'
+      // } as any);
 
       const installmentGroupId = `purchase-${purchase.id}-${Date.now()}`;
 
@@ -161,7 +161,7 @@ export function registerSalesPurchasesRoutes(app: Express) {
             type: 'expense',
             description: `${description || 'Compra'} (${i + 1}/${customInstallments.length})`,
             amount: String(inst.amount),
-            date: new Date(inst.due_date),
+            date: new Date(inst.date || inst.due_date), // Safe date handling
             status: status === 'pago' ? 'pago' : 'pendente',
             categoryId,
             supplierId,
@@ -169,7 +169,7 @@ export function registerSalesPurchasesRoutes(app: Express) {
             installmentNumber: i + 1,
             installmentTotal: customInstallments.length,
             installmentGroup: installmentGroupId,
-            shift: 'default'
+            shift: 'Normal'
           };
           await storage.createTransaction(req.user.companyId, transactionData as any);
         }
