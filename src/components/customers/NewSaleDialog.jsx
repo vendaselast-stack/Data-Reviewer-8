@@ -79,87 +79,17 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
 
   const createSaleMutation = useMutation({
     mutationFn: async (data) => {
-      // Use categories from React Query cache (already fetched), don't re-fetch
-      const cat = categories.find(c => c.name === data.category);
+      const payload = {
+        customerId: customer.id,
+        saleDate: new Date(data.sale_date).toISOString(),
+        totalAmount: String(data.total_amount),
+        paidAmount: data.status === 'pago' ? String(data.total_amount) : '0',
+        installmentCount: parseInt(data.installments) || 1,
+        status: data.status,
+      };
 
-      if (!cat || !cat.id) {
-        throw new Error('Categoria selecionada não é válida. Recarregue a página e tente novamente.');
-      }
-
-      // Validate that categoryId is a UUID format (not a timestamp)
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cat.id)) {
-        throw new Error('Erro no formato da categoria. Por favor, recarregue a página.');
-      }
-
-      const installmentCount = parseInt(data.installments) || 1;
-      const totalAmount = parseFloat(data.total_amount);
-      const installmentAmount = parseFloat(data.installment_amount) || (totalAmount / installmentCount);
-
-      const installmentGroupId = `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const promises = [];
-
-      // Use custom installments if available, otherwise calculate with addMonths
-      if (data.customInstallments && data.customInstallments.length > 0) {
-        // Use the custom installments with their specific dates
-        for (let i = 0; i < data.customInstallments.length; i++) {
-          const inst = data.customInstallments[i];
-          const [year, month, day] = inst.due_date.split('-');
-          const dueDate = new Date(`${year}-${month}-${day}T12:00:00Z`);
-          const dueDateISO = dueDate.toISOString();
-          const customAmount = parseFloat(inst.amount);
-
-          const payload = {
-            customerId: customer.id,
-            categoryId: cat?.id,
-            companyId: company?.id,
-            type: 'venda',
-            date: dueDateISO,
-            shift: 'manhã',
-            amount: String(customAmount.toFixed(2)),
-            description: `${data.description}${installmentCount > 1 ? ` (${i + 1}/${installmentCount})` : ''}`,
-            status: data.status || 'pendente',
-            paymentMethod: data.paymentMethod,
-            installmentGroup: installmentGroupId,
-            installmentNumber: i + 1,
-            installmentTotal: installmentCount
-          };
-
-          const res = await apiRequest('POST', '/api/transactions', payload);
-          promises.push(res);
-        }
-      } else {
-        // Use default calculation with addMonths from sale_date
-        const [year, month, day] = data.sale_date.split('-');
-        const baseDate = new Date(`${year}-${month}-${day}T12:00:00Z`);
-
-        for (let i = 0; i < installmentCount; i++) {
-          // Use addMonths from date-fns to properly handle timezone-aware date arithmetic
-          const dueDate = addMonths(baseDate, i);
-          const dueDateISO = dueDate.toISOString();
-
-          const payload = {
-            customerId: customer.id,
-            categoryId: cat?.id,
-            companyId: company?.id,
-            type: 'venda',
-            date: dueDateISO,
-            shift: 'manhã',
-            amount: String(installmentAmount.toFixed(2)),
-            description: `${data.description}${installmentCount > 1 ? ` (${i + 1}/${installmentCount})` : ''}`,
-            status: data.status || 'pendente',
-            paymentMethod: data.paymentMethod,
-            installmentGroup: installmentGroupId,
-            installmentNumber: i + 1,
-            installmentTotal: installmentCount
-          };
-
-          const res = await apiRequest('POST', '/api/transactions', payload);
-
-          promises.push(res);
-        }
-      }
-
-      return Promise.all(promises);
+      const res = await apiRequest('POST', '/api/sales', payload);
+      return res;
     },
     onSuccess: async () => {
       // Force immediate refetch (invalidation alone won't work with staleTime: Infinity)
