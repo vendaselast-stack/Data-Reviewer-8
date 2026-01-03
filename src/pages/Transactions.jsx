@@ -1,3 +1,4 @@
+import { TransactionFilters } from "@/components/transactions/sections/TransactionFilters";
 import React, { useState } from 'react';
 import { Transaction, Category } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -413,70 +414,19 @@ export default function TransactionsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        {/* Filters */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4 justify-start">
-            <div className="relative w-full md:w-[300px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input 
-                    placeholder="Buscar transações..." 
-                    className="pl-9 w-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-            
-            <div className="flex gap-2 w-full md:w-auto flex-wrap">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-full md:w-[180px]">
-                        <SelectValue placeholder="Categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todas categorias</SelectItem>
-                        {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.name}>{cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-full md:w-[140px]">
-                        <SelectValue placeholder="Tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="income">Receitas</SelectItem>
-                        <SelectItem value="expense">Despesas</SelectItem>
-                    </SelectContent>
-                </Select>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full md:w-[140px]">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="paid">Pagas</SelectItem>
-                        <SelectItem value="pending">Pendentes</SelectItem>
-                    </SelectContent>
-                </Select>
-
-                <Select value={paymentMethodFilter} onValueChange={setPaymentMethodFilter}>
-                    <SelectTrigger className="w-full md:w-[160px]">
-                        <SelectValue placeholder="Forma de Pagamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todas as Formas</SelectItem>
-                        <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                        <SelectItem value="Pix">Pix</SelectItem>
-                        <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                        <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
-                        <SelectItem value="Boleto">Boleto</SelectItem>
-                        <SelectItem value="Crediário">Crediário</SelectItem>
-                        <SelectItem value="Transferência">Transferência</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
+        <TransactionFilters 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          paymentMethodFilter={paymentMethodFilter}
+          setPaymentMethodFilter={setPaymentMethodFilter}
+          categories={categories}
+        />
 
         <div className="overflow-x-auto">
             <Table>
