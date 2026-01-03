@@ -46,13 +46,13 @@ const Hero: React.FC = () => {
         {/* CTA Buttons after Video */}
         <div className="flex flex-col items-center gap-6">
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <a 
-              href="#precos" 
+            <Link 
+              href="/signup?plan=pro" 
               className="group w-full sm:w-auto relative inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-base md:text-lg px-10 py-5 rounded-xl font-bold transition-all shadow-xl shadow-blue-500/30 active:scale-95"
             >
               GARANTIR ACESSO VITALÍCIO AGORA
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </a>
+            </Link>
             <a 
               href="#recursos" 
               className="w-full sm:w-auto inline-flex items-center justify-center bg-white border-2 border-slate-200 hover:border-blue-600 text-slate-900 text-base md:text-lg px-10 py-5 rounded-xl font-bold transition-all active:scale-95 shadow-sm"
