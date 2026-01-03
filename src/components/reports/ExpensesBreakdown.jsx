@@ -10,7 +10,7 @@ export default function ExpensesBreakdown({ opportunities = [], transactions, ca
   // Create a map of categoryId to category name for quick lookup
   const categoryMap = {};
   categories.forEach(cat => {
-    categoryMap[cat.id] = cat.name || 'Sem Categoria';
+    categoryMap[cat.id] = cat.name || 'Outros';
   });
 
   // Filter expense transactions from already-filtered data
@@ -21,11 +21,15 @@ export default function ExpensesBreakdown({ opportunities = [], transactions, ca
   // Calculate expenses by category
   const expensesByCategory = expenseTransactions
     .reduce((acc, t) => {
-      let categoryName = 'Sem Categoria';
+      let categoryName = 'Outros';
       
       // Try to map by categoryId first
       if (t.categoryId && categoryMap[t.categoryId]) {
         categoryName = categoryMap[t.categoryId];
+      }
+      // Fallback to categoryName from backend
+      else if (t.categoryName) {
+        categoryName = t.categoryName;
       }
       // Fallback to category string if available
       else if (t.category) {
@@ -36,8 +40,8 @@ export default function ExpensesBreakdown({ opportunities = [], transactions, ca
       return acc;
     }, {});
 
-  const chartData = Object.entries(expensesByCategory).map(([name, value]) => {
-    const safeName = name || 'Sem Categoria';
+    const chartData = Object.entries(expensesByCategory).map(([name, value]) => {
+    const safeName = name || 'Outros';
     return {
       name: safeName.charAt(0).toUpperCase() + safeName.slice(1),
       value
@@ -122,12 +126,16 @@ export default function ExpensesBreakdown({ opportunities = [], transactions, ca
             </div>
             
             {opportunities && Array.isArray(opportunities) && opportunities.length > 0 && opportunities.map((opp, idx) => {
-              const safeCategory = (opp?.category || 'Categoria Desconhecida').toString();
+              const categoryId = opp?.categoryId;
+              const rawCategory = opp?.category;
+              const mappedName = categoryId ? categoryMap[categoryId] : null;
+              const finalCategory = mappedName || rawCategory || 'Outros';
+              
               return (
                 <div key={idx} className="p-4 rounded-lg bg-rose-50 border border-rose-100 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-2">
                     <Badge variant="outline" className="bg-white text-rose-700 border-rose-200 font-medium">
-                      {safeCategory.charAt(0).toUpperCase() + safeCategory.slice(1)}
+                      {finalCategory.charAt(0).toUpperCase() + finalCategory.slice(1)}
                     </Badge>
                     <div className="flex items-center gap-1 text-rose-600 font-bold text-sm bg-white px-2 py-1 rounded border border-rose-200">
                       <TrendingDown className="w-3 h-3" />
