@@ -97,9 +97,10 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     },
     onSuccess: async () => {
       // Force immediate refetch (invalidation alone won't work with staleTime: Infinity)
-      await queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/cash-flow'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/customers', company?.id] });
+      await queryClient.refetchQueries({ queryKey: ['/api/transactions'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/customers', company?.id] });
+      await queryClient.refetchQueries({ queryKey: ['/api/transactions', { customerId: customer?.id }] });
       onOpenChange(false);
       setFormData({
         description: '',
