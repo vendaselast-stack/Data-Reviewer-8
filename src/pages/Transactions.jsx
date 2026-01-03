@@ -69,6 +69,14 @@ export default function TransactionsPage() {
 
   const transactions = Array.isArray(transactionsData) ? transactionsData : (transactionsData?.data || []);
 
+  const categoryMap = React.useMemo(() => {
+    const map = {};
+    categories.forEach(cat => {
+      map[cat.id] = cat.name;
+    });
+    return map;
+  }, [categories]);
+
   const createMutation = useMutation({
     mutationFn: (data) => Transaction.create(data),
     onSuccess: () => {
@@ -141,19 +149,14 @@ export default function TransactionsPage() {
     setReconciliationOpen(true);
   };
 
-  const handleExport = () => {
+    const handleExport = () => {
     if (!transactions.length) return;
-    
-    const categoryMap = {};
-    categories.forEach(cat => {
-      categoryMap[cat.id] = cat.name || 'Sem Categoria';
-    });
     
     const headers = ['Data', 'Descrição', 'Tipo', 'Categoria', 'Forma de Pagamento', 'Valor'];
     const csvContent = [
       headers.join(','),
       ...filteredTransactions.map(t => {
-        const categoryName = t.categoryId ? (categoryMap[t.categoryId] || 'Sem Categoria') : 'Sem Categoria';
+        const categoryName = t.categoryId ? (categoryMap[t.categoryId] || 'Outros') : (t.categoryName || t.category || 'Outros');
         
         // Format date as DD/MM/YYYY (extract from ISO format YYYY-MM-DD)
         const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
@@ -261,15 +264,15 @@ export default function TransactionsPage() {
           }
           
           // 3. Filtrar por Categoria
+          const tCategoryName = t.categoryId ? categoryMap[t.categoryId] : (t.categoryName || t.category || 'Outros');
           const matchesCategory = categoryFilter === 'all' || 
-                                 t.category === categoryFilter || 
-                                 categories?.find(c => c.id === t.categoryId)?.name === categoryFilter ||
-                                 categories?.find(c => c.name === t.category)?.id === categoryFilter;
+                                 tCategoryName === categoryFilter ||
+                                 t.categoryId === categoryFilter;
           if (!matchesCategory) return false;
 
           // 4. Filtrar por Busca
           const matchesSearch = (t.description || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                (t.category && t.category.toLowerCase().includes(searchTerm.toLowerCase()));
+                                (tCategoryName && tCategoryName.toLowerCase().includes(searchTerm.toLowerCase()));
           if (!matchesSearch) return false;
 
           // 5. Filtrar por Forma de Pagamento
@@ -509,7 +512,7 @@ export default function TransactionsPage() {
                                 </TableCell>
                                 <TableCell className="text-left">
                                     <Badge variant="secondary" className="capitalize font-normal bg-slate-100 text-slate-600 hover:bg-slate-200">
-                                        {categories.find(c => c.id === t.categoryId)?.name || t.category}
+                                        {t.categoryId ? (categoryMap[t.categoryId] || 'Outros') : (t.categoryName || t.category || 'Outros')}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-left">
