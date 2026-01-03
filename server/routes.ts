@@ -1094,8 +1094,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       
-      const sale = await storage.getSale(req.user.companyId, req.params.id);
-      if (!sale) return res.status(404).json({ error: "Sale not found" });
+      const companyId = req.user.companyId;
+      const saleId = req.params.id;
+
+      // Debug log
+      console.log(`[CANCEL_PAYMENT] Attempting to cancel payment for sale ${saleId} in company ${companyId}`);
+
+      const sale = await storage.getSale(companyId, saleId);
+      if (!sale) {
+        console.warn(`[CANCEL_PAYMENT] Sale ${saleId} NOT FOUND for company ${companyId}`);
+        return res.status(404).json({ error: "Sale not found" });
+      }
 
       await db.transaction(async (tx) => {
         // Reset sale status
@@ -1105,30 +1114,44 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
             paidAmount: "0",
             status: "pendente"
           })
-          .where(and(eq(sales.companyId, req.user!.companyId), eq(sales.id, req.params.id)));
+          .where(and(eq(sales.companyId, companyId), eq(sales.id, saleId)));
 
         // Remove related transactions and cash flow entries
+        const descriptionPattern = `%Venda #${saleId.substring(0, 8)}%`;
+        
         await tx
           .delete(transactions)
           .where(and(
-            eq(transactions.companyId, req.user!.companyId),
+            eq(transactions.companyId, companyId),
             eq(transactions.customerId, sale.customerId),
             eq(transactions.type, "venda"),
-            sql`description LIKE ${`%Venda #${sale.id.substring(0, 8)}%`}`
+            sql`description LIKE ${descriptionPattern}`
           ));
 
         await tx
           .delete(cashFlow)
           .where(and(
-            eq(cashFlow.companyId, req.user!.companyId),
-            sql`description LIKE ${`%Venda #${sale.id.substring(0, 8)}%`}`
+            eq(cashFlow.companyId, companyId),
+            sql`description LIKE ${descriptionPattern}`
           ));
+          
+        // Log the action
+        await createAuditLog(
+          req.user!.id,
+          companyId,
+          "CANCEL_PAYMENT",
+          "sale",
+          saleId,
+          JSON.stringify({ originalStatus: sale.status, originalPaid: sale.paidAmount }),
+          req.ip || "0.0.0.0",
+          req.headers['user-agent'] || 'unknown'
+        );
       });
 
       res.json({ success: true, status: "pendente" });
     } catch (error: any) {
-      console.error("Cancel payment error:", error);
-      res.status(500).json({ error: "Failed to cancel payment" });
+      console.error("[CANCEL_PAYMENT] Error:", error);
+      res.status(500).json({ error: "Failed to cancel payment", details: error.message });
     }
   });
 
