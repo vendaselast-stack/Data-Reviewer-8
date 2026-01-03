@@ -1005,7 +1005,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/sales/:id/pay", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const { paidAmount, interest } = req.body;
+      const { paidAmount, interest, paymentMethod, paymentDate, description } = req.body;
       
       if (!paidAmount || isNaN(parseFloat(paidAmount.toString()))) {
         return res.status(400).json({ error: "Invalid paid amount" });
@@ -1021,9 +1021,47 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       
       const newStatus = newPaidAmount >= totalDue ? "pago" : "parcial";
 
-      const updated = await storage.updateSale(req.user.companyId, req.params.id, {
-        paidAmount: newPaidAmount.toString(),
-        status: newStatus
+      const updated = await db.transaction(async (tx) => {
+        // Update the sale
+        const [updatedSale] = await tx
+          .update(sales)
+          .set({
+            paidAmount: newPaidAmount.toString(),
+            status: newStatus
+          })
+          .where(and(eq(sales.companyId, req.user!.companyId), eq(sales.id, req.params.id)))
+          .returning();
+
+        // Create a corresponding transaction record
+        const [newTransaction] = await tx.insert(transactions).values({
+          companyId: req.user!.companyId,
+          customerId: sale.customerId,
+          type: "venda",
+          amount: String(paid),
+          paidAmount: String(paid),
+          date: new Date(paymentDate || new Date()),
+          paymentDate: new Date(paymentDate || new Date()),
+          description: description || `Recebimento Venda #${sale.id.substring(0, 8)}`,
+          shift: "Geral",
+          status: "pago",
+          paymentMethod: paymentMethod || "Pix",
+          categoryId: null,
+          isReconciled: false
+        }).returning();
+
+        // Also update cash flow
+        await tx.insert(cashFlow).values({
+          companyId: req.user!.companyId,
+          date: new Date(paymentDate || new Date()),
+          inflow: String(paid),
+          outflow: "0",
+          balance: "0",
+          description: description || `Recebimento Venda #${sale.id.substring(0, 8)}`,
+          shift: "Geral",
+          transactionId: parseInt(newTransaction.id)
+        });
+
+        return updatedSale;
       });
 
       res.json({
