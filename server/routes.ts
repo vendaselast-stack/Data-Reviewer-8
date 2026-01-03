@@ -1097,10 +1097,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const sale = await storage.getSale(req.user.companyId, req.params.id);
       if (!sale) return res.status(404).json({ error: "Sale not found" });
 
-      // In a real scenario, we might want to target specific payments
-      // For now, we'll revert the last payment impact if it was fully paid
-      // or just reset the paid amount for simplicity in this MVP stage
-      
       await db.transaction(async (tx) => {
         // Reset sale status
         await tx
@@ -1112,7 +1108,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           .where(and(eq(sales.companyId, req.user!.companyId), eq(sales.id, req.params.id)));
 
         // Remove related transactions and cash flow entries
-        // This is a simple cleanup for the MVP
         await tx
           .delete(transactions)
           .where(and(
