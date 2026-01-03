@@ -132,7 +132,7 @@ export default function CustomerSalesDialog({ customer, open, onOpenChange }) {
       let formattedPaymentDate = new Date().toISOString();
       if (paymentDate && paymentDate.trim()) {
         const [year, month, day] = paymentDate.split('-');
-        formattedPaymentDate = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+        formattedPaymentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0).toISOString();
       }
 
       // Update the transaction
