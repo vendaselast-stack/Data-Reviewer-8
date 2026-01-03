@@ -161,8 +161,8 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
     const canInstall = ['Cartão de Crédito', 'Boleto', 'Crediário'].includes(formData.paymentMethod);
     const instCount = canInstall ? Number(formData.installments) : 1;
 
-    // Use the professional rounding logic suggested
-    const totalAmountValue = parseFloat(String(formData.total_amount).replace(/\./g, '').replace(',', '.'));
+    // CurrencyInput already returns a numeric value (number) because of the synthetic event
+    const totalAmountValue = parseFloat(formData.total_amount);
 
     createPurchaseMutation.mutate({
       ...formData,
@@ -170,7 +170,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
       installments: instCount,
       customInstallments: customInstallments.length > 0 ? customInstallments.map(inst => ({
         ...inst,
-        amount: parseFloat(String(inst.amount).replace(/\./g, '').replace(',', '.'))
+        amount: parseFloat(inst.amount)
       })) : null
     });
   };
