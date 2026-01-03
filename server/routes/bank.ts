@@ -19,7 +19,8 @@ export function registerBankRoutes(app: Express) {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const { ofxContent } = req.body;
       
-      const data = ofx.parse(ofxContent);
+      const xmlContent = ofxContent.substring(ofxContent.indexOf('<OFX>'));
+      const data = ofx.parse(xmlContent);
       
       // Navigate the OFX structure
       const stmttrns = data.OFX?.BANKMSGSRSV1?.STMTTRNRS?.STMTRS?.BANKTRANLIST?.STMTTRN;
