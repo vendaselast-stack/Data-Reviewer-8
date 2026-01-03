@@ -126,7 +126,7 @@ export default function SupplierPurchasesDialog({ supplier, open, onOpenChange }
       if (paymentDate && paymentDate.trim()) {
         // Parse yyyy-MM-dd format correctly with timezone awareness (use noon UTC to avoid -1 day offset)
         const [year, month, day] = paymentDate.split('-');
-        formattedPaymentDate = new Date(`${year}-${month}-${day}T12:00:00Z`).toISOString();
+        formattedPaymentDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0).toISOString();
       }
 
       // IMPORTANT: Do NOT update 'date' field - that's the due date and must remain unchanged
