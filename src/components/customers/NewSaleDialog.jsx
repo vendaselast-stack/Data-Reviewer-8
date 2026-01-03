@@ -96,12 +96,25 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       return res;
     },
     onSuccess: async () => {
-      // Force immediate refetch (invalidation alone won't work with staleTime: Infinity)
-      await queryClient.refetchQueries({ queryKey: ['/api/transactions'] });
-      await queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] });
-      await queryClient.refetchQueries({ queryKey: ['/api/customers', company?.id] });
-      await queryClient.refetchQueries({ queryKey: ['/api/transactions', { customerId: customer?.id }] });
-      onOpenChange(false);
+      onOpenChange(false); // Fecha modal primeiro
+      toast.success('Venda registrada com sucesso!', { duration: 5000 });
+
+      // Pequeno delay para garantir consistência do banco
+      setTimeout(async () => {
+        console.log('🔄 Forçando atualização das listas...');
+        // Força o recarregamento ativo de todas as transações e fluxo de caixa
+        await queryClient.refetchQueries({ queryKey: ['/api/transactions'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/customers', company?.id] });
+        
+        // Se tiver cliente, força a lista específica dele também
+        if (customer?.id) {
+          await queryClient.refetchQueries({ 
+            queryKey: ['/api/transactions', { customerId: customer.id }] 
+          });
+        }
+      }, 300);
+
       setFormData({
         description: '',
         total_amount: '',
@@ -113,7 +126,6 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
         paymentMethod: ''
       });
       setCustomInstallments([]);
-      toast.success('Venda registrada com sucesso!', { duration: 5000 });
     },
     onError: (error) => {
       toast.error(error.message || 'Erro ao registrar venda', { duration: 5000 });
