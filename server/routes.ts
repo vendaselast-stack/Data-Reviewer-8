@@ -856,6 +856,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const data = {
         ...req.body,
+        date: req.body.date ? new Date(req.body.date) : new Date(),
         balance: req.body.balance || "0",
         shift: req.body.shift || "Geral"
       };
