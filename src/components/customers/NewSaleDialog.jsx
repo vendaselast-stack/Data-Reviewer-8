@@ -6,7 +6,6 @@ import { CurrencyInput, formatCurrency } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Category, Sale, Installment } from '@/api/entities';
 import { format, addMonths } from 'date-fns';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
@@ -14,6 +13,15 @@ import { apiRequest } from '@/lib/queryClient';
 import CreateCategoryModal from '../transactions/CreateCategoryModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
+
+// Função utilitária para converter string formatada (BR) para float (Universal)
+// Ex: "5.454,51" vira 5454.51
+const parseCurrency = (value) => {
+  if (!value) return 0;
+  if (typeof value === 'number') return value;
+  const cleanValue = value.toString().replace(/\./g, '').replace(',', '.');
+  return parseFloat(cleanValue) || 0;
+};
 
 export default function NewSaleDialog({ customer, open, onOpenChange }) {
   const { company } = useAuth();
@@ -79,27 +87,32 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
 
   const createSaleMutation = useMutation({
     mutationFn: async (data) => {
+      // CORREÇÃO: Limpa o valor monetário antes de enviar
+      const rawTotal = parseCurrency(data.total_amount);
+
       const payload = {
         customerId: customer.id,
         saleDate: data.sale_date,
-        totalAmount: String(data.total_amount),
+        totalAmount: rawTotal, // Envia float limpo
         status: data.status,
         description: data.description,
         categoryId: categories.find(c => c.name === data.category)?.id,
         paymentMethod: data.paymentMethod,
         installmentCount: parseInt(data.installments) || 1,
-        customInstallments: data.customInstallments
+        // CORREÇÃO: Limpa também as parcelas customizadas
+        customInstallments: data.customInstallments?.map(inst => ({
+          ...inst,
+          amount: parseCurrency(inst.amount)
+        }))
       };
 
       const res = await apiRequest('POST', '/api/sales', payload);
       return res;
     },
     onSuccess: async () => {
-      // 1. Fecha o modal e avisa o usuário (UX imediata)
       onOpenChange(false);
       toast.success('Venda registrada com sucesso!');
 
-      // 2. Limpa o formulário
       setFormData({
         description: '',
         total_amount: '',
@@ -113,26 +126,19 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       });
       setCustomInstallments([]);
 
-      // 3. O "Pulo do Gato": Espera 500ms e FORÇA o recarregamento
       setTimeout(async () => {
-
-        // refetchQueries força a busca ativa (Active Fetch)
-        // Isso atualiza a lista principal (Dashboard), fluxo de caixa e a lista do cliente
         await queryClient.refetchQueries({ queryKey: ['/api/transactions'] });
         await queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] });
-        
-        // Garante que a chave com companyId também seja atualizada se existir na aplicação
+
         if (company?.id) {
           await queryClient.refetchQueries({ queryKey: ['/api/transactions', company.id] });
           await queryClient.refetchQueries({ queryKey: ['/api/customers', company.id] });
         }
 
-        // Se tiver um ID de cliente no contexto, força também a lista específica dele
         if (customer?.id) {
           await queryClient.refetchQueries({ 
             queryKey: ['/api/transactions', { customerId: customer.id }] 
           });
-          // Algumas partes do app podem usar a rota de vendas do cliente diretamente
           await queryClient.refetchQueries({ 
             queryKey: [`/api/customers/${customer.id}/sales`] 
           });
@@ -146,11 +152,15 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // CORREÇÃO: Converter para validação correta
+    const rawTotal = parseCurrency(formData.total_amount);
+
     if (!formData.description.trim()) {
       toast.error('Digite uma descrição', { duration: 5000 });
       return;
     }
-    if (!formData.total_amount || Number(formData.total_amount) <= 0) {
+    if (rawTotal <= 0) {
       toast.error('Digite um valor válido', { duration: 5000 });
       return;
     }
@@ -163,25 +173,24 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       return;
     }
 
-    // Validate custom installments if provided
+    // Validação de parcelas customizadas
     if (customInstallments.length > 0) {
-      const totalCustom = customInstallments.reduce((sum, inst) => sum + parseFloat(inst.amount || 0), 0);
-      if (Math.abs(totalCustom - Number(formData.total_amount)) > 0.01) {
-        toast.error('A soma das parcelas deve ser igual ao valor total', { duration: 5000 });
+      const totalCustom = customInstallments.reduce((sum, inst) => sum + parseCurrency(inst.amount), 0);
+
+      // Margem de erro de 0.05 centavos para arredondamentos
+      if (Math.abs(totalCustom - rawTotal) > 0.05) {
+        toast.error(`A soma das parcelas (R$ ${totalCustom.toFixed(2)}) deve ser igual ao total (R$ ${rawTotal.toFixed(2)})`, { duration: 5000 });
         return;
       }
     }
 
     createSaleMutation.mutate({
       ...formData,
-      total_amount: formData.total_amount,
+      // Nota: o tratamento de parseCurrency é feito dentro do mutationFn agora
       installments: Number(formData.installments),
       installment_amount: formData.installment_amount,
       paymentMethod: formData.paymentMethod,
-      customInstallments: customInstallments.length > 0 ? customInstallments.map(inst => ({
-        ...inst,
-        amount: inst.amount
-      })) : null
+      customInstallments: customInstallments.length > 0 ? customInstallments : null
     });
   };
 
@@ -189,15 +198,15 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
     const numValue = value === '' ? '1' : value;
     setFormData({ ...formData, installments: numValue, installment_amount: '' });
 
-    // Initialize custom installments array
     const numInstallments = parseInt(numValue);
     if (numInstallments > 1) {
-      const totalAmount = parseFloat(formData.total_amount) || 0;
+      // CORREÇÃO: Usar parseCurrency aqui também
+      const totalAmount = parseCurrency(formData.total_amount);
+
       const defaultAmount = totalAmount > 0 ? totalAmount / numInstallments : '';
-      // Parse date in UTC to avoid timezone offset issues (UTC-3 São Paulo)
       const baseDate = new Date(formData.sale_date + 'T12:00:00Z');
       const newCustomInstallments = Array.from({ length: numInstallments }, (_, i) => ({
-        amount: defaultAmount,
+        amount: defaultAmount, // Aqui pode manter float, o input depois formata se precisar ou usa value normal
         due_date: format(addMonths(baseDate, i), 'yyyy-MM-dd')
       }));
       setCustomInstallments(newCustomInstallments);
@@ -308,9 +317,9 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
           {formData.status !== 'pago' && Number(formData.installments) > 1 && customInstallments.length === 0 && (
             <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-600">
               <p>
-                {formData.installment_amount && !isNaN(parseFloat(formData.installment_amount))
+                {formData.installment_amount && !isNaN(parseCurrency(formData.installment_amount))
                   ? `${formData.installments}x de R$ ${formatCurrency(formData.installment_amount)}`
-                  : `${formData.installments}x de R$ ${formatCurrency((parseFloat(formData.total_amount || 0) / Number(formData.installments || 1)))}`
+                  : `${formData.installments}x de R$ ${formatCurrency((parseCurrency(formData.total_amount) / Number(formData.installments || 1)))}`
                 }
               </p>
             </div>
@@ -359,11 +368,11 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
                   <div className="flex justify-between items-center text-sm">
                     <span className="font-medium">Total das Parcelas:</span>
                     <span className={`font-bold ${
-                      Math.abs(customInstallments.reduce((sum, inst) => sum + parseFloat(inst.amount || 0), 0) - parseFloat(formData.total_amount || 0)) < 0.01
+                      Math.abs(customInstallments.reduce((sum, inst) => sum + parseCurrency(inst.amount), 0) - parseCurrency(formData.total_amount)) < 0.05
                         ? 'text-emerald-600'
                         : 'text-rose-600'
                     }`}>
-                      R$ {customInstallments.reduce((sum, inst) => sum + parseFloat(inst.amount || 0), 0).toFixed(2)}
+                      R$ {customInstallments.reduce((sum, inst) => sum + parseCurrency(inst.amount), 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
