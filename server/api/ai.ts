@@ -11,6 +11,7 @@ export async function analyzeWithAI(prompt: string, responseJsonSchema: any = nu
 
   try {
     const model = genAI.getGenerativeModel({ 
+      // Voltando para o Flash após reinstalação limpa
       model: "gemini-1.5-flash", 
       generationConfig: {
         responseMimeType: responseJsonSchema ? "application/json" : "text/plain",
