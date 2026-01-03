@@ -19,8 +19,30 @@ export function registerBankRoutes(app: Express) {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const { ofxContent } = req.body;
       
-      const xmlContent = ofxContent.substring(ofxContent.indexOf('<OFX>'));
-      const data = ofx.parse(xmlContent);
+      // Sanitização básica do conteúdo OFX
+      // Alguns bancos brasileiros usam ISO-8859-1 ou caracteres especiais que quebram o XML
+      let sanitizedContent = ofxContent;
+      
+      // Tenta encontrar o início do OFX
+      const ofxStart = sanitizedContent.indexOf('<OFX>');
+      if (ofxStart === -1) {
+        return res.status(400).json({ error: "Arquivo OFX inválido: tag <OFX> não encontrada" });
+      }
+
+      const xmlBody = sanitizedContent.substring(ofxStart);
+      
+      // node-ofx-parser espera um formato bem específico. 
+      // Se falhar, tentamos uma limpeza mais agressiva ou retornamos erro amigável.
+      let data;
+      try {
+        data = ofx.parse(xmlBody);
+      } catch (parseError) {
+        // Tenta limpar tags não fechadas comuns em OFX de bancos brasileiros
+        const cleanedXml = xmlBody
+          .replace(/<(\w+)>([^<]+)(?!\/<\1>)/g, '<$1>$2</$1>') // Fecha tags simples
+          .replace(/&/g, '&amp;'); // Escapa ampersands
+        data = ofx.parse(cleanedXml);
+      }
       
       // Navigate the OFX structure
       const stmttrns = data.OFX?.BANKMSGSRSV1?.STMTTRNRS?.STMTRS?.BANKTRANLIST?.STMTTRN;
