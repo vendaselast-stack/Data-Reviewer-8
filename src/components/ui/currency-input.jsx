@@ -4,14 +4,17 @@ import { Input } from '@/components/ui/input';
 // Format number to Brazilian currency format (1.234,56)
 export function formatCurrency(value) {
   if (value === null || value === undefined || value === '') return '';
-  const numValue = typeof value === 'string' ? parseFloat(value.replace(/\./g, '').replace(',', '.')) : value;
+  const numValue = typeof value === 'number' ? value : parseFloat(value);
   if (isNaN(numValue)) return '';
   return numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // Parse Brazilian currency format to number
 export function parseCurrency(value) {
-  if (!value || value === '') return 0;
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return value;
+  
+  // Replace thousand separators (.) and then comma (,) with dot (.)
   const cleanValue = value.toString().replace(/\./g, '').replace(',', '.');
   const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? 0 : parsed;
@@ -19,10 +22,10 @@ export function parseCurrency(value) {
 
 // Format as user types (cents to currency)
 function formatAsCurrency(rawValue) {
-  if (!rawValue || rawValue === '') return '';
+  if (rawValue === null || rawValue === undefined || rawValue === '') return '';
   
   // Remove any non-digit characters
-  const digits = rawValue.replace(/\D/g, '');
+  const digits = rawValue.toString().replace(/\D/g, '');
   
   if (!digits) return '';
   
