@@ -502,8 +502,8 @@ export default function TransactionsPage() {
                                         {t.status === 'pago' || t.status === 'completed' ? 'Pago' : t.status === 'parcial' ? 'Parcial' : 'Pendente'}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className={`text-right font-bold ${t.type === 'venda' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                    {t.type === 'venda' ? '+' : '-'} R$ {Math.abs(parseFloat(t.amount || 0) + parseFloat(t.interest || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                <TableCell className={`text-right font-bold ${['venda', 'venda_prazo', 'receita', 'income'].includes(t.type) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                    {['venda', 'venda_prazo', 'receita', 'income'].includes(t.type) ? '+' : '-'} R$ {Math.abs(parseFloat(t.amount || 0) + parseFloat(t.interest || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </TableCell>
                                 <TableCell className="text-center" data-testid={`status-reconciliation-${t.id}`}>
                                     <div className="flex items-center justify-center gap-1">
