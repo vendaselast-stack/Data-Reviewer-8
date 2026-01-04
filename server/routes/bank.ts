@@ -4,133 +4,108 @@ import { authMiddleware, AuthenticatedRequest } from "../middleware";
 import * as ofx from 'node-ofx-parser';
 
 export function registerBankRoutes(app: Express) {
+  // ROTA 1: BUSCAR ITENS
   app.get("/api/bank/items", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      console.log("\n--- [DEBUG] INICIANDO BUSCA DE ITENS BANCÁRIOS ---");
+      
+      if (!req.user) {
+        console.log("[DEBUG] Erro: Usuário não autenticado.");
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
       const companyId = req.user.companyId;
-      console.log(`[Bank API Debug] Buscando itens para empresa: ${companyId}`);
+      const userId = req.user.id;
+      console.log(`[DEBUG] Usuário: ${userId} | Empresa: ${companyId}`);
       
+      // Busca direta no storage
       const items = await storage.getBankStatementItems(companyId);
-      console.log(`[Bank API Debug] Encontrados ${items.length} itens no storage para ${companyId}`);
       
-      // Log detalhado dos status para garantir que não há erros de filtragem
-      console.log(`[Bank API Debug] Retornando ${items.length} itens para ${companyId}`);
+      console.log(`[DEBUG] Quantidade de itens encontrados no Banco de Dados: ${items.length}`);
       
-      res.header('Cache-Control', 'no-store'); // Prevenir cache no nível da rede
+      if (items.length > 0) {
+        console.log("[DEBUG] Exemplo do primeiro item encontrado:");
+        console.log(JSON.stringify(items[0], null, 2));
+      } else {
+        console.log("[DEBUG] A lista retornou VAZIA do banco de dados.");
+        console.log("[DEBUG] DICA: Verifique se o upload salvou com o companyId correto.");
+      }
+
+      console.log("--- [DEBUG] FIM DA BUSCA ---\n");
+      
+      // Cabeçalhos para matar cache
+      res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.header('Pragma', 'no-cache');
+      res.header('Expires', '0');
+      
       res.json(items);
     } catch (error) {
-      console.error("[Bank API Debug] Erro ao buscar itens:", error);
+      console.error("[DEBUG] ERRO CRÍTICO NA ROTA:", error);
       res.status(500).json({ error: "Failed to fetch bank statement items" });
     }
   });
 
+  // ROTA 2: UPLOAD E PROCESSAMENTO DO OFX (CORRIGIDO)
   app.post("/api/bank/upload-ofx", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const { ofxContent } = req.body;
-      
-      console.log("[OFX Debug] Recebido conteúdo. Tamanho:", ofxContent?.length);
-      
-      if (!ofxContent) {
-        return res.status(400).json({ error: "Conteúdo do arquivo não fornecido" });
-      }
 
-      const ofxStart = ofxContent.indexOf('<OFX>');
-      if (ofxStart === -1) {
-        console.error("[OFX Debug] Tag <OFX> não encontrada no conteúdo");
-        return res.status(400).json({ error: "Arquivo OFX inválido: tag <OFX> não encontrada" });
-      }
+      if (!ofxContent) return res.status(400).json({ error: "Conteúdo inválido" });
 
-      console.log("[OFX Debug] Tag <OFX> encontrada na posição:", ofxStart);
+      // --- 1. PARSE DO ARQUIVO ---
+      const cleanContent = ofxContent.replace(/&/g, '&amp;'); 
+      const ofxStart = cleanContent.indexOf('<OFX>');
 
-      const header = ofxContent.substring(0, ofxStart);
-      const body = ofxContent.substring(ofxStart);
-      
       let data;
       try {
-        console.log("[OFX Debug] Tentando parse inicial...");
-        // Limpeza básica e remoção de fuso horário
-        const initialClean = ofxContent.trim().replace(/\[-?\d+:\w+\]/g, '');
+        const initialClean = cleanContent.trim().replace(/\[-?\d+:\w+\]/g, '');
         data = ofx.parse(initialClean);
-        console.log("[OFX Debug] Parse inicial bem-sucedido");
-      } catch (parseError) {
-        console.warn("[OFX Debug] Falha no parse inicial, tentando limpeza SGML customizada...");
-        try {
-          // Lógica manual para converter SGML malformado em objeto JSON
-          // Baseado na estrutura do arquivo enviado pelo usuário
-          const transactions: any[] = [];
-          const lines = ofxContent.split('\n');
-          let currentTrn: any = null;
-          
-          for (let line of lines) {
-            line = line.trim();
-            if (line.includes('<STMTTRN>')) {
-              currentTrn = {};
-            } else if (line.includes('</STMTTRN>')) {
-              if (currentTrn) transactions.push(currentTrn);
-              currentTrn = null;
-            } else if (currentTrn) {
-              const match = line.match(/<(\w+)>([^<\n\r]+)/);
-              if (match) {
-                const tag = match[1];
-                let value = match[2].trim();
-                // Limpeza específica para data
-                if (tag === 'DTPOSTED') value = value.replace(/\[-?\d+:\w+\]/g, '');
-                currentTrn[tag] = value;
-              }
+      } catch (e) {
+        // Fallback para OFX manual
+        const transactions: any[] = [];
+        const lines = cleanContent.split('\n');
+        let currentTrn: any = null;
+        for (let line of lines) {
+          line = line.trim();
+          if (line.includes('<STMTTRN>')) currentTrn = {};
+          else if (line.includes('</STMTTRN>')) {
+            if (currentTrn) transactions.push(currentTrn);
+            currentTrn = null;
+          } else if (currentTrn) {
+            const match = line.match(/<(\w+)>([^<\n\r]+)/);
+            if (match) {
+              const tag = match[1];
+              let value = match[2].trim();
+              if (tag === 'DTPOSTED') value = value.replace(/\[-?\d+:\w+\]/g, '');
+              currentTrn[tag] = value;
             }
           }
-          
-          if (transactions.length > 0) {
-            data = {
-              OFX: {
-                BANKMSGSRSV1: {
-                  STMTTRNRS: {
-                    STMTRS: {
-                      BANKTRANLIST: {
-                        STMTTRN: transactions
-                      }
-                    }
-                  }
-                }
-              }
-            };
-            console.log("[OFX Debug] Parse manual SGML bem-sucedido. Transações:", transactions.length);
-          } else {
-            throw new Error("Nenhuma transação encontrada no parse manual");
-          }
-        } catch (manualError) {
-          console.error('[OFX Debug] Falha no parse manual:', manualError);
-          throw parseError;
+        }
+        if (transactions.length > 0) {
+          data = { OFX: { BANKMSGSRSV1: { STMTTRNRS: { STMTRS: { BANKTRANLIST: { STMTTRN: transactions } } } } } };
+        } else {
+          throw new Error("Não foi possível ler as transações do OFX");
         }
       }
 
-      if (!data || typeof data !== 'object') {
-        throw new Error("Falha ao gerar objeto de dados do OFX");
-      }
-      
-      console.log("[OFX Debug] Estrutura detectada:", Object.keys(data));
-      
+      // --- 2. EXTRAÇÃO ---
       const ofxObj = data.OFX || data;
       const bankMsg = ofxObj.BANKMSGSRSV1?.STMTTRNRS?.STMTRS || 
-                     ofxObj.CREDITCARDMSGSRSV1?.CCSTMTTRNRS?.CCSTMTRS;
-      
-      const stmttrns = bankMsg?.BANKTRANLIST?.STMTTRN;
-      
-      if (!stmttrns) {
-        console.error("[OFX Debug] Estrutura de transações não encontrada. Chaves OFX:", Object.keys(ofxObj));
-        return res.status(400).json({ error: "Estrutura do arquivo OFX inválida ou sem transações" });
-      }
+                      ofxObj.CREDITCARDMSGSRSV1?.CCSTMTTRNRS?.CCSTMTRS;
+
+      let stmttrns = bankMsg?.BANKTRANLIST?.STMTTRN;
+      if (!stmttrns) return res.status(400).json({ error: "Sem transações no arquivo" });
 
       const transactions = Array.isArray(stmttrns) ? stmttrns : [stmttrns];
-      console.log("[OFX Debug] Número de transações encontradas:", transactions.length);
-      
-      const newItems: any[] = [];
-      let duplicateCount = 0;
+
+      // --- 3. LÓGICA DE CONCILIAÇÃO INTELIGENTE ---
       const companyId = req.user.companyId;
-      console.log("[OFX Debug] Usando CompanyID:", companyId);
-      const existing = await storage.getBankStatementItems(companyId);
-      
+      const processedItems: any[] = [];
+      let duplicateCount = 0;
+
+      const existingDbItems = await storage.getBankStatementItems(companyId);
+
       for (const trn of transactions) {
         const amount = parseFloat(trn.TRNAMT);
         const rawDate = trn.DTPOSTED || "";
@@ -139,65 +114,71 @@ export function registerBankRoutes(app: Express) {
           parseInt(rawDate.substring(4, 6)) - 1,
           parseInt(rawDate.substring(6, 8))
         );
-        
+
         const description = (trn.MEMO || trn.NAME || "Transação Bancária").trim();
-        
-        const isDuplicate = existing.some(item => 
+
+        // Verifica se já existe
+        const existingItem = existingDbItems.find(item => 
           item.description === description && 
           new Date(item.date).getTime() === date.getTime() && 
-          Math.abs(parseFloat(item.amount.toString()) - amount) < 0.001
+          Math.abs(parseFloat(item.amount.toString()) - amount) < 0.01
         );
-        
-        if (!isDuplicate) {
-          console.log(`[OFX Debug] Criando item para empresa ${companyId}: ${description}`);
+
+        if (existingItem) {
+          // SE JÁ EXISTE: Devolve para a tela (NÃO DESCARTA)
+          processedItems.push(existingItem);
+          duplicateCount++; 
+        } else {
+          // SE É NOVO: Cria no banco
           const newItem = await storage.createBankStatementItem(companyId, {
             date,
             amount: amount.toString(),
             description: description,
             status: 'PENDING'
           });
-          newItems.push(newItem);
-        } else {
-          duplicateCount++;
+          processedItems.push(newItem);
         }
       }
-      
-      console.log("[OFX Debug] Importação finalizada. Novos:", newItems.length, "Duplicados:", duplicateCount);
-      const totalItems = await storage.getBankStatementItems(req.user.companyId);
-      console.log("[OFX Debug] Itens totais no banco para esta empresa:", totalItems.length);
-      res.json({ newItems, duplicateCount, totalItems: totalItems.length });
+
+      // Retorna TUDO para o frontend preencher a lista
+      res.json({ 
+        newItems: processedItems, 
+        duplicateCount,
+        totalItems: processedItems.length 
+      });
+
     } catch (error: any) {
-      console.error('[OFX Debug] Erro fatal:', error);
-      res.status(400).json({ error: "Erro ao processar arquivo OFX: formato inválido ou corrompido" });
+      console.error('[OFX Error]', error);
+      res.status(400).json({ error: "Erro ao processar arquivo OFX" });
     }
   });
 
+  // ROTA 3: SUGESTÕES DE MATCH
   app.get("/api/bank/suggest/:id", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const item = await storage.getBankStatementItemById(req.user.companyId, req.params.id);
       if (!item) return res.status(404).json({ error: "Item not found" });
 
-      console.log(`[IA Debug] Buscando sugestões para item ${req.params.id} (${item.description})`);
-      
       const transactions = await storage.getTransactions(req.user.companyId);
+
       const suggestions = transactions.filter(t => {
-        const bankDesc = item.description.toLowerCase();
-        const transDesc = (t.description || "").toLowerCase();
-        
-        const amountMatch = Math.abs(parseFloat(t.amount) - Math.abs(parseFloat(item.amount))) < 0.01;
-        const descMatch = transDesc.includes(bankDesc) || bankDesc.includes(transDesc);
-        
+        const bankVal = Math.abs(parseFloat(item.amount));
+        const sysVal = Math.abs(parseFloat(t.amount));
+
+        const amountMatch = Math.abs(sysVal - bankVal) < 0.05; 
+        const descMatch = (t.description || "").toLowerCase().includes(item.description.toLowerCase().split(' ')[0]);
+
         return amountMatch || descMatch;
       }).slice(0, 5);
-      
+
       res.json(suggestions);
     } catch (error) {
-      console.error("[IA Debug] Erro ao buscar sugestões:", error);
       res.status(500).json({ error: "Failed to fetch suggestions" });
     }
   });
 
+  // ROTA 4: MATCH MANUAL
   app.post("/api/bank/match", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
@@ -209,13 +190,14 @@ export function registerBankRoutes(app: Express) {
     }
   });
 
+  // ROTA 5: LIMPAR DADOS
   app.delete("/api/bank/clear", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       await storage.clearBankStatementItems(req.user.companyId);
-      res.json({ message: "Dados bancários removidos com sucesso" });
+      res.json({ message: "Limpo com sucesso" });
     } catch (error) {
-      res.status(500).json({ error: "Failed to clear bank statement items" });
+      res.status(500).json({ error: "Failed to clear" });
     }
   });
 }

@@ -25,11 +25,10 @@ export default function BankReconciliation({ open, onOpenChange }) {
     if (open) {
       const fileName = localStorage.getItem('lastBankStatementFile');
       setLastFileName(fileName);
-      autoReconcileTriggered.current = false; // Reset flag when opening
+      autoReconcileTriggered.current = false; 
     }
   }, [open]);
 
-  // Fetch categories to use as default
   const { data: categories = [] } = useQuery({
     queryKey: ['/api/categories'],
     queryFn: () => apiRequest('GET', '/api/categories')
@@ -45,20 +44,9 @@ export default function BankReconciliation({ open, onOpenChange }) {
 
   const bankItems = Array.isArray(bankItemsRaw) ? bankItemsRaw : (bankItemsRaw.data || []);
 
-  // Log para depuração profunda
   useEffect(() => {
     if (open) {
-      console.log("[Bank Reconciliation Debug] Modal aberto. raw bankItems:", bankItems);
-      console.log("[Bank Reconciliation Debug] Quantidade de itens:", bankItems.length);
-    }
-  }, [bankItems, open]);
-
-  // Forçar refetch e garantir que o estado local reflita a realidade
-  useEffect(() => {
-    if (open) {
-      refetchBankItems().then((res) => {
-        console.log("[Bank Reconciliation Debug] Refetch concluído. Novos dados:", res.data);
-      });
+      refetchBankItems();
     }
   }, [open, refetchBankItems]);
 
@@ -89,8 +77,6 @@ export default function BankReconciliation({ open, onOpenChange }) {
   const createTransactionAndMatchMutation = useMutation({
     mutationFn: async (transactionData) => {
       const transaction = await apiRequest('POST', '/api/transactions', transactionData);
-      
-      // Auto-match with bank item after creation
       if (selectedBankItemForForm) {
         return matchMutation.mutateAsync({ 
           bankItemId: selectedBankItemForForm.id, 
@@ -114,17 +100,12 @@ export default function BankReconciliation({ open, onOpenChange }) {
   const clearBankDataMutation = useMutation({
     mutationFn: () => apiRequest('DELETE', '/api/bank/clear'),
     onSuccess: () => {
-      // Limpa cache do queryClient imediatamente
       queryClient.setQueryData(['/api/bank/items'], []);
       queryClient.invalidateQueries({ queryKey: ['/api/bank/items'] });
-      
-      // Limpa local storage e estado local
       localStorage.removeItem('lastBankStatementFile');
-      localStorage.removeItem('lastBankStatementContent'); // Adicionado para garantir limpeza total
+      localStorage.removeItem('lastBankStatementContent');
       setLastFileName(null);
-      
       toast.success('Dados bancários removidos com sucesso');
-      // Fecha o modal para resetar completamente o estado interno
       onOpenChange(false);
     },
     onError: () => {
@@ -132,24 +113,21 @@ export default function BankReconciliation({ open, onOpenChange }) {
     }
   });
 
-  // Auto-reconciliation function
   const performAutoReconciliation = async () => {
     if (!bankItems.length || isAutoReconciling) return;
-    
+
     setIsAutoReconciling(true);
     let reconciliationCount = 0;
     const pendingItems = bankItems.filter(item => item.status === 'PENDING');
-    
+
     for (const bankItem of pendingItems) {
       try {
-        // Get suggestions for this bank item
         const suggestions = await apiRequest('GET', `/api/bank/suggest/${bankItem.id}`);
         if (suggestions.length === 0) continue;
-        
-        // Check for perfect match (exact description and amount)
+
         const bankItemAmount = Math.abs(parseFloat(bankItem.amount));
         const bankItemDesc = bankItem.description.toLowerCase().trim();
-        
+
         const perfectMatch = suggestions.find(t => {
           const tAmount = Math.abs(parseFloat(t.amount));
           const tDesc = (t.description || '').toLowerCase().trim();
@@ -157,34 +135,29 @@ export default function BankReconciliation({ open, onOpenChange }) {
           const descMatch = tDesc === bankItemDesc;
           return amountMatch && descMatch;
         });
-        
+
         if (perfectMatch) {
-          // Auto-reconcile this item
           await apiRequest('POST', '/api/bank/match', { 
               bankItemId: bankItem.id, 
               transactionId: perfectMatch.id 
             });
-          
           reconciliationCount++;
         }
-      } catch (error) {
-      }
+      } catch (error) {}
     }
-    
+
     setIsAutoReconciling(false);
-    
+
     if (reconciliationCount > 0) {
       queryClient.invalidateQueries({ queryKey: ['/api/bank/items'] });
       queryClient.invalidateQueries({ exact: false, queryKey: ['/api/transactions'] });
-      toast.success(`${reconciliationCount} transação${reconciliationCount > 1 ? 's' : ''} reconciliada${reconciliationCount > 1 ? 's' : ''} automaticamente!`);
+      toast.success(`${reconciliationCount} transação(ões) reconciliada(s) automaticamente!`);
     }
   };
 
-  // Trigger auto-reconciliation when modal opens with pending items
   useEffect(() => {
     if (open && bankItems.length > 0 && !autoReconcileTriggered.current) {
       autoReconcileTriggered.current = true;
-      // Pequeno delay para garantir que os dados estão prontos
       setTimeout(() => {
         performAutoReconciliation();
       }, 500);
@@ -202,9 +175,6 @@ export default function BankReconciliation({ open, onOpenChange }) {
     return status === 'RECONCILED' || status === 'MATCHED' || status === 'CONCILIADO' || status === 'COMPLETED';
   });
 
-  console.log("[Bank Reconciliation Debug] Itens filtrados - Pendentes:", pendingItems.length, "Conciliados:", reconciledItems.length);
-
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -217,7 +187,7 @@ export default function BankReconciliation({ open, onOpenChange }) {
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-between">
               <div>
                 <p className="text-xs text-blue-600">Último arquivo carregado</p>
-                <p className="text-sm font-medium text-blue-900" data-testid="text-last-file">{lastFileName}</p>
+                <p className="text-sm font-medium text-blue-900">{lastFileName}</p>
               </div>
               <Button 
                 size="sm"
@@ -225,7 +195,6 @@ export default function BankReconciliation({ open, onOpenChange }) {
                 className="text-rose-600 hover:bg-rose-50"
                 onClick={() => clearBankDataMutation.mutate()}
                 disabled={clearBankDataMutation.isPending}
-                data-testid="button-clear-file"
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 Limpar
@@ -241,7 +210,7 @@ export default function BankReconciliation({ open, onOpenChange }) {
               </div>
               <p className="text-2xl font-bold text-amber-700">{pendingItems.length}</p>
             </div>
-            
+
             <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -264,7 +233,7 @@ export default function BankReconciliation({ open, onOpenChange }) {
                 <div className="text-center py-8 text-slate-500">Nenhum item pendente</div>
               ) : (
                 pendingItems.map((item) => (
-                  <div key={item.id} className="p-4 bg-white rounded-lg border space-y-3" data-testid={`card-pending-${item.id}`}>
+                  <div key={item.id} className="p-4 bg-white rounded-lg border space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -273,15 +242,15 @@ export default function BankReconciliation({ open, onOpenChange }) {
                           {parseFloat(item.amount) > 0 ? '+' : '-'}
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-slate-900" data-testid={`text-description-${item.id}`}>{item.description}</p>
+                          <p className="font-medium text-slate-900">{item.description}</p>
                           <div className="flex items-center gap-3 text-xs text-slate-600">
-                            <span data-testid={`text-date-${item.id}`}>{format(new Date(item.date), "dd/MM/yyyy", { locale: ptBR })}</span>
-                            <span className="font-semibold" data-testid={`text-amount-${item.id}`}>
+                            <span>{format(new Date(item.date), "dd/MM/yyyy", { locale: ptBR })}</span>
+                            <span className="font-semibold">
                               R$ {Math.abs(parseFloat(item.amount)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1" data-testid={`status-pending-${item.id}`}>
+                        <div className="flex items-center gap-1">
                           <XCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
                           <span className="text-xs font-medium text-rose-600">Pendente</span>
                         </div>
@@ -345,7 +314,7 @@ export default function BankReconciliation({ open, onOpenChange }) {
 
             <TabsContent value="reconciled" className="space-y-2 mt-4">
               {reconciledItems.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200" data-testid={`card-reconciled-${item.id}`}>
+                <div key={item.id} className="flex items-center gap-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-900">{item.description}</p>
                     <p className="text-xs text-slate-600">
@@ -374,12 +343,9 @@ export default function BankReconciliation({ open, onOpenChange }) {
             open={isTransactionFormOpen}
             onOpenChange={(value) => {
               setIsTransactionFormOpen(value);
-              if (!value) {
-                setSelectedBankItemForForm(null);
-              }
+              if (!value) setSelectedBankItemForForm(null);
             }}
             onSubmit={(data) => {
-              // Convert bank item data to transaction form format
               const transactionData = Array.isArray(data) ? data : [data];
               transactionData.forEach(t => {
                 createTransactionAndMatchMutation.mutate(t);
