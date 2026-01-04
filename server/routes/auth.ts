@@ -1,5 +1,5 @@
 import { Express } from "express";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "../db";
 import { users, companies, subscriptions, categories } from "../../shared/schema";
 import { 
@@ -70,7 +70,8 @@ export function registerAuthRoutes(app: Express) {
           plan: subscriptionPlan, 
           status: "active",
           amount: amount,
-          subscriberName: name || username
+          subscriberName: name || username,
+          createdAt: new Date()
         } as any);
         await db.update(companies).set({ subscriptionPlan: subscriptionPlan, paymentStatus: "approved" } as any).where(eq(companies.id, company.id));
       } catch (err) {
