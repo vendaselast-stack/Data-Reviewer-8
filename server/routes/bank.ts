@@ -76,6 +76,8 @@ export function registerBankRoutes(app: Express) {
       // --- CORREÇÃO 3: Tipagem 'any[]' para evitar erro de propriedade inexistente ---
       const existingDbItems = (await storage.getBankStatementItems(companyId)) as any[];
 
+      console.log(`[Bank API] Processando ${transactions.length} transações para empresa ${companyId}. Itens existentes no banco: ${existingDbItems.length}`);
+
       for (const trn of transactions) {
         const amount = parseFloat(trn.TRNAMT);
         const rawDate = trn.DTPOSTED || "";
@@ -86,10 +88,7 @@ export function registerBankRoutes(app: Express) {
         );
         const description = (trn.MEMO || trn.NAME || "Transação").trim();
 
-        // Log para depuração de duplicatas
-        console.log(`[Bank API] Verificando item: ${description} | Data: ${date.toISOString()} | Valor: ${amount} | Empresa: ${companyId}`);
-
-        // Busca no banco se já existe ESSA transação para ESSA empresa
+        // Busca no banco se JÁ EXISTE essa transação PARA ESSA EMPRESA ESPECÍFICA
         const existingItem = existingDbItems.find(item => 
           item.description === description && 
           new Date(item.date).toDateString() === date.toDateString() && 
@@ -97,11 +96,11 @@ export function registerBankRoutes(app: Express) {
         );
 
         if (existingItem) {
-          console.log(`[Bank API] Item ignorado (já existe): ${description}`);
+          console.log(`[Bank API] Transação já existe para esta empresa, ignorando: ${description}`);
           processedItems.push(existingItem);
           duplicateCount++;
         } else {
-          console.log(`[Bank API] Criando novo item: ${description} - ${amount} para empresa ${companyId}`);
+          console.log(`[Bank API] Criando NOVA transação para empresa ${companyId}: ${description}`);
           const newItem = await storage.createBankStatementItem(companyId, {
             date,
             amount: amount.toString(),
