@@ -140,8 +140,10 @@ export function registerBankRoutes(app: Express) {
           parseInt(rawDate.substring(6, 8))
         );
         
+        const description = (trn.MEMO || trn.NAME || "Transação Bancária").trim();
+        
         const isDuplicate = existing.some(item => 
-          item.description === trn.MEMO && 
+          item.description === description && 
           new Date(item.date).getTime() === date.getTime() && 
           Math.abs(parseFloat(item.amount.toString()) - amount) < 0.001
         );
@@ -150,7 +152,7 @@ export function registerBankRoutes(app: Express) {
           const newItem = await storage.createBankStatementItem(req.user.companyId, {
             date,
             amount: amount.toString(),
-            description: trn.MEMO || trn.NAME || "Transação Bancária",
+            description: description,
             status: 'PENDING'
           });
           newItems.push(newItem);

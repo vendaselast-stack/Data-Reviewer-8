@@ -583,7 +583,16 @@ export class DatabaseStorage implements IStorage {
   async deleteInvitation(token: string): Promise<void> { await db.delete(invitations).where(eq(invitations.token, token)); }
   async createAuditLog(data: InsertAuditLog): Promise<AuditLog> { const result = await db.insert(auditLogs).values(data as any).returning(); return result[0]; }
   async getAuditLogs(companyId: string, limit: number = 100): Promise<AuditLog[]> { return await db.select({ id: auditLogs.id, userId: auditLogs.userId, companyId: auditLogs.companyId, action: auditLogs.action, resourceType: auditLogs.resourceType, resourceId: auditLogs.resourceId, details: auditLogs.details, ipAddress: auditLogs.ipAddress, userAgent: auditLogs.userAgent, status: auditLogs.status, createdAt: auditLogs.createdAt, userName: users.name, }).from(auditLogs).leftJoin(users, eq(auditLogs.userId, users.id)).where(eq(auditLogs.companyId, companyId)).orderBy(desc(auditLogs.createdAt)).limit(limit); }
-  async getBankStatementItems(companyId: string): Promise<BankStatementItem[]> { return await db.select().from(bankStatementItems).where(eq(bankStatementItems.companyId, companyId)).orderBy(desc(bankStatementItems.date)); }
+  async getBankStatementItemById(companyId: string, id: string): Promise<BankStatementItem | undefined> {
+    const result = await db.select().from(bankStatementItems).where(and(eq(bankStatementItems.companyId, companyId), eq(bankStatementItems.id, id)));
+    return result[0];
+  }
+
+  async getBankStatementItems(companyId: string): Promise<BankStatementItem[]> { 
+    const result = await db.select().from(bankStatementItems).where(eq(bankStatementItems.companyId, companyId)).orderBy(desc(bankStatementItems.date));
+    console.log(`[Storage Debug] getBankStatementItems para ${companyId} retornou ${result.length} itens`);
+    return result;
+  }
   async createBankStatementItem(companyId: string, data: InsertBankStatementItem): Promise<BankStatementItem> { const [item] = await db.insert(bankStatementItems).values({ ...data, companyId }).returning(); return item; }
   async updateBankStatementItem(companyId: string, id: string, data: Partial<InsertBankStatementItem>): Promise<BankStatementItem> { const [item] = await db.update(bankStatementItems).set(data).where(and(eq(bankStatementItems.companyId, companyId), eq(bankStatementItems.id, id))).returning(); return item; }
   async matchBankStatementItem(companyId: string, bankItemId: string, transactionId: string): Promise<BankStatementItem> { return await db.transaction(async (tx) => { const result = await tx.update(bankStatementItems).set({ status: "RECONCILED", transactionId }).where(and(eq(bankStatementItems.companyId, companyId), eq(bankStatementItems.id, bankItemId))).returning(); await tx.update(transactions).set({ isReconciled: true }).where(and(eq(transactions.companyId, companyId), eq(transactions.id, transactionId))); return result[0]; }); }

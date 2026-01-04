@@ -185,19 +185,22 @@ export default function BankReconciliation({ open, onOpenChange }) {
   useEffect(() => {
     if (open && bankItems.length > 0 && !autoReconcileTriggered.current) {
       autoReconcileTriggered.current = true;
-      performAutoReconciliation();
+      // Pequeno delay para garantir que os dados estão prontos
+      setTimeout(() => {
+        performAutoReconciliation();
+      }, 500);
     }
   }, [open, bankItems.length]);
 
   const pendingItems = bankItems.filter(item => {
-    console.log("[Bank Reconciliation Debug] Filtrando item:", item.description, "Status:", item.status);
-    const status = (item.status || 'PENDING').toUpperCase();
+    if (!item.status) return true;
+    const status = item.status.toUpperCase();
     return status === 'PENDING' || status === 'PENDENTE';
   });
   const reconciledItems = bankItems.filter(item => {
     if (!item.status) return false;
     const status = item.status.toUpperCase();
-    return status === 'RECONCILED' || status === 'MATCHED' || status === 'CONCILIADO';
+    return status === 'RECONCILED' || status === 'MATCHED' || status === 'CONCILIADO' || status === 'COMPLETED';
   });
 
   console.log("[Bank Reconciliation Debug] Itens filtrados - Pendentes:", pendingItems.length, "Conciliados:", reconciledItems.length);
