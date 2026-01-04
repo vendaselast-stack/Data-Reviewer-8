@@ -66,13 +66,14 @@ export default function BankStatementUpload({ open, onOpenChange, onExtracted })
     try {
       // Ler como ArrayBuffer para detectar/converter encoding
       const buffer = await file.arrayBuffer();
-      const decoderUtf8 = new TextDecoder('utf-8');
+      // Robust encoding detection: 
+      // Try UTF-8 first, if it fails or contains many replacement characters, try ISO-8859-1
+      const decoderUtf8 = new TextDecoder('utf-8', { fatal: false });
       const decodedUtf8 = decoderUtf8.decode(buffer);
       
       let content;
-      // Heurística simples: se contém caracteres estranhos (como o caractere de substituição ), 
-      // tenta ISO-8859-1 que é comum em OFX de bancos brasileiros
-      if (decodedUtf8.includes('')) {
+      // Heurística: se contém o caractere de substituição (), tenta ISO-8859-1 
+      if (decodedUtf8.includes('\uFFFD')) {
         const decoderIso = new TextDecoder('iso-8859-1');
         content = decoderIso.decode(buffer);
       } else {

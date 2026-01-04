@@ -77,15 +77,18 @@ export function registerBankRoutes(app: Express) {
       let duplicateCount = 0;
       const companyId = req.user!.companyId;
 
-      // Busca itens existentes APENAS desta empresa
+      if (!companyId) {
+        return res.status(401).json({ error: "Company ID missing in user session" });
+      }
+
+      // Busca itens existentes APENAS desta empresa para verificação de duplicatas
       const existingDbItems = (await storage.getBankStatementItems(companyId)) as any[];
 
       for (const trn of transactions) {
         const amount = parseFloat(trn.TRNAMT);
-        if (isNaN(amount)) continue; // Pula transações sem valor válido
+        if (isNaN(amount)) continue;
 
         const rawDate = trn.DTPOSTED || "";
-        // Suporte a diferentes formatos de data OFX (YYYYMMDD ou YYYYMMDDHHMMSS)
         const year = parseInt(rawDate.substring(0, 4));
         const month = parseInt(rawDate.substring(4, 6)) - 1;
         const day = parseInt(rawDate.substring(6, 8));
@@ -96,17 +99,19 @@ export function registerBankRoutes(app: Express) {
         const description = (trn.MEMO || trn.NAME || "Transação").trim();
 
         // Busca no banco se JÁ EXISTE essa transação PARA ESSA EMPRESA ESPECÍFICA
-        const existingItem = existingDbItems.find(item => {
-          // Garante que estamos comparando apenas dentro da mesma empresa
+        const isDuplicate = existingDbItems.some(item => {
+          // O getBankStatementItems já filtra por companyId, mas reforçamos a verificação por segurança
           if (item.companyId !== companyId) return false;
           
+          const itemDate = new Date(item.date);
+          const itemAmount = parseFloat(item.amount);
+
           return item.description === description && 
-                 new Date(item.date).toDateString() === date.toDateString() && 
-                 Math.abs(parseFloat(item.amount) - amount) < 0.001;
+                 itemDate.toDateString() === date.toDateString() && 
+                 Math.abs(itemAmount - amount) < 0.001;
         });
 
-        if (existingItem) {
-          processedItems.push(existingItem);
+        if (isDuplicate) {
           duplicateCount++;
         } else {
           const newItem = await storage.createBankStatementItem(companyId, {
@@ -119,7 +124,12 @@ export function registerBankRoutes(app: Express) {
         }
       }
 
-      res.json({ newItems: processedItems, duplicateCount, totalItems: processedItems.length });
+      res.json({ 
+        newItems: processedItems, 
+        duplicateCount, 
+        totalItems: processedItems.length,
+        message: `${processedItems.length} novas transações importadas, ${duplicateCount} duplicatas ignoradas.`
+      });
 
     } catch (error: any) {
       console.error('[OFX Error]', error);
