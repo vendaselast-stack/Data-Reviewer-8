@@ -114,6 +114,11 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       onOpenChange(false);
       toast.success('Venda registrada com sucesso!');
 
+      // Invalida e recarrega os dados para garantir que o total na tabela atualize
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sales'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+
       setFormData({
         description: '',
         total_amount: '',
