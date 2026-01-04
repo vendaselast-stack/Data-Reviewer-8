@@ -254,8 +254,8 @@ Forneça:
               type: "object",
               properties: {
                 month: { type: "string" },
-                predicted_revenue: { type: "number" },
-                predicted_expense: { type: "number" },
+                predicted_revenue: { type: "number", description: "Numerical value only, no R$ prefix" },
+                predicted_expense: { type: "number", description: "Numerical value only, no R$ prefix" },
                 reasoning: { type: "string" }
               },
               required: ["month", "predicted_revenue", "predicted_expense"]
