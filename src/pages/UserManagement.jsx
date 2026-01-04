@@ -139,6 +139,20 @@ export default function UserManagement() {
     // Força permissões completas para admin na interface
     if (user.role === 'admin') {
       Object.values(PERMISSIONS).forEach(p => perms[p] = true);
+    } else if (user.role === 'user' && (!user.permissions || Object.keys(user.permissions).length === 0)) {
+      // Permissões padrão para Operacional se não tiver nenhuma
+      perms = {
+        [PERMISSIONS.VIEW_TRANSACTIONS]: true,
+        [PERMISSIONS.CREATE_TRANSACTIONS]: true,
+        [PERMISSIONS.EDIT_TRANSACTIONS]: true,
+        [PERMISSIONS.DELETE_TRANSACTIONS]: true,
+        [PERMISSIONS.IMPORT_BANK]: true,
+        [PERMISSIONS.VIEW_CUSTOMERS]: true,
+        [PERMISSIONS.MANAGE_CUSTOMERS]: true,
+        [PERMISSIONS.VIEW_SUPPLIERS]: true,
+        [PERMISSIONS.MANAGE_SUPPLIERS]: true,
+        [PERMISSIONS.PRICE_CALC]: true
+      };
     }
     
     setSelectedUser({
