@@ -64,7 +64,14 @@ export function registerAuthRoutes(app: Express) {
 
       const subscriptionPlan = plan || "pro";
       try {
-        await db.insert(subscriptions).values({ companyId: company.id, plan: subscriptionPlan, status: "active" } as any);
+        const amount = subscriptionPlan === "pro" ? "997.00" : (subscriptionPlan === "monthly" ? "97.00" : "0.00");
+        await db.insert(subscriptions).values({ 
+          companyId: company.id, 
+          plan: subscriptionPlan, 
+          status: "active",
+          amount: amount,
+          subscriberName: name || username
+        } as any);
         await db.update(companies).set({ subscriptionPlan: subscriptionPlan, paymentStatus: "approved" } as any).where(eq(companies.id, company.id));
       } catch (err) {
         console.error("Error setting up company subscription:", err);
@@ -142,10 +149,10 @@ export function registerAuthRoutes(app: Express) {
   app.patch("/api/auth/profile", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const { name, phone, cep, rua, numero, complemento, estado, cidade } = req.body;
+      const { name, phone, cep, rua, numero, complemento, estado, cidade, avatar } = req.body;
       
       const [updatedUser] = await db.update(users)
-        .set({ name, phone, cep, rua, numero, complemento, estado, cidade })
+        .set({ name, phone, cep, rua, numero, complemento, estado, cidade, avatar })
         .where(eq(users.id, req.user.id))
         .returning();
 
@@ -168,6 +175,60 @@ export function registerAuthRoutes(app: Express) {
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  // Avatar Upload
+  app.post("/api/auth/avatar", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const { avatarDataUrl } = req.body;
+      
+      const [updatedUser] = await db.update(users)
+        .set({ avatar: avatarDataUrl })
+        .where(eq(users.id, req.user.id))
+        .returning();
+
+      if (!updatedUser) return res.status(404).json({ error: "User not found" });
+
+      res.json({
+        user: { 
+          id: updatedUser.id, 
+          username: updatedUser.username, 
+          email: updatedUser.email, 
+          name: updatedUser.name, 
+          phone: updatedUser.phone, 
+          avatar: updatedUser.avatar, 
+          role: updatedUser.role, 
+          isSuperAdmin: updatedUser.isSuperAdmin, 
+          companyId: updatedUser.companyId, 
+          permissions: updatedUser.permissions ? JSON.parse(updatedUser.permissions) : {} 
+        }
+      });
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      res.status(500).json({ error: "Failed to upload avatar" });
+    }
+  });
+
+  // Get Invoices
+  app.get("/api/auth/invoices", authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+      const companyInvoices = await db.select()
+        .from(subscriptions)
+        .where(eq(subscriptions.companyId, req.user.companyId))
+        .orderBy(desc(subscriptions.createdAt));
+      
+      res.json(companyInvoices.map(inv => ({
+        date: inv.createdAt,
+        plan: inv.plan,
+        amount: inv.amount,
+        status: "paid"
+      })));
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ error: "Failed to fetch invoices" });
     }
   });
 
