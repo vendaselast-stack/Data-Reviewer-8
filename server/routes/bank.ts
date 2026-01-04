@@ -86,9 +86,12 @@ export function registerBankRoutes(app: Express) {
         );
         const description = (trn.MEMO || trn.NAME || "Transação").trim();
 
+        // Log para depuração de duplicatas
+        console.log(`[Bank API] Verificando item: ${description} | Data: ${date.toISOString()} | Valor: ${amount}`);
+
         const existingItem = existingDbItems.find(item => 
           item.description === description && 
-          new Date(item.date).getTime() === date.getTime() && 
+          new Date(item.date).toDateString() === date.toDateString() && 
           Math.abs(parseFloat(item.amount) - amount) < 0.01
         );
 
