@@ -1,5 +1,5 @@
 import { Express } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db } from "../db";
 import { users, companies, subscriptions, categories } from "../../shared/schema";
 import { 
@@ -13,7 +13,8 @@ import {
   createAuditLog,
   createCompany,
   createUser,
-  findUserById
+  findUserById,
+  hashPassword
 } from "../auth";
 import { authMiddleware, checkRateLimit, recordLoginAttempt, AuthenticatedRequest } from "../middleware";
 
