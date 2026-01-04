@@ -26,12 +26,22 @@ export default function CashFlowForecastChart({ forecast }) {
     );
   }
 
-  const chartData = Array.isArray(forecast) ? forecast.map(item => ({
-    name: item.month,
-    receita: item.predicted_revenue,
-    despesa: item.predicted_expense,
-    lucro: item.predicted_revenue - item.predicted_expense
-  })) : [];
+  const chartData = Array.isArray(forecast) ? forecast.map(item => {
+    const receita = typeof item.predicted_revenue === 'string' 
+      ? parseFloat(item.predicted_revenue.replace(/[^\d.-]/g, '')) 
+      : parseFloat(item.predicted_revenue || 0);
+    
+    const despesa = typeof item.predicted_expense === 'string'
+      ? parseFloat(item.predicted_expense.replace(/[^\d.-]/g, ''))
+      : parseFloat(item.predicted_expense || 0);
+
+    return {
+      name: item.month,
+      receita,
+      despesa,
+      lucro: receita - despesa
+    };
+  }) : [];
 
   return (
     <Card className="border-slate-200 shadow-sm">
@@ -87,18 +97,30 @@ export default function CashFlowForecastChart({ forecast }) {
         </ResponsiveContainer>
 
         <div className="mt-6 space-y-3">
-          {Array.isArray(forecast) && forecast.map((item, idx) => (
-            <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-slate-700">{item.month}</span>
-                <span className={`font-bold ${(item.predicted_revenue - item.predicted_expense) >= 0 ? 'text-teal-700' : 'text-red-600'}`}>
-                  {(item.predicted_revenue - item.predicted_expense) >= 0 ? '+' : ''}
-                  R$ {(item.predicted_revenue - item.predicted_expense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
+          {Array.isArray(forecast) && forecast.map((item, idx) => {
+            const receita = typeof item.predicted_revenue === 'string' 
+              ? parseFloat(item.predicted_revenue.replace(/[^\d.-]/g, '')) 
+              : parseFloat(item.predicted_revenue || 0);
+            
+            const despesa = typeof item.predicted_expense === 'string'
+              ? parseFloat(item.predicted_expense.replace(/[^\d.-]/g, ''))
+              : parseFloat(item.predicted_expense || 0);
+            
+            const lucro = receita - despesa;
+
+            return (
+              <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-slate-700">{item.month}</span>
+                  <span className={`font-bold ${lucro >= 0 ? 'text-teal-700' : 'text-red-600'}`}>
+                    {lucro >= 0 ? '+' : ''}
+                    R$ {lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 italic">{item.reasoning}</p>
               </div>
-              <p className="text-xs text-slate-600 italic">{item.reasoning}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
