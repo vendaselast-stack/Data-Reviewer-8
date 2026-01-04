@@ -56,6 +56,10 @@ export class DatabaseStorage {
   // copiando do seu arquivo original, pois eles são necessários para o resto do sistema.
   // Vou colocar os principais aqui para garantir que compile:
 
+  async getTransactions(companyId: any) {
+    return await db.select().from(transactions).where(eq(transactions.companyId, companyId)).orderBy(desc(transactions.date));
+  }
+
   async getCustomers(companyId: any) {
     return await db.select().from(customers).where(eq(customers.companyId, companyId));
   }
@@ -66,7 +70,7 @@ export class DatabaseStorage {
   }
 
   async updateCustomer(companyId: any, id: any, data: any) {
-    const [updated] = await tx.update(customers).set(data).where(and(eq(customers.companyId, companyId), eq(customers.id, id))).returning();
+    const [updated] = await db.update(customers).set(data).where(and(eq(customers.companyId, companyId), eq(customers.id, id))).returning();
     return updated;
   }
 
@@ -84,12 +88,13 @@ export class DatabaseStorage {
   }
 
   async updateSupplier(companyId: any, id: any, data: any) {
-    const [updated] = await tx.update(suppliers).set(data).where(and(eq(suppliers.companyId, companyId), eq(suppliers.id, id))).returning();
+    const [updated] = await db.update(suppliers).set(data).where(and(eq(suppliers.companyId, companyId), eq(suppliers.id, id))).returning();
     return updated;
   }
 
   async deleteSupplier(companyId: any, id: any) {
     await db.delete(suppliers).where(and(eq(suppliers.companyId, companyId), eq(suppliers.id, id)));
   }
+}
 
 export const storage = new DatabaseStorage();
