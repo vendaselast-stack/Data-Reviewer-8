@@ -233,13 +233,14 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
 
     // Get selected category to determine if value should be negative
     const selectedCategory = categories.find(c => c.id === formData.categoryId);
-    let amount = Number(formData.amount).toFixed(2);
+    const numericAmount = parseFloat(formData.amount);
+    let amount = numericAmount.toFixed(2);
 
     // If category is "saida" (expense), make amount negative
     if (selectedCategory && selectedCategory.type === 'saida') {
-      amount = (-Math.abs(Number(amount))).toFixed(2);
+      amount = (-Math.abs(numericAmount)).toFixed(2);
     } else {
-      amount = Math.abs(Number(amount)).toFixed(2);
+      amount = Math.abs(numericAmount).toFixed(2);
     }
 
     // Helper to convert Date to YYYY-MM-DD format (local date, no timezone)
@@ -473,7 +474,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
           <div className="space-y-2">
             <Label>Valor (R$)</Label>
             <CurrencyInput 
-              value={formData.amount ? parseFloat(formData.amount) : ''}
+              value={formData.amount !== '' ? parseFloat(formData.amount) : ''}
               onChange={(e) => {
                 setFormData({...formData, amount: e.target.value.toString()})
               }}

@@ -46,6 +46,11 @@ export function registerTransactionRoutes(app: Express) {
         body.paymentDate = new Date(body.paymentDate);
       }
       
+      // Ensure amount is handled as string for decimal validation if it comes as number
+      if (typeof body.amount === 'number') {
+        body.amount = body.amount.toFixed(2);
+      }
+      
       const data = insertTransactionSchema.parse(body);
       const transaction = await storage.createTransaction(req.user.companyId, data);
       res.status(201).json(transaction);
