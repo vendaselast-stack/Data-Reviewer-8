@@ -294,7 +294,7 @@ export default function ProfilePage() {
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile">Dados Pessoais</TabsTrigger>
-          <TabsTrigger value="subscription">Assinatura</TabsTrigger>
+          <TabsTrigger value="subscription">Financeiro</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
