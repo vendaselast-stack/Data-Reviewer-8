@@ -25,7 +25,7 @@ export function registerAdminRoutes(app: Express) {
 
   app.get("/api/admin/audit-logs", authMiddleware, requireSuperAdmin, async (req, res) => {
     try {
-      const logs = await db.select().from(auditLogs).orderBy(desc(auditLogs.timestamp)).limit(100);
+      const logs = await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(100);
       res.json(logs);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch audit logs" });
