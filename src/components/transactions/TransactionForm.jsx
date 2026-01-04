@@ -162,25 +162,22 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
 
     if (numValue > 1) {
       const totalAmount = parseFloat(formData.amount) || 0;
-      const defaultAmount = totalAmount > 0 ? (totalAmount / numValue).toFixed(2) : '';
+      const defaultAmount = totalAmount > 0 ? (totalAmount / numValue).toFixed(2) : '0.00';
 
       // Extract local date from formData.date (which might be Date or string)
       let baseDate;
       if (typeof formData.date === 'string') {
-        // If it's a string like "2025-12-23", parse it correctly
         const [year, month, day] = formData.date.split('-');
         baseDate = new Date(year, parseInt(month) - 1, parseInt(day));
       } else {
         baseDate = new Date(formData.date);
       }
       
-      // Fix: Ensure we use the correct local day for calculation to avoid timezone shift
       const dayOfMonth = baseDate.getDate();
       const monthIdx = baseDate.getMonth();
       const yearVal = baseDate.getFullYear();
 
       const newCustomInstallments = Array.from({ length: numValue }, (_, i) => {
-        // Use local date constructor to avoid UTC shift
         const installmentDate = new Date(yearVal, monthIdx + i, dayOfMonth);
         const year = installmentDate.getFullYear();
         const month = String(installmentDate.getMonth() + 1).padStart(2, '0');
@@ -636,8 +633,8 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
                             <span className="text-slate-600 text-sm">R$</span>
                             <CurrencyInput
                               placeholder="Valor"
-                              value={inst.amount}
-                              onChange={(e) => updateCustomInstallment(idx, 'amount', e.target.value)}
+                              value={parseFloat(inst.amount) || 0}
+                              onChange={(e) => updateCustomInstallment(idx, 'amount', e.target.value.toString())}
                               className="text-sm flex-1"
                             />
                           </div>
