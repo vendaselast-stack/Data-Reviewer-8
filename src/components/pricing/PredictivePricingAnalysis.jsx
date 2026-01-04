@@ -85,7 +85,69 @@ Crie uma análise preditiva incluindo:
       if (!response || Object.keys(response).length === 0) {
         throw new Error("Resposta da IA vazia");
       }
-      setPredictions(response);
+
+      // Flexibilizar mapeamento para português
+      const rawResult = Array.isArray(response) ? response[0] : response;
+      
+      const validated = {
+        optimal_price_point: rawResult.optimal_price_point || rawResult.ponto_otimo_preco || rawResult.preco_otimo || rawResult.ponto_otimo_precificacao || {},
+        demand_forecast: rawResult.demand_forecast || rawResult.previsao_demanda || (rawResult.analise_preditiva && rawResult.analise_preditiva.previsao_de_demanda) || [],
+        price_elasticity: rawResult.price_elasticity || rawResult.elasticidade_preco || (rawResult.analise_preditiva && rawResult.analise_preditiva.elasticidade_preco_estimada_obj) || {},
+        pricing_strategies: rawResult.pricing_strategies || rawResult.estrategias_precificacao || rawResult.estrategias || (rawResult.analise_preditiva && rawResult.analise_preditiva.cenarios_volume_x_margem) || [],
+        market_positioning: rawResult.market_positioning || rawResult.posicionamento_mercado || rawResult.posicionamento || (rawResult.analise_preditiva && rawResult.analise_preditiva.posicionamento_de_mercado) || ''
+      };
+
+      // Se a elasticidade vier como string simples na nova estrutura
+      if (typeof rawResult.analise_preditiva?.elasticidade_preco_estimada === 'string' && Object.keys(validated.price_elasticity).length === 0) {
+        validated.price_elasticity = {
+          classification: 'unitary',
+          sensitivity: rawResult.analise_preditiva.elasticidade_preco_estimada,
+          recommendations: 'Veja os detalhes acima'
+        };
+      }
+
+      // Mapear campos internos de optimal_price_point
+      if (validated.optimal_price_point) {
+        const op = validated.optimal_price_point;
+        validated.optimal_price_point = {
+          price: parseFloat(String(op.price || op.preco || rawResult.preco_sugerido || 0).replace(/[^\d.-]/g, '')),
+          expected_volume: op.expected_volume || op.volume_esperado || 'N/A',
+          expected_revenue: parseFloat(String(op.expected_revenue || op.receita_esperada || 0).replace(/[^\d.-]/g, '')),
+          reasoning: op.reasoning || op.justificativa || op.motivo || ''
+        };
+      }
+
+      // Mapear demand_forecast
+      if (Array.isArray(validated.demand_forecast)) {
+        validated.demand_forecast = validated.demand_forecast.map(item => ({
+          price_point: parseFloat(String(item.price_point || item.ponto_preco || item.preco || 0).replace(/[^\d.-]/g, '')),
+          estimated_demand: item.estimated_demand || item.demanda_estimada || item.demanda || 'N/A',
+          total_revenue: parseFloat(String(item.total_revenue || item.receita_total || item.margem_bruta_total || 0).replace(/[^\d.-]/g, '')),
+          profit_margin: parseFloat(String(item.profit_margin || item.margem_lucro || item.margem_bruta_por_unidade || 0).replace(/[^\d.-]/g, ''))
+        }));
+      }
+
+      // Mapear price_elasticity
+      if (validated.price_elasticity) {
+        const pe = validated.price_elasticity;
+        validated.price_elasticity = {
+          classification: pe.classification || pe.classificacao || 'unitary',
+          sensitivity: pe.sensitivity || pe.sensibilidade || '',
+          recommendations: pe.recommendations || pe.recomendacoes || ''
+        };
+      }
+
+      // Mapear pricing_strategies
+      if (Array.isArray(validated.pricing_strategies)) {
+        validated.pricing_strategies = validated.pricing_strategies.map(item => ({
+          strategy: item.strategy || item.estrategia || item.acao || '',
+          price: item.price || item.preco || 0,
+          expected_outcome: item.expected_outcome || item.resultado_esperado || '',
+          risk_level: item.risk_level || item.nivel_risco || 'medium'
+        }));
+      }
+
+      setPredictions(validated);
       toast.success('Análise preditiva concluída!', { duration: 5000 });
     } catch (error) {
       toast.error('Erro ao gerar análise preditiva: ' + (error.message || 'Erro desconhecido'), { duration: 5000 });
