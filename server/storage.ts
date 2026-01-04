@@ -88,7 +88,15 @@ export class DatabaseStorage {
   }
 
   async getCustomers(companyId: any) {
-    return await db.select().from(customers).where(eq(customers.companyId, companyId));
+    const allCustomers = await db.select().from(customers).where(eq(customers.companyId, companyId));
+    const allTransactions = await db.select().from(transactions).where(and(eq(transactions.companyId, companyId), eq(transactions.type, 'venda')));
+
+    return allCustomers.map(customer => {
+      const totalSales = allTransactions
+        .filter(t => t.customerId === customer.id)
+        .reduce((sum, t) => sum + parseFloat(t.amount || "0"), 0);
+      return { ...customer, totalSales: totalSales.toString() };
+    });
   }
 
   async createCustomer(companyId: any, data: any) {
@@ -106,7 +114,15 @@ export class DatabaseStorage {
   }
 
   async getSuppliers(companyId: any) {
-    return await db.select().from(suppliers).where(eq(suppliers.companyId, companyId));
+    const allSuppliers = await db.select().from(suppliers).where(eq(suppliers.companyId, companyId));
+    const allTransactions = await db.select().from(transactions).where(and(eq(transactions.companyId, companyId), eq(transactions.type, 'compra')));
+
+    return allSuppliers.map(supplier => {
+      const totalPurchases = allTransactions
+        .filter(t => t.supplierId === supplier.id)
+        .reduce((sum, t) => sum + parseFloat(t.amount || "0"), 0);
+      return { ...supplier, totalPurchases: totalPurchases.toString() };
+    });
   }
 
   async createSupplier(companyId: any, data: any) {

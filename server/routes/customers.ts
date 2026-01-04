@@ -8,7 +8,7 @@ export function registerCustomerRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
       const customers = await storage.getCustomers(req.user.companyId);
-      res.json(customers.map(c => ({ ...c, totalSales: Number(c.totalSales || 0) })));
+      res.json(customers.map((c: any) => ({ ...c, totalSales: Number(c.totalSales || 0) })));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch customers" });
     }
