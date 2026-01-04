@@ -106,6 +106,11 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
       return await apiRequest('POST', '/api/purchases', payload);
     },
     onSuccess: async () => {
+      // Invalida e recarrega os dados para garantir que o total na tabela atualize
+      queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/purchases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+
       await Promise.all([
         queryClient.refetchQueries({ queryKey: ['/api/transactions'] }),
         queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] }),
