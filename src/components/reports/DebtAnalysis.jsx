@@ -49,7 +49,15 @@ export default function DebtAnalysis({ transactions, purchases, purchaseInstallm
 
     if (Array.isArray(purchaseInstallments) && purchaseInstallments.length > 0) {
       purchaseInstallments.forEach(inst => {
-        const dueDate = inst.dueDate ? (typeof inst.dueDate === 'string' ? parseISO(inst.dueDate) : new Date(inst.dueDate)) : null;
+        let dueDate;
+        try {
+          if (!inst.dueDate) return;
+          dueDate = typeof inst.dueDate === 'string' ? parseISO(inst.dueDate) : new Date(inst.dueDate);
+        } catch (e) {
+          console.error("Erro ao processar data da parcela:", inst.dueDate);
+          return;
+        }
+
         if (!dueDate || isNaN(dueDate.getTime())) return;
 
         const amount = parseFloat(inst.amount || 0);
