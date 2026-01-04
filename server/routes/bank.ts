@@ -96,11 +96,14 @@ export function registerBankRoutes(app: Express) {
         const description = (trn.MEMO || trn.NAME || "Transação").trim();
 
         // Busca no banco se JÁ EXISTE essa transação PARA ESSA EMPRESA ESPECÍFICA
-        const existingItem = existingDbItems.find(item => 
-          item.description === description && 
-          new Date(item.date).toDateString() === date.toDateString() && 
-          Math.abs(parseFloat(item.amount) - amount) < 0.001
-        );
+        const existingItem = existingDbItems.find(item => {
+          // Garante que estamos comparando apenas dentro da mesma empresa
+          if (item.companyId !== companyId) return false;
+          
+          return item.description === description && 
+                 new Date(item.date).toDateString() === date.toDateString() && 
+                 Math.abs(parseFloat(item.amount) - amount) < 0.001;
+        });
 
         if (existingItem) {
           processedItems.push(existingItem);
