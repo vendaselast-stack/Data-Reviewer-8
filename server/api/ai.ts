@@ -14,6 +14,7 @@ export async function analyzeWithAI(prompt: string, responseJsonSchema: any = nu
       config: {
         responseMimeType: responseJsonSchema ? "application/json" : "text/plain",
         temperature: 0.1,
+        maxOutputTokens: 2048,
       },
       contents: [
         {
