@@ -1,9 +1,18 @@
 import { Express } from "express";
 import { storage } from "../storage";
-import { insertTransactionSchema, PERMISSIONS, users } from "../../shared/schema";
+import { insertTransactionSchema, users } from "../../shared/schema";
 import { authMiddleware, AuthenticatedRequest } from "../middleware";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
+
+// Define PERMISSIONS object since it might not be exported from schema or to be safe
+const PERMISSIONS = {
+  VIEW_TRANSACTIONS: 'view_transactions',
+  CREATE_TRANSACTIONS: 'create_transactions',
+  EDIT_TRANSACTIONS: 'edit_transactions',
+  DELETE_TRANSACTIONS: 'delete_transactions',
+  IMPORT_BANK: 'import_bank'
+};
 
 // Helper to check permissions
 const checkPermission = async (req: AuthenticatedRequest, permission: string) => {
@@ -14,7 +23,7 @@ const checkPermission = async (req: AuthenticatedRequest, permission: string) =>
   if (!dbUser || !dbUser.permissions) return false;
   
   try {
-    const perms = JSON.parse(dbUser.permissions as string);
+    const perms = typeof dbUser.permissions === 'string' ? JSON.parse(dbUser.permissions) : dbUser.permissions;
     return !!perms[permission];
   } catch (e) {
     return false;

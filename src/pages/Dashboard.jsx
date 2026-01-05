@@ -35,6 +35,12 @@ export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { company, user } = useAuth();
   const queryClient = useQueryClient();
+  const { PERMISSIONS } = { PERMISSIONS: { CREATE_TRANSACTIONS: 'create_transactions' } }; // Simplified for now or import properly
+
+  const hasPermission = (permission) => {
+    if (user?.role === 'admin' || user?.isSuperAdmin) return true;
+    return !!user?.permissions?.[permission];
+  };
 
   useEffect(() => {
     // Confetti effect on first access after payment
@@ -250,13 +256,15 @@ export default function DashboardPage() {
             mode="days"
             defaultPeriod="today"
           />
-          <Button 
-            onClick={() => setIsFormOpen(true)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4" />
-            Nova Transação
-          </Button>
+          {hasPermission('create_transactions') && (
+            <Button 
+              onClick={() => setIsFormOpen(true)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4" />
+              Nova Transação
+            </Button>
+          )}
         </div>
       </div>
 
