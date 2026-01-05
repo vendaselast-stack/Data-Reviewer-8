@@ -120,8 +120,9 @@ export default function ProfilePage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "phone") {
-      const formatted = formatPhone(value);
-      if (formatted.length <= 15) {
+      const numbers = value.replace(/\D/g, "");
+      const formatted = formatPhone(numbers);
+      if (numbers.length <= 11) {
         setFormData(prev => ({ ...prev, [name]: formatted }));
       }
       return;
