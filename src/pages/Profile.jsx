@@ -218,7 +218,13 @@ export default function ProfilePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} />
+                    <Input 
+                      id="phone" 
+                      name="phone" 
+                      value={formData.phone} 
+                      onChange={handleInputChange} 
+                      placeholder="(00) 00000-0000"
+                    />
                   </div>
                 </div>
 

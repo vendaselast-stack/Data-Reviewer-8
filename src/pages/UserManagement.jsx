@@ -228,6 +228,12 @@ export default function UserManagement() {
           { id: PERMISSIONS.VIEW_SETTINGS, label: "Ver Configurações" },
           { id: PERMISSIONS.MANAGE_SETTINGS, label: "Gerenciar Configurações" }
         ]
+      },
+      {
+        group: "NAVEGAÇÃO",
+        perms: [
+          { id: PERMISSIONS.VIEW_FINANCIAL, label: "Exibir Aba Financeiro (Menu)" }
+        ]
       }
     ];
 
