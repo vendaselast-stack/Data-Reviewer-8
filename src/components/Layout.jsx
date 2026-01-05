@@ -34,7 +34,7 @@ export default function Layout({ children }) {
     { name: 'Categorias', icon: Tag, path: '/categories', roles: ['admin'], permission: null },
     { name: 'Fluxo de Caixa', icon: TrendingUp, path: '/forecast', roles: ['admin'], permission: 'view_reports' },
     { name: 'IA Analista', icon: Brain, path: '/reports', roles: ['admin'], permission: 'view_reports' },
-    { name: 'Calc. Preços', icon: Settings, path: '/pricing', roles: ['admin', 'operational'], permission: null },
+    { name: 'Calc. Preços', icon: Settings, path: '/pricing', roles: ['admin', 'operational', 'user', 'manager'], permission: 'price_calc' },
     { name: 'Gestão de Usuários', icon: Users, path: '/users', roles: ['admin'], permission: 'manage_users' },
   ];
 
