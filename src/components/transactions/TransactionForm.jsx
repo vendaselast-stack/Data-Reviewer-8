@@ -17,7 +17,6 @@ import { Switch } from "@/components/ui/switch";
 import CreateCategoryModal from './CreateCategoryModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Customer, Supplier, ROLES } from '@/api/entities';
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -28,6 +27,7 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
   const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const [customInstallments, setCustomInstallments] = useState([]);
 
+  // Use ROLES instead of direct strings to be safer
   const canEdit = user?.role === ROLES.ADMIN || user?.isSuperAdmin || (initialData ? user?.permissions?.edit_transactions : user?.permissions?.create_transactions);
 
   const [formData, setFormData] = React.useState({

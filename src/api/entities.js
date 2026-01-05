@@ -28,6 +28,14 @@ const WrappedCustomer = wrapList(Customer);
 const WrappedSupplier = wrapList(Supplier);
 const WrappedTransaction = wrapList(Transaction);
 
+export const ROLES = {
+  ADMIN: "admin",
+  MANAGER: "manager",
+  USER: "user",
+  OPERATIONAL: "operational",
+  SUPER_ADMIN: "super_admin",
+};
+
 export {
   WrappedTransaction as Transaction,
   WrappedCustomer as Customer,
