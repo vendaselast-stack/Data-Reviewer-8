@@ -542,23 +542,34 @@ export default function TransactionsPage() {
                                     <div className="flex justify-end">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-slate-100" data-testid={`button-actions-${t.id}`}>
                                                     <MoreHorizontal className="w-4 h-4 text-slate-500" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-40">
-                                                <DropdownMenuItem 
-                                                    className="cursor-pointer"
-                                                    onClick={() => handleEdit(t)}
-                                                >
-                                                    <Pencil className="w-4 h-4 mr-2" /> Editar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    className="text-rose-600 focus:text-rose-700 focus:bg-rose-50 cursor-pointer"
-                                                    onClick={() => handleDelete(t.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" /> Remover
-                                                </DropdownMenuItem>
+                                                {hasPermission(PERMISSIONS.EDIT_TRANSACTIONS) && (
+                                                    <DropdownMenuItem 
+                                                        className="cursor-pointer"
+                                                        onClick={() => handleEdit(t)}
+                                                        data-testid={`menu-edit-${t.id}`}
+                                                    >
+                                                        <Pencil className="w-4 h-4 mr-2" /> Editar
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {hasPermission(PERMISSIONS.DELETE_TRANSACTIONS) && (
+                                                    <DropdownMenuItem 
+                                                        className="text-rose-600 focus:text-rose-700 focus:bg-rose-50 cursor-pointer"
+                                                        onClick={() => handleDelete(t.id)}
+                                                        data-testid={`menu-delete-${t.id}`}
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-2" /> Remover
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {!hasPermission(PERMISSIONS.EDIT_TRANSACTIONS) && !hasPermission(PERMISSIONS.DELETE_TRANSACTIONS) && (
+                                                    <DropdownMenuItem disabled>
+                                                        Sem permissão
+                                                    </DropdownMenuItem>
+                                                )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
