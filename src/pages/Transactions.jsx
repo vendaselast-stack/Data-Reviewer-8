@@ -49,8 +49,13 @@ export default function TransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const { company } = useAuth();
+  const { company, user } = useAuth();
   const queryClient = useQueryClient();
+
+  const hasPermission = (permission) => {
+    if (user?.role === 'admin' || user?.isSuperAdmin) return true;
+    return !!user?.permissions?.[permission];
+  };
 
   const { data: categories } = useQuery({
     queryKey: ['/api/categories', company?.id],
@@ -339,26 +344,34 @@ export default function TransactionsPage() {
               mode="days"
               defaultPeriod="last30Days"
             />
-            <Button variant="outline" onClick={handleExport} className="flex items-center gap-2 flex-1 sm:flex-none">
-                <Download className="w-4 h-4" /> Exportar CSV
-            </Button>
-            <Button 
-              onClick={() => setUploadOpen(true)} 
-              variant="outline"
-              className="flex items-center gap-2 flex-1 sm:flex-none"
-            >
-              <Upload className="w-4 h-4" /> Importar Extrato
-            </Button>
-            <Button 
-              onClick={() => setReconciliationOpen(true)} 
-              variant="outline"
-              className="flex items-center gap-2 flex-1 sm:flex-none"
-            >
-              <CheckCircle2 className="w-4 h-4" /> Conciliação
-            </Button>
-            <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }} className="bg-primary hover:bg-primary w-full sm:w-auto">
-                <Plus className="w-4 h-4 mr-2" /> Nova Transação
-            </Button>
+            {hasPermission('export_reports') && (
+              <Button variant="outline" onClick={handleExport} className="flex items-center gap-2 flex-1 sm:flex-none">
+                  <Download className="w-4 h-4" /> Exportar CSV
+              </Button>
+            )}
+            {hasPermission('import_bank') && (
+              <Button 
+                onClick={() => setUploadOpen(true)} 
+                variant="outline"
+                className="flex items-center gap-2 flex-1 sm:flex-none"
+              >
+                <Upload className="w-4 h-4" /> Importar Extrato
+              </Button>
+            )}
+            {hasPermission('view_transactions') && (
+              <Button 
+                onClick={() => setReconciliationOpen(true)} 
+                variant="outline"
+                className="flex items-center gap-2 flex-1 sm:flex-none"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Conciliação
+              </Button>
+            )}
+            {hasPermission('create_transactions') && (
+              <Button onClick={() => { setEditingTransaction(null); setIsFormOpen(true); }} className="bg-primary hover:bg-primary w-full sm:w-auto">
+                  <Plus className="w-4 h-4 mr-2" /> Nova Transação
+              </Button>
+            )}
         </div>
       </div>
 
