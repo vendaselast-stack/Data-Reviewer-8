@@ -52,7 +52,7 @@ args = "npx tsx server/index.ts"
 [userenv]
 
 [userenv.shared]
-VITE_GOOGLE_GEMINI_API_KEY = "AIzaSyCFemyCeqgUrQ2syn6tVbWNflVbsq0BUVg"
+VITE_GOOGLE_GEMINI_API_KEY = "AIzaSyAys-euD6wR2hKEGgvFyYBlD-ZY-98tGQU"
 DATABASE_URL = "postgresql://neondb_owner:npg_NvCa6n1hGZBo@ep-bold-surf-acxc3vye-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 MERCADOPAGO_ACCESS_TOKEN = "TEST-480170991685621-122922-242361804774376ec1ad15e2cc323035-1220647240"
 VITE_MERCADOPAGO_PUBLIC_KEY = "TEST-b451766f-a43e-498b-9441-38d6ac0ce68e"
