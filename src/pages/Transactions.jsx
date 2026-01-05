@@ -50,6 +50,11 @@ export default function TransactionsPage() {
   const [pageSize, setPageSize] = useState(10);
 
   const { company, user } = useAuth();
+  
+  if (!user?.isSuperAdmin && user?.role !== 'admin' && !user?.permissions?.view_transactions) {
+    return <AccessDenied />;
+  }
+
   const queryClient = useQueryClient();
 
   const hasPermission = (permission) => {
