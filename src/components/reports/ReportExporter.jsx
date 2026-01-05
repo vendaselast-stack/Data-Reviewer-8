@@ -24,7 +24,16 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
         scale: 2,
         logging: false,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        windowWidth: 1200,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById(id);
+          if (el) {
+            el.style.height = 'auto';
+            el.style.width = '1000px';
+            el.style.padding = '20px';
+          }
+        }
       });
       return canvas.toDataURL('image/png');
     } catch (error) {
@@ -43,51 +52,66 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 15;
       const contentWidth = pageWidth - (margin * 2);
       let yPos = 20;
 
-      // Header
-      pdf.setFontSize(20);
-      pdf.setTextColor(44, 62, 80);
-      pdf.text('Relatório Financeiro Analítico', margin, yPos);
-      
-      yPos += 8;
-      pdf.setFontSize(10);
-      pdf.setTextColor(127, 140, 141);
-      pdf.text(`Período: ${reportData?.summary?.periodo || 'N/A'}`, margin, yPos);
-      pdf.text(`Gerado em: ${formatDateTimeUTC3()}`, pageWidth - margin - 45, yPos);
+      const checkPageBreak = (neededHeight) => {
+        if (yPos + neededHeight > pageHeight - 20) {
+          pdf.addPage();
+          yPos = 20;
+          return true;
+        }
+        return false;
+      };
 
-      yPos += 10;
+      const addSectionTitle = (title) => {
+        checkPageBreak(15);
+        pdf.setFontSize(14);
+        pdf.setTextColor(44, 62, 80);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(title, margin, yPos);
+        yPos += 8;
+      };
+
+      // --- CAPA ---
+      pdf.setFillColor(44, 62, 80);
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.text('RELATÓRIO FINANCEIRO', margin, 25);
+      
+      pdf.setTextColor(44, 62, 80);
+      pdf.setFontSize(12);
+      yPos = 55;
+      pdf.text(`Empresa: ${reportData?.summary?.companyName || 'Minha Empresa'}`, margin, yPos);
+      yPos += 7;
+      pdf.text(`Período: ${reportData?.summary?.periodo || 'N/A'}`, margin, yPos);
+      yPos += 7;
+      pdf.text(`Gerado em: ${formatDateTimeUTC3()}`, margin, yPos);
+      
+      yPos += 15;
       pdf.setDrawColor(200, 200, 200);
       pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 15;
 
       // Section 1: Executive Summary
-      yPos += 15;
-      pdf.setFontSize(14);
-      pdf.setTextColor(44, 62, 80);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('1. Sumário Executivo', margin, yPos);
-
-      yPos += 8;
-      pdf.setFillColor(248, 249, 250);
-      pdf.roundedRect(margin, yPos, contentWidth, 35, 3, 3, 'F');
-      
+      addSectionTitle('1. Sumário Executivo');
+      const summaryText = analysisResult.executive_summary || 'Resumo analítico gerado pela IA com base nas transações do período. A saúde financeira apresenta pontos de atenção e oportunidades de otimização identificadas nas seções seguintes.';
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(10);
       pdf.setTextColor(52, 73, 94);
-      const summaryText = analysisResult.executive_summary || 'Sem resumo disponível.';
       const splitSummary = pdf.splitTextToSize(summaryText, contentWidth - 10);
-      pdf.text(splitSummary, margin + 5, yPos + 10);
+      const summaryHeight = (splitSummary.length * 5) + 10;
+      
+      pdf.setFillColor(248, 249, 250);
+      pdf.roundedRect(margin, yPos, contentWidth, summaryHeight, 2, 2, 'F');
+      pdf.text(splitSummary, margin + 5, yPos + 8);
+      yPos += summaryHeight + 15;
 
       // Section 2: KPIs
-      yPos += 45;
-      pdf.setFontSize(14);
-      pdf.setTextColor(44, 62, 80);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('2. KPIs Principais', margin, yPos);
-
-      yPos += 10;
+      addSectionTitle('2. Indicadores Chave (KPIs)');
       const cardWidth = (contentWidth - 15) / 4;
       const kpis = [
         { label: 'Receita', value: reportData?.summary?.receita_total || 0, color: [46, 204, 113] },
@@ -99,208 +123,91 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
       kpis.forEach((kpi, i) => {
         const x = margin + (i * (cardWidth + 5));
         pdf.setFillColor(248, 249, 250);
-        pdf.roundedRect(x, yPos, cardWidth, 20, 2, 2, 'F');
+        pdf.roundedRect(x, yPos, cardWidth, 22, 2, 2, 'F');
         pdf.setFontSize(8);
         pdf.setTextColor(127, 140, 141);
         pdf.text(kpi.label, x + 5, yPos + 7);
         pdf.setFontSize(10);
         pdf.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(kpi.isPercent ? kpi.value : formatCurrency(kpi.value), x + 5, yPos + 14);
+        pdf.text(kpi.isPercent ? kpi.value : formatCurrency(kpi.value), x + 5, yPos + 15);
       });
+      yPos += 35;
 
       // Section 3: Charts
-      yPos += 35;
-      const cashflowChart = await captureChart('report-chart-cashflow');
-      if (cashflowChart) {
-        pdf.setFontSize(14);
-        pdf.setTextColor(44, 62, 80);
-        pdf.text('3. Previsão de Fluxo de Caixa', margin, yPos);
-        pdf.addImage(cashflowChart, 'PNG', margin, yPos + 5, contentWidth, 60);
-        yPos += 75;
+      const charts = [
+        { id: 'report-chart-cashflow', title: '3. Previsão de Fluxo de Caixa' },
+        { id: 'report-chart-revenue', title: '4. Tendência de Receita' },
+        { id: 'report-chart-expenses', title: '5. Distribuição de Despesas' },
+        { id: 'report-chart-working-capital', title: '6. Capital de Giro' },
+        { id: 'report-chart-debt', title: '7. Análise de Dívidas' }
+      ];
+
+      for (const chart of charts) {
+        const chartImg = await captureChart(chart.id);
+        if (chartImg) {
+          addSectionTitle(chart.title);
+          // Manter proporção e evitar esticamento: 180mm largura -> ~70mm altura é seguro
+          pdf.addImage(chartImg, 'PNG', margin, yPos, contentWidth, 70, undefined, 'FAST');
+          yPos += 85;
+          checkPageBreak(20);
+        }
       }
 
-      if (yPos > 220) {
-        pdf.addPage();
-        yPos = 20;
-      }
-
-      const revenueChart = await captureChart('report-chart-revenue');
-      if (revenueChart) {
-        pdf.setFontSize(14);
-        pdf.setTextColor(44, 62, 80);
-        pdf.text('4. Tendência de Receita', margin, yPos);
-        pdf.addImage(revenueChart, 'PNG', margin, yPos + 5, contentWidth, 60);
-        yPos += 75;
-      }
-
-      const expensesChart = await captureChart('report-chart-expenses');
-      if (expensesChart) {
-        if (yPos > 220) { pdf.addPage(); yPos = 20; }
-        pdf.setFontSize(14);
-        pdf.setTextColor(44, 62, 80);
-        pdf.text('4.1. Distribuição de Despesas', margin, yPos);
-        pdf.addImage(expensesChart, 'PNG', margin, yPos + 5, contentWidth, 60);
-        yPos += 75;
-      }
-
-      const capitalChart = await captureChart('report-chart-working-capital');
-      if (capitalChart) {
-        if (yPos > 220) { pdf.addPage(); yPos = 20; }
-        pdf.setFontSize(14);
-        pdf.setTextColor(44, 62, 80);
-        pdf.text('4.2. Capital de Giro', margin, yPos);
-        pdf.addImage(capitalChart, 'PNG', margin, yPos + 5, contentWidth, 60);
-        yPos += 75;
-      }
-
-      const debtChart = await captureChart('report-chart-debt');
-      if (debtChart) {
-        if (yPos > 220) { pdf.addPage(); yPos = 20; }
-        pdf.setFontSize(14);
-        pdf.setTextColor(44, 62, 80);
-        pdf.text('4.3. Análise de Dívidas', margin, yPos);
-        pdf.addImage(debtChart, 'PNG', margin, yPos + 5, contentWidth, 60);
-        yPos += 75;
-      }
-
-      // Section 5: Detailed Data Tables
-      pdf.addPage();
-      yPos = 20;
-      pdf.setFontSize(14);
-      pdf.setTextColor(44, 62, 80);
-      pdf.text('5. Detalhamento de Dados', margin, yPos);
-
-      // Revenue Breakdown
-      yPos += 10;
-      pdf.setFontSize(12);
-      pdf.text('5.1. Maiores Receitas por Categoria', margin, yPos);
-      const revenueByCat = {};
-      reportData?.transactions?.filter(t => ['venda', 'receita', 'income'].includes(t.type)).forEach(t => {
-        const cat = t.category || 'Outros';
-        revenueByCat[cat] = (revenueByCat[cat] || 0) + parseFloat(t.amount || 0);
-      });
-      const revenueTable = Object.entries(revenueByCat)
-        .sort((a, b) => b[1] - a[1])
-        .map(([cat, val]) => [cat, formatCurrency(val)]);
-
-      autoTable(pdf, {
-        startY: yPos + 5,
-        head: [['Categoria', 'Total']],
-        body: revenueTable,
-        theme: 'striped',
-        headStyles: { fillColor: [46, 204, 113] }
-      });
-
-      // Expense Breakdown
-      yPos = pdf.lastAutoTable.finalY + 10;
-      if (yPos > 230) { pdf.addPage(); yPos = 20; }
-      pdf.setFontSize(12);
-      pdf.text('5.2. Maiores Despesas por Categoria', margin, yPos);
-      const expenseByCat = {};
-      reportData?.transactions?.filter(t => ['compra', 'despesa', 'expense'].includes(t.type)).forEach(t => {
-        const cat = t.category || 'Outros';
-        expenseByCat[cat] = (expenseByCat[cat] || 0) + parseFloat(t.amount || 0);
-      });
-      const expenseTable = Object.entries(expenseByCat)
-        .sort((a, b) => b[1] - a[1])
-        .map(([cat, val]) => [cat, formatCurrency(val)]);
-
-      autoTable(pdf, {
-        startY: yPos + 5,
-        head: [['Categoria', 'Total']],
-        body: expenseTable,
-        theme: 'striped',
-        headStyles: { fillColor: [231, 76, 60] }
-      });
-
-      // DRE
-      pdf.addPage();
-      yPos = 20;
-      pdf.setFontSize(14);
-      pdf.setTextColor(44, 62, 80);
-      pdf.text('6. DRE (Demonstrativo de Resultados)', margin, yPos);
-
+      // Section 8: DRE
+      addSectionTitle('8. Demonstrativo de Resultados (DRE)');
       const dreData = [
-        ['Receita Bruta', formatCurrency(reportData?.summary?.receita_total || 0), '100%'],
-        ['Custos Totais', formatCurrency(reportData?.summary?.despesas_total || 0), `${((reportData?.summary?.despesas_total || 0) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`],
-        ['Lucro Líquido', formatCurrency((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)), `${(((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`]
+        ['RECEITA BRUTA', formatCurrency(reportData?.summary?.receita_total || 0), '100%'],
+        ['(-) CUSTOS E DESPESAS', formatCurrency(reportData?.summary?.despesas_total || 0), `${((reportData?.summary?.despesas_total || 0) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`],
+        ['(=) RESULTADO LÍQUIDO', formatCurrency((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)), `${(((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`]
       ];
 
       autoTable(pdf, {
-        startY: yPos + 5,
-        head: [['Categoria', 'Valor', '% da Receita']],
+        startY: yPos,
+        head: [['DESCRIÇÃO', 'VALOR (R$)', '%']],
         body: dreData,
-        theme: 'striped',
-        headStyles: { fillColor: [44, 62, 80] },
-        styles: { fontSize: 10 },
+        theme: 'grid',
+        headStyles: { fillColor: [44, 62, 80], halign: 'center' },
+        styles: { fontSize: 10, cellPadding: 5 },
         columnStyles: {
           1: { halign: 'right' },
-          2: { halign: 'right' }
-        },
-        didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 1) {
-            if (data.row.index === 0) data.cell.styles.textColor = [46, 204, 113];
-            if (data.row.index === 1) data.cell.styles.textColor = [231, 76, 60];
-            if (data.row.index === 2) data.cell.styles.textColor = [52, 152, 219];
-          }
+          2: { halign: 'center' }
+        }
+      });
+      yPos = pdf.lastAutoTable.finalY + 15;
+
+      // Section 9: AI Insights
+      addSectionTitle('9. Recomendações Estratégicas');
+      const insights = [
+        { label: 'Redução de Custos', data: analysisResult.expense_reduction_opportunities, field: 'suggestion', icon: '•' },
+        { label: 'Crescimento de Receita', data: analysisResult.revenue_growth_suggestions, field: 'strategy', icon: '→' }
+      ];
+
+      insights.forEach(insight => {
+        if (insight.data && insight.data.length > 0) {
+          checkPageBreak(20);
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(insight.label, margin, yPos);
+          yPos += 6;
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(9);
+          
+          insight.data.forEach(item => {
+            const text = `${insight.icon} ${item[insight.field]}${item.rationale ? `: ${item.rationale}` : ''}`;
+            const splitLines = pdf.splitTextToSize(text, contentWidth - 5);
+            checkPageBreak(splitLines.length * 5);
+            pdf.text(splitLines, margin + 2, yPos);
+            yPos += splitLines.length * 5 + 2;
+          });
+          yPos += 5;
         }
       });
 
-      yPos = pdf.lastAutoTable.finalY + 15;
-
-      // Section 7: AI Insights
-      if (yPos > 200) { pdf.addPage(); yPos = 20; }
-      pdf.setFontSize(14);
-      pdf.setTextColor(44, 62, 80);
-      pdf.text('7. Insights e Recomendações de IA', margin, yPos);
-      
-      yPos += 8;
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Sumário:', margin, yPos);
-      yPos += 6;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      const splitExecSummary = pdf.splitTextToSize(analysisResult.executive_summary || '', contentWidth);
-      pdf.text(splitExecSummary, margin, yPos);
-      yPos += splitExecSummary.length * 5;
-
-      yPos += 5;
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
-      pdf.text('Redução de Despesas:', margin, yPos);
-      yPos += 6;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      (analysisResult.expense_reduction_opportunities || []).forEach(opt => {
-        const text = `• ${opt.suggestion}`;
-        const splitText = pdf.splitTextToSize(text, contentWidth);
-        pdf.text(splitText, margin, yPos);
-        yPos += splitText.length * 5;
-      });
-
-      yPos += 5;
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Estratégias de Crescimento:', margin, yPos);
-      yPos += 6;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      (analysisResult.revenue_growth_suggestions || []).forEach(strat => {
-        const text = `• ${strat.strategy}: ${strat.rationale}`;
-        const splitText = pdf.splitTextToSize(text, contentWidth);
-        pdf.text(splitText, margin, yPos);
-        yPos += splitText.length * 5;
-      });
-
-      // Section 8: Detailed Transactions
+      // Section 10: Transactions
       pdf.addPage();
       yPos = 20;
-      pdf.setFontSize(14);
-      pdf.setTextColor(44, 62, 80);
-      pdf.text('8. Histórico Analítico de Transações', margin, yPos);
-
+      addSectionTitle('10. Histórico Analítico');
       const txnData = (reportData?.transactions || []).map(t => [
         t.date ? new Date(t.date).toLocaleDateString('pt-BR') : '-',
         t.description || '-',
@@ -310,18 +217,24 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
       ]);
 
       autoTable(pdf, {
-        startY: yPos + 5,
+        startY: yPos,
         head: [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor']],
         body: txnData,
-        theme: 'grid',
+        theme: 'striped',
         headStyles: { fillColor: [44, 62, 80] },
         styles: { fontSize: 8 },
-        columnStyles: {
-          4: { halign: 'right' }
-        }
+        columnStyles: { 4: { halign: 'right' } }
       });
 
-      pdf.save(`relatorio-analitico-${formatDateUTC3()}.pdf`);
+      pdf.save(`Relatorio_Financeiro_${formatDateUTC3()}.pdf`);
+      toast.success('Relatório completo gerado com sucesso!');
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      toast.error('Erro ao gerar relatório. Tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
       toast.success('Relatório PDF gerado com sucesso!');
     } catch (error) {
       console.error('PDF Export Error:', error);
