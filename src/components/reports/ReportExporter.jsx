@@ -318,7 +318,7 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
         ) : (
           <FileText className="w-4 h-4 text-blue-600" />
         )}
-        Relatório Executivo (PDF)
+        Exportar PDF
       </Button>
       <Button
         onClick={exportToExcel}
@@ -331,7 +331,7 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
         ) : (
           <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
         )}
-        Planilha de Gestão (XLSX)
+        Exportar XLSX
       </Button>
     </div>
   );
