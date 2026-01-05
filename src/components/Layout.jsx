@@ -42,14 +42,25 @@ export default function Layout({ children }) {
   const navigationList = user?.isSuperAdmin ? superAdminNavigation : baseNavigation;
 
   const navigation = navigationList.filter(item => {
-    const hasRole = item.roles.includes(user?.role || 'operational') || (user?.isSuperAdmin && item.roles.includes('super_admin'));
+    // Super Admin ignora regras de cargo/permissão comuns
+    if (user?.isSuperAdmin) {
+      return item.roles.includes('super_admin');
+    }
+
+    const userRole = user?.role || 'operational';
+    const hasRole = item.roles.includes(userRole);
     
-    // Verificar permissão se o item exigir uma
-    if (item.permission && !user?.isSuperAdmin && user?.role !== 'admin') {
+    // Se não tem o cargo, nem verifica permissão
+    if (!hasRole) return false;
+
+    // Se o item exige permissão, verifica se o usuário tem
+    if (item.permission) {
+      // Admin da empresa ignora verificações de permissão granular (tem todas)
+      if (userRole === 'admin') return true;
       return !!user?.permissions?.[item.permission];
     }
     
-    return hasRole;
+    return true;
   });
 
   const NavContent = ({ onNavigate }) => (
