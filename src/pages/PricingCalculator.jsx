@@ -112,6 +112,20 @@ Forneça recomendações estratégicas de precificação.`;
     }
   };
 
+  if (!hasPermission('price_calc')) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-4">
+        <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-4">
+          <DollarSign className="w-8 h-8 text-rose-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Acesso Negado</h2>
+        <p className="text-slate-500 max-w-md">
+          Você não tem permissão para acessar a Calculadora de Preços.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto p-4 sm:p-6">
       <div>
