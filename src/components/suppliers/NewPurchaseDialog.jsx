@@ -335,7 +335,7 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
                   </SelectTrigger>
                   <SelectContent>
                     {categories
-                      .filter(cat => cat.type === 'saida')
+                      .filter(cat => cat.type === 'saida' || cat.type === 'expense')
                       .map((cat) => (
                         <SelectItem key={cat.id} value={cat.name}>
                           {cat.name}
