@@ -166,10 +166,11 @@ export default function Checkout() {
   };
 
   const handlePayment = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    console.log("handlePayment triggered", { paymentMethod, selectedPlan });
 
-    if (paymentMethod === 'credit_card' && !validateCardData()) {
-      toast.error('Por favor, preencha os dados do cartão corretamente');
+    if (!paymentMethod) {
+      toast.error('Por favor, selecione uma forma de pagamento');
       return;
     }
 
