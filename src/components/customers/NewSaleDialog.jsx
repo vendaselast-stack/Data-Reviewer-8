@@ -412,7 +412,7 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
                   </SelectTrigger>
                   <SelectContent>
                     {categories
-                      .filter(cat => cat.type === 'entrada')
+                      .filter(cat => cat.type === 'entrada' || cat.type === 'income')
                       .map((cat) => (
                         <SelectItem key={cat.id} value={cat.name}>
                           {cat.name.charAt(0).toUpperCase() + cat.name.slice(1)}

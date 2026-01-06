@@ -482,8 +482,8 @@ export default function TransactionForm({ open, onOpenChange, onSubmit, initialD
                     <SelectContent>
                         {categories
                           .filter(cat => {
-                            if (formData.entityType === 'customer') return cat.type === 'entrada';
-                            if (formData.entityType === 'supplier') return cat.type === 'saida';
+                            if (formData.entityType === 'customer') return cat.type === 'entrada' || cat.type === 'income';
+                            if (formData.entityType === 'supplier') return cat.type === 'saida' || cat.type === 'expense';
                             return true;
                           })
                           .map((cat) => (
