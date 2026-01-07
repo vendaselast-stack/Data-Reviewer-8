@@ -379,97 +379,81 @@ export const insertUserSchema = createInsertSchema(users, {
   password: z.string().min(6, "Password must be at least 6 characters").optional(),
   username: z.string().min(3, "Username must be at least 3 characters").optional(),
   email: z.string().email("Invalid email").optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+}).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 export const insertInvitationSchema = createInsertSchema(invitations, {
   email: z.string().email("Invalid email"),
   expiresAt: z.coerce.date(),
-}).omit({
-  id: true,
-  createdAt: true,
-  acceptedAt: true,
-  acceptedBy: true,
+}).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  acceptedAt: z.date().optional(),
+  acceptedBy: z.string().optional(),
 });
 
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof users.$inferInsert>;
+export type InsertUser = typeof users.$inferInsert;
 export type Invitation = typeof invitations.$inferSelect;
-export type InsertInvitation = z.infer<typeof invitations.$inferInsert>;
+export type InsertInvitation = typeof invitations.$inferInsert;
 
-export const insertCustomerSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  cnpj: z.string().nullable().optional(),
-  email: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  contact: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
-  status: z.string().default("ativo").optional(),
-}) as any;
-
-export const insertSupplierSchema = createInsertSchema(suppliers).omit({
-  id: true,
-  createdAt: true,
-  companyId: true,
-}) as any;
-
-export const insertCategorySchema = createInsertSchema(categories).omit({
-  id: true,
-  createdAt: true,
-  companyId: true,
-}) as any;
-
-export const insertTransactionSchema = createInsertSchema(transactions).omit({
-  id: true,
-  companyId: true,
-}) as any;
-
-export const insertBankStatementItemSchema = createInsertSchema(bankStatementItems).omit({
-  id: true,
-  companyId: true,
-  createdAt: true,
-}) as any;
-
-export const insertCashFlowSchema = createInsertSchema(cashFlow).omit({
-  id: true,
-  companyId: true,
-}) as any;
-
-export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
-  id: true,
-  createdAt: true,
-}) as any;
-
-export const insertSaleSchema = z.object({
-  customerId: z.string().min(1, "Cliente é obrigatório"),
-  saleDate: z.coerce.date(),
-  totalAmount: z.string().or(z.number()).transform(v => String(v)),
-  paidAmount: z.string().or(z.number()).transform(v => String(v)).optional(),
-  installmentCount: z.number().int().min(1).optional(),
-  status: z.string().min(1, "Status é obrigatório"),
+export const insertCustomerSchema = createInsertSchema(customers).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
 });
 
-export const insertPurchaseSchema = z.object({
-  supplierId: z.string().min(1, "Fornecedor é obrigatório"),
-  purchaseDate: z.coerce.date(),
-  totalAmount: z.string().or(z.number()).transform(v => String(v)),
-  paidAmount: z.string().or(z.number()).transform(v => String(v)).optional(),
-  installmentCount: z.number().int().min(1).optional(),
-  status: z.string().min(1, "Status é obrigatório"),
+export const insertSupplierSchema = createInsertSchema(suppliers).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
 });
 
-export const insertInstallmentSchema = createInsertSchema(installments).omit({
-  id: true,
-  companyId: true,
-}) as any;
+export const insertCategorySchema = createInsertSchema(categories).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+});
 
-export const insertPurchaseInstallmentSchema = createInsertSchema(purchaseInstallments).omit({
-  id: true,
-  companyId: true,
-}) as any;
+export const insertTransactionSchema = createInsertSchema(transactions).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const insertBankStatementItemSchema = createInsertSchema(bankStatementItems).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+});
+
+export const insertCashFlowSchema = createInsertSchema(cashFlow).extend({
+  id: z.string().optional(),
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+});
+
+export const insertSaleSchema = createInsertSchema(sales).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const insertPurchaseSchema = createInsertSchema(purchases).extend({
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const insertInstallmentSchema = createInsertSchema(installments).extend({
+  id: z.string().optional(),
+});
+
+export const insertPurchaseInstallmentSchema = createInsertSchema(purchaseInstallments).extend({
+  id: z.string().optional(),
+});
 
 // ========== TYPES ==========
 

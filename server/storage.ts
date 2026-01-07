@@ -170,6 +170,11 @@ export class DatabaseStorage {
   async deleteSupplier(companyId: any, id: any) {
     await db.delete(suppliers).where(and(eq(suppliers.companyId, companyId), eq(suppliers.id, id)));
   }
+
+  // --- MÉTODOS DE FLUXO DE CAIXA ---
+  async getCashFlow(companyId: any) {
+    return await db.select().from(cashFlow).where(eq(cashFlow.companyId, companyId)).orderBy(desc(cashFlow.date));
+  }
 }
 
 export const storage = new DatabaseStorage();
