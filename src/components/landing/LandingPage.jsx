@@ -2,8 +2,11 @@
 import { useState, useEffect } from 'react';
 import Header from './Header';
 import Hero from './Hero';
+import VisionSection from './VisionSection';
 import PainPoints from './PainPoints';
 import Benefits from './Benefits';
+import TargetAudience from './TargetAudience';
+import SecuritySection from './SecuritySection';
 import Modules from './Modules';
 import Pricing from './Pricing';
 import Guarantee from './Guarantee';
@@ -49,8 +52,11 @@ const LandingPage = () => {
       <Header />
       <main>
         <Hero />
+        <VisionSection />
         <PainPoints />
         <Benefits />
+        <TargetAudience />
+        <SecuritySection />
         <Modules />
         <Guarantee />
         <FAQ />
