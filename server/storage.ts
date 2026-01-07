@@ -1,9 +1,9 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import { eq, and, desc, sql } from "drizzle-orm";
 import {
   bankStatementItems, transactions, users, customers, suppliers, categories,
   companies, sales, purchases, cashFlow
-} from "../shared/schema";
+} from "../shared/schema.js";
 
 // Função para formatar dinheiro corretamente
 function sanitizeMoney(value: any): string {

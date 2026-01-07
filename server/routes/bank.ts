@@ -1,11 +1,11 @@
 import { Express } from "express";
-import { storage } from "../storage";
-import { authMiddleware, AuthenticatedRequest } from "../middleware";
+import { storage } from "../storage.js";
+import { authMiddleware, AuthenticatedRequest } from "../middleware.js";
 import * as ofx from 'node-ofx-parser';
 
 // --- CORREÇÃO 1: Caminho relativo duplo para chegar na raiz 'shared' ---
-import { db } from "../db";
-import { bankStatementItems } from "../../shared/schema"; 
+import { db } from "../db.js";
+import { bankStatementItems } from "../../shared/schema.js"; 
 
 export function registerBankRoutes(app: Express) {
 

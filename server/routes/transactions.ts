@@ -1,8 +1,8 @@
 import { Express } from "express";
-import { storage } from "../storage";
-import { insertTransactionSchema, users } from "../../shared/schema";
-import { authMiddleware, AuthenticatedRequest } from "../middleware";
-import { db } from "../db";
+import { storage } from "../storage.js";
+import { insertTransactionSchema, users } from "../../shared/schema.js";
+import { authMiddleware, AuthenticatedRequest } from "../middleware.js";
+import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 
 // Define PERMISSIONS object since it might not be exported from schema or to be safe

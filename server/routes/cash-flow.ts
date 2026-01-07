@@ -1,6 +1,6 @@
 import { Express } from "express";
-import { storage } from "../storage";
-import { authMiddleware, AuthenticatedRequest } from "../middleware";
+import { storage } from "../storage.js";
+import { authMiddleware, AuthenticatedRequest } from "../middleware.js";
 
 export function registerCashFlowRoutes(app: Express) {
   app.get("/api/cash-flow", authMiddleware, async (req: AuthenticatedRequest, res) => {

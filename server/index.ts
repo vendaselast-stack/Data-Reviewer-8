@@ -4,7 +4,7 @@ import http from "http";
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import { registerAllRoutes } from "./routes/index";
+import { registerAllRoutes } from "./routes/index.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "5000", 10);

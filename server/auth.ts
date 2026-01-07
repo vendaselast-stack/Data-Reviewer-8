@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { db } from "./db";
-import { users, companies, sessions, subscriptions, auditLogs } from "../shared/schema";
+import { db } from "./db.js";
+import { users, companies, sessions, subscriptions, auditLogs } from "../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-change-in-production";

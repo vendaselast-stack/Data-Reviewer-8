@@ -1,7 +1,7 @@
 import { Express } from "express";
-import { storage } from "../storage";
-import { insertCategorySchema, DEFAULT_CATEGORIES } from "../../shared/schema";
-import { authMiddleware, AuthenticatedRequest } from "../middleware";
+import { storage } from "../storage.js";
+import { insertCategorySchema, DEFAULT_CATEGORIES } from "../../shared/schema.js";
+import { authMiddleware, AuthenticatedRequest } from "../middleware.js";
 import { z } from "zod";
 
 export function registerCategoryRoutes(app: Express) {

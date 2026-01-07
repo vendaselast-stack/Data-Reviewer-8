@@ -1,14 +1,14 @@
 import { Express } from "express";
-import { registerAuthRoutes } from "./auth";
-import { registerCustomerRoutes } from "./customers";
-import { registerTransactionRoutes } from "./transactions";
-import { registerSupplierRoutes } from "./suppliers";
-import { registerCategoryRoutes } from "./categories";
-import { registerSalesPurchasesRoutes } from "./sales-purchases";
-import { registerAIRoutes } from "./ai";
-import { registerBankRoutes } from "./bank";
-import { registerCashFlowRoutes } from "./cash-flow";
-import { registerAdminRoutes } from "./admin";
+import { registerAuthRoutes } from "./auth.js";
+import { registerCustomerRoutes } from "./customers.js";
+import { registerTransactionRoutes } from "./transactions.js";
+import { registerSupplierRoutes } from "./suppliers.js";
+import { registerCategoryRoutes } from "./categories.js";
+import { registerSalesPurchasesRoutes } from "./sales-purchases.js";
+import { registerAIRoutes } from "./ai.js";
+import { registerBankRoutes } from "./bank.js";
+import { registerCashFlowRoutes } from "./cash-flow.js";
+import { registerAdminRoutes } from "./admin.js";
 
 export function registerAllRoutes(app: Express) {
   registerAuthRoutes(app);

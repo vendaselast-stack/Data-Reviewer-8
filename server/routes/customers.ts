@@ -1,8 +1,8 @@
 import { Express } from "express";
-import { storage } from "../storage";
-import { insertCustomerSchema, users } from "../../shared/schema";
-import { authMiddleware, AuthenticatedRequest } from "../middleware";
-import { db } from "../db";
+import { storage } from "../storage.js";
+import { insertCustomerSchema, users } from "../../shared/schema.js";
+import { authMiddleware, AuthenticatedRequest } from "../middleware.js";
+import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 
 const checkPermission = async (req: AuthenticatedRequest, permission: string) => {
