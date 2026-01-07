@@ -59,7 +59,10 @@ const httpServer = http.createServer(app);
   } else {
     const staticPath = path.join(__dirname, "..", "dist", "public");
     app.use(express.static(staticPath));
-    app.get("*", (_req, res) => {
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) {
+        return next();
+      }
       res.sendFile(path.join(staticPath, "index.html"));
     });
   }
