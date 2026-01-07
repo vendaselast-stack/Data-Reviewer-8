@@ -19,8 +19,8 @@ COPY components.json ./
 # Build frontend
 RUN npx vite build
 
-# Build server
-RUN npx esbuild server/index.ts \
+# Build server using prod.ts (no vite dependency)
+RUN npx esbuild server/prod.ts \
   --bundle \
   --platform=node \
   --target=node20 \
@@ -47,5 +47,4 @@ ENV NODE_ENV=production
 
 EXPOSE 5000
 
-# Use shell form to allow env var expansion
 CMD node dist/index.js

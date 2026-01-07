@@ -7,9 +7,8 @@ import helmet from "helmet";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "5000", 10);
-const isDev = process.env.NODE_ENV !== "production";
 
-console.log(`[Server] Starting in ${isDev ? 'development' : 'production'} mode`);
+console.log(`[Server] Starting in production mode`);
 console.log(`[Server] PORT: ${PORT}`);
 console.log(`[Server] DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
 
@@ -66,19 +65,13 @@ const httpServer = http.createServer(app);
       console.warn("[Server] DATABASE_URL not set - API routes disabled");
     }
 
-    if (isDev) {
-      // Development: use Vite dev server (only imported in dev)
-      const viteModule = await import("./vite");
-      await viteModule.setupVite(httpServer, app);
-    } else {
-      // Production: serve static files
-      const staticPath = path.join(__dirname, "..", "dist", "public");
-      console.log(`[Server] Serving static files from: ${staticPath}`);
-      app.use(express.static(staticPath));
-      app.get("*", (_req, res) => {
-        res.sendFile(path.join(staticPath, "index.html"));
-      });
-    }
+    // Serve static files
+    const staticPath = path.join(__dirname, "..", "dist", "public");
+    console.log(`[Server] Serving static files from: ${staticPath}`);
+    app.use(express.static(staticPath));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(staticPath, "index.html"));
+    });
 
     // Start server
     httpServer.listen(PORT, "0.0.0.0", () => {
