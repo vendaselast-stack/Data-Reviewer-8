@@ -14,32 +14,32 @@ const Benefits: React.FC = () => {
   const benefits = [
     {
       icon: <LineChart className="w-6 h-6" />,
-      title: "Fluxo de Caixa",
+      title: "Analisar fluxo de caixa e projeções",
       desc: "Visão clara do realizado e projetado para antecipar cenários e garantir a saúde financeira do negócio."
     },
     {
       icon: <Calculator className="w-6 h-6" />,
-      title: "DRE Gerencial",
+      title: "Interpretar DRE gerencial",
       desc: "Interpretação automática dos resultados para entender a lucratividade real da operação em tempo real."
     },
     {
       icon: <Users className="w-6 h-6" />,
-      title: "Capital de Giro",
+      title: "Avaliar capital de giro",
       desc: "Análise inteligente das necessidades de caixa para suportar o crescimento sustentável da empresa."
     },
     {
       icon: <ShieldCheck className="w-6 h-6" />,
-      title: "Endividamento",
+      title: "Identificar riscos de endividamento",
       desc: "Identificação proativa de riscos de crédito e gestão de obrigações para evitar surpresas no orçamento."
     },
     {
       icon: <FileBarChart className="w-6 h-6" />,
-      title: "Indicadores",
+      title: "Indicadores financeiros",
       desc: "Painéis de controle com as métricas que realmente importam para quem decide o futuro do negócio."
     },
     {
       icon: <Fingerprint className="w-6 h-6" />,
-      title: "Inteligência IA",
+      title: "Apoiar decisões estratégicas",
       desc: "Camada de IA que interpreta dados, identifica riscos e apoia gestores com recomendações estratégicas."
     }
   ];
@@ -48,12 +48,12 @@ const Benefits: React.FC = () => {
     <section className="py-16 md:py-24 px-4 bg-white" id="beneficios">
       <div className="container mx-auto">
         <div className="max-w-4xl mx-auto text-center mb-12 md:mb-20">
-          <h2 className="text-blue-600 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3">Poder de Gestão</h2>
+          <h2 className="text-blue-600 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] mb-3">INTELIGÊNCIA ARTIFICIAL A SERVIÇO DA GESTÃO</h2>
           <h3 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">
-            Gestão Financeira em um <span className="text-blue-600">Único Ambiente.</span>
+            CONTROLE FINANCEIRO EM UM <span className="text-blue-600">ÚNICO AMBIENTE.</span>
           </h3>
           <p className="text-base md:text-lg text-slate-600 max-w-xl mx-auto font-normal">
-            O HUACONTROL entrega governança e precisão, transformando informações em análises claras para decisões seguras.
+            O HUACONTROL entrega uma gestão financeira estruturada, com visão clara do presente e do futuro da empresa.
           </p>
         </div>
 

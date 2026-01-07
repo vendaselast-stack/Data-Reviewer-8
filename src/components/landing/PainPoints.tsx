@@ -6,17 +6,17 @@ const PainPoints: React.FC = () => {
   const pains = [
     {
       icon: <LayoutGrid className="w-10 h-10 text-red-500" />,
-      title: "Informações Descentralizadas",
+      title: "Informações descentralizadas",
       desc: "Dados espalhados dificultam a visão real do negócio e atrasam relatórios essenciais para o crescimento."
     },
     {
       icon: <Clock className="w-10 h-10 text-red-500" />,
-      title: "Relatórios Demorados",
+      title: "Relatórios demorados",
       desc: "Perda de tempo precioso consolidando planilhas manuais que já nascem desatualizadas e sujeitas a erros."
     },
     {
       icon: <EyeOff className="w-10 h-10 text-red-500" />,
-      title: "Falta de Visão do Futuro",
+      title: "Falta de visão do futuro do caixa",
       desc: "Dificuldade em antecipar riscos e projetar o caixa, gerando insegurança na hora de tomar decisões importantes."
     }
   ];
@@ -25,11 +25,11 @@ const PainPoints: React.FC = () => {
     <section className="py-16 md:py-24 bg-slate-50 border-y border-slate-100" id="solucao">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center mb-12 md:mb-20">
-          <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-6 leading-tight px-4 tracking-tight">
-            O Desafio das Empresas em <span className="text-blue-600 underline underline-offset-8">Crescimento</span>
+          <h2 className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-6 leading-tight px-4 tracking-tight uppercase">
+            O DESAFIO DAS EMPRESAS EM <span className="text-blue-600 underline underline-offset-8">CRESCIMENTO</span>
           </h2>
           <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto font-normal">
-            À medida que o negócio cresce, o financeiro se torna mais complexo. O impacto é direto na estratégia e na segurança da empresa.
+            À medida que o negócio cresce, o financeiro se torna mais complexo. O impacto é direto na estratégia, no crescimento e na segurança da empresa.
           </p>
         </div>
 

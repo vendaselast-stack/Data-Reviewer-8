@@ -15,7 +15,7 @@ const Hero: React.FC = () => {
       <div className="container mx-auto max-w-6xl relative z-10 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[10px] md:text-xs font-semibold mb-8 tracking-[0.2em] uppercase">
           <Zap className="w-3.5 h-3.5 fill-blue-600" />
-          OFERTA ESPECIAL: <span className="text-blue-900 font-bold">ACESSO VITALÍCIO LIBERADO</span>
+          HUACONTROL
         </div>
         
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight mb-8 text-balance">
@@ -23,7 +23,7 @@ const Hero: React.FC = () => {
         </h1>
         
         <p className="text-base md:text-lg text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed px-4 font-normal">
-          ERP financeiro com <span className="text-blue-700 font-semibold">inteligência artificial</span> para empresas que exigem controle, previsibilidade e decisões seguras.
+          ERP financeiro com inteligência artificial para empresas que exigem controle, previsibilidade e decisões seguras.
         </p>
 
         {/* Video Player Section */}

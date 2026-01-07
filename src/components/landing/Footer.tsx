@@ -85,15 +85,15 @@ const Footer: React.FC = () => {
           <div className="bg-blue-800/50 p-6 md:p-8 rounded-3xl border border-blue-700 backdrop-blur-sm sm:col-span-2 lg:col-span-1">
             <h4 className="text-lg md:text-xl font-bold mb-4">Pronto para começar?</h4>
             <p className="text-xs md:text-sm text-blue-100/70 mb-6 font-normal">
-              Solicite uma apresentação agora mesmo e conheça como a inteligência artificial pode apoiar sua gestão.
+              Assuma o controle do seu financeiro. Conheça como a inteligência artificial pode apoiar sua gestão financeira.
             </p>
             <a 
               href="https://wa.me/5554996231432"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95 uppercase"
             >
-              SOLICITAR APRESENTAÇÃO
+              Solicitar apresentação
             </a>
           </div>
         </div>
