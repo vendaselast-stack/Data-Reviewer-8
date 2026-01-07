@@ -4,7 +4,24 @@ import { ShieldCheck } from './constants';
 
 const Guarantee: React.FC = () => {
   return (
-    <section className="py-24 px-4 bg-slate-50">
+    <section className="py-24 px-4 bg-slate-50" id="garantia">
+      <div className="container mx-auto max-w-4xl mb-16">
+        <div className="bg-white border border-blue-100 p-8 md:p-12 rounded-[2.5rem] shadow-xl text-center flex flex-col items-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4 uppercase tracking-tight">Assuma o controle do seu financeiro agora</h2>
+          <p className="text-slate-600 mb-10 max-w-2xl text-sm md:text-base font-normal leading-relaxed">
+            Fale com um de nossos consultores e descubra como o HUACONTROL pode transformar a gestão da sua empresa com inteligência e previsibilidade.
+          </p>
+          <a 
+            href="https://wa.me/5554996231432?text=Olá,%20gostaria%20de%20saber%20o%20valor!"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-xl font-bold text-lg transition-all shadow-xl shadow-blue-500/30 active:scale-95 uppercase gap-3"
+          >
+            Consultar preços no whatsapp
+          </a>
+        </div>
+      </div>
+
       <div className="container mx-auto max-w-4xl bg-white border border-blue-100 p-8 md:p-16 rounded-[3rem] shadow-xl flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
         <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-100/50 blur-[60px] rounded-full"></div>
         
