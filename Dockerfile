@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy all source files
+# Copy all source files needed for build
 COPY index.html ./
 COPY src ./src
 COPY shared ./shared
@@ -29,21 +29,23 @@ RUN npx esbuild server/index.ts \
   --external:bcryptjs \
   --external:pg \
   --external:@neondatabase/serverless \
+  --external:ws \
   --packages=external
 
+# Production stage
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy built files
 COPY --from=builder /app/dist ./dist
 
 ENV NODE_ENV=production
-ENV PORT=5000
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+# Use shell form to allow env var expansion
+CMD node dist/index.js
