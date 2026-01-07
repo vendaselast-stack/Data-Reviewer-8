@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CurrencyInput, formatCurrency } from "@/components/ui/currency-input";
+import { CurrencyInput, formatCurrency, parseCurrency } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,16 +13,6 @@ import { apiRequest } from '@/lib/queryClient';
 import CreateCategoryModal from '../transactions/CreateCategoryModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
-
-// Função utilitária para converter string formatada (BR) para float (Universal)
-// Ex: "5.454,51" vira 5454.51
-const parseCurrency = (value) => {
-  if (!value) return 0;
-  if (typeof value === 'number') return value;
-  // Remove pontos de milhar e troca vírgula por ponto
-  const cleanValue = value.toString().replace(/\./g, '').replace(',', '.');
-  return parseFloat(cleanValue) || 0;
-};
 
 export default function NewSaleDialog({ customer, open, onOpenChange }) {
   const { company } = useAuth();
