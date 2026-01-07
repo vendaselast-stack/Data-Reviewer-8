@@ -9,3 +9,10 @@ vite.config.ts.*
 .config
 .pythonlibs
 .upm
+.env
+*.log
+.eslintcache
+.vscode
+.idea
+build/
+temp/
