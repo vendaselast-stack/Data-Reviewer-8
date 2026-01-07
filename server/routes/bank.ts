@@ -1,5 +1,4 @@
 import { Express } from "express";
-<<<<<<< HEAD
 import { storage } from "../storage";
 import { authMiddleware, AuthenticatedRequest } from "../middleware";
 import * as ofx from 'node-ofx-parser';
@@ -7,15 +6,6 @@ import * as ofx from 'node-ofx-parser';
 // --- CORREÇÃO 1: Caminho relativo duplo para chegar na raiz 'shared' ---
 import { db } from "../db";
 import { bankStatementItems } from "../../shared/schema"; 
-=======
-import { storage } from "../storage.js";
-import { authMiddleware, AuthenticatedRequest } from "../middleware.js";
-import * as ofx from 'node-ofx-parser';
-
-// --- CORREÇÃO 1: Caminho relativo duplo para chegar na raiz 'shared' ---
-import { db } from "../db.js";
-import { bankStatementItems } from "../../shared/schema.js"; 
->>>>>>> 421df1f960deb88f8be303df4d1aba395442d6c0
 
 export function registerBankRoutes(app: Express) {
 
