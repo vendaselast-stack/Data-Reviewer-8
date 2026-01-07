@@ -61,7 +61,7 @@ const httpServer = http.createServer(app);
     app.use(express.static(staticPath));
     
     // Todas as outras rotas que não começam com /api devem servir o frontend
-    app.get("*", (req, res, next) => {
+    app.get("*", (req: express.Request, res: express.Response, next: express.NextFunction) => {
       // Evita capturar rotas de API no wildcard do frontend
       if (req.path.startsWith("/api")) {
         return next();
