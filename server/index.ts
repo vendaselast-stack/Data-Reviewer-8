@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 // Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(cookieParser());
+app.use(cookieParser() as any);
 
 // Get __dirname from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
@@ -53,7 +53,7 @@ const httpServer = http.createServer(app);
 
 (async () => {
   if (isDev) {
-    const { setupVite } = await import("./vite");
+    const { setupVite } = await import("./vite.js");
     // setupVite in this environment expects (server, app)
     await setupVite(httpServer, app);
   } else {
