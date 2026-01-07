@@ -94,10 +94,12 @@ const Benefits: React.FC = () => {
                 ))}
               </div>
               <a 
-                href="#precos" 
+                href="https://wa.me/5554996231432"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-xl hover:bg-blue-50 active:scale-95"
               >
-                VER PLANOS AGORA
+                SOLICITAR APRESENTAÇÃO
               </a>
             </div>
             <div className="hidden lg:block relative">

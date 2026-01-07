@@ -58,7 +58,6 @@ const Footer: React.FC = () => {
               <li><a href="#solucao" className="hover:text-white transition-colors">A Solução</a></li>
               <li><a href="#beneficios" className="hover:text-white transition-colors">Benefícios</a></li>
               <li><a href="#recursos" className="hover:text-white transition-colors">Recursos</a></li>
-              <li><a href="#precos" className="hover:text-white transition-colors">Planos e Preços</a></li>
               <li><a href="#faq" className="hover:text-white transition-colors">Dúvidas Frequentes</a></li>
             </ul>
           </div>
@@ -86,14 +85,16 @@ const Footer: React.FC = () => {
           <div className="bg-blue-800/50 p-6 md:p-8 rounded-3xl border border-blue-700 backdrop-blur-sm sm:col-span-2 lg:col-span-1">
             <h4 className="text-lg md:text-xl font-bold mb-4">Pronto para começar?</h4>
             <p className="text-xs md:text-sm text-blue-100/70 mb-6 font-normal">
-              Garanta seu acesso vitalício agora mesmo e mude o patamar da sua empresa.
+              Solicite uma apresentação agora mesmo e conheça como a inteligência artificial pode apoiar sua gestão.
             </p>
-            <Link 
-              href="/signup?plan=pro" 
+            <a 
+              href="https://wa.me/5554996231432"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95"
             >
-              GARANTIR VITALÍCIO
-            </Link>
+              SOLICITAR APRESENTAÇÃO
+            </a>
           </div>
         </div>
         

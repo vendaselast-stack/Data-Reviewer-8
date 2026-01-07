@@ -1,20 +1,21 @@
 
 import React from 'react';
+import { LayoutGrid, Clock, EyeOff } from 'lucide-react';
 
 const PainPoints: React.FC = () => {
   const pains = [
     {
-      icon: "📉",
+      icon: <LayoutGrid className="w-10 h-10 text-red-500" />,
       title: "Informações Descentralizadas",
       desc: "Dados espalhados dificultam a visão real do negócio e atrasam relatórios essenciais para o crescimento."
     },
     {
-      icon: "⏳",
+      icon: <Clock className="w-10 h-10 text-red-500" />,
       title: "Relatórios Demorados",
       desc: "Perda de tempo precioso consolidando planilhas manuais que já nascem desatualizadas e sujeitas a erros."
     },
     {
-      icon: "❓",
+      icon: <EyeOff className="w-10 h-10 text-red-500" />,
       title: "Falta de Visão do Futuro",
       desc: "Dificuldade em antecipar riscos e projetar o caixa, gerando insegurança na hora de tomar decisões importantes."
     }
@@ -35,7 +36,7 @@ const PainPoints: React.FC = () => {
         <div className="grid md:grid-cols-3 gap-6 md:gap-8">
           {pains.map((pain, idx) => (
             <div key={idx} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-lg transition-all group hover:-translate-y-1">
-              <div className="text-4xl mb-6 group-hover:scale-110 transition-transform inline-block">
+              <div className="mb-6 group-hover:scale-110 transition-transform inline-block">
                 {pain.icon}
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">{pain.title}</h3>
