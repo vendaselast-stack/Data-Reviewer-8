@@ -391,17 +391,17 @@ export type InsertUser = typeof users.$inferInsert;
 export type Invitation = typeof invitations.$inferSelect;
 export type InsertInvitation = typeof invitations.$inferInsert;
 
-export const insertCustomerSchema = createInsertSchema(customers);
-export const insertSupplierSchema = createInsertSchema(suppliers);
-export const insertCategorySchema = createInsertSchema(categories);
-export const insertTransactionSchema = createInsertSchema(transactions);
-export const insertBankStatementItemSchema = createInsertSchema(bankStatementItems);
-export const insertCashFlowSchema = createInsertSchema(cashFlow);
-export const insertAuditLogSchema = createInsertSchema(auditLogs);
-export const insertSaleSchema = createInsertSchema(sales);
-export const insertPurchaseSchema = createInsertSchema(purchases);
-export const insertInstallmentSchema = createInsertSchema(installments);
-export const insertPurchaseInstallmentSchema = createInsertSchema(purchaseInstallments);
+export const insertCustomerSchema = createInsertSchema(customers) as any;
+export const insertSupplierSchema = createInsertSchema(suppliers) as any;
+export const insertCategorySchema = createInsertSchema(categories) as any;
+export const insertTransactionSchema = createInsertSchema(transactions) as any;
+export const insertBankStatementItemSchema = createInsertSchema(bankStatementItems) as any;
+export const insertCashFlowSchema = createInsertSchema(cashFlow) as any;
+export const insertAuditLogSchema = createInsertSchema(auditLogs) as any;
+export const insertSaleSchema = createInsertSchema(sales) as any;
+export const insertPurchaseSchema = createInsertSchema(purchases) as any;
+export const insertInstallmentSchema = createInsertSchema(installments) as any;
+export const insertPurchaseInstallmentSchema = createInsertSchema(purchaseInstallments) as any;
 
 // ========== TYPES ==========
 

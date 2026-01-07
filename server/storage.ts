@@ -173,7 +173,8 @@ export class DatabaseStorage {
 
   // --- MÉTODOS DE FLUXO DE CAIXA ---
   async getCashFlow(companyId: any) {
-    return await db.select().from(cashFlow).where(eq(cashFlow.companyId, companyId)).orderBy(desc(cashFlow.date));
+    const { cashFlow: cfTable } = await import("../shared/schema");
+    return await db.select().from(cfTable).where(eq(cfTable.companyId, companyId)).orderBy(desc(cfTable.date));
   }
 }
 
