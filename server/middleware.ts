@@ -55,18 +55,6 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
   req.clientIp = (req.headers['x-forwarded-for']?.toString().split(',')[0] || req.socket.remoteAddress || 'unknown') as string;
   
   if (!token) {
-    // In development, allow requests without token (demo mode)
-    if (process.env.NODE_ENV === "development" || !process.env.GROQ_API_KEY) {
-      // Use the real company from database (HUA Consultoria)
-      req.user = {
-        id: "dev-user-1",
-        companyId: "f6744c7d-511b-4fa6-aef2-cb9e8261a238",
-        role: "admin",
-        isSuperAdmin: true, // Bypass security checks in dev/demo
-      };
-      req.token = "dev-token";
-      return next();
-    }
     return res.status(401).json({ error: "Unauthorized - No token provided" });
   }
 

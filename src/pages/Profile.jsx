@@ -215,7 +215,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" name="name" value={formData.name} onChange={handleInputChange} />
+                    <Input id="name" name="name" value={formData.name} onChange={handleInputChange} data-testid="input-name" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
@@ -225,6 +225,19 @@ export default function ProfilePage() {
                       value={formData.phone} 
                       onChange={handleInputChange} 
                       placeholder="(00) 00000-0000"
+                      data-testid="input-phone"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email"
+                      value={formData.email} 
+                      onChange={handleInputChange} 
+                      placeholder="seu@email.com"
+                      data-testid="input-email"
                     />
                   </div>
                 </div>

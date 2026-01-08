@@ -117,7 +117,7 @@ export function registerAuthRoutes(app: Express) {
       await recordLoginAttempt(ip, username, true);
       if (company.paymentStatus !== "approved") {
         return res.json({
-          user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, permissions: user.permissions ? JSON.parse(user.permissions as string) : {} },
+          user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, cep: user.cep, rua: user.rua, numero: user.numero, complemento: user.complemento, estado: user.estado, cidade: user.cidade, permissions: user.permissions ? JSON.parse(user.permissions as string) : {} },
           company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus },
           token: null, paymentPending: true, message: "Pagamento pendente."
         });
@@ -126,7 +126,7 @@ export function registerAuthRoutes(app: Express) {
       await createSession(user.id, user.companyId as string, token);
       await createAuditLog(user.id, user.companyId as string, "LOGIN", "user", user.id, undefined, ip, req.headers['user-agent'] || 'unknown');
       res.json({
-        user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, permissions: user.permissions ? JSON.parse(user.permissions as string) : {} },
+        user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, cep: user.cep, rua: user.rua, numero: user.numero, complemento: user.complemento, estado: user.estado, cidade: user.cidade, permissions: user.permissions ? JSON.parse(user.permissions as string) : {} },
         company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan: company.subscriptionPlan, document: company.document },
         token, paymentPending: false
       });
@@ -142,7 +142,7 @@ export function registerAuthRoutes(app: Express) {
       const company = await findCompanyById(req.user.companyId);
       if (!user || !company) return res.status(404).json({ error: "User or company not found" });
       res.json({
-        user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, permissions: user.permissions ? JSON.parse(user.permissions) : {} },
+        user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, cep: user.cep, rua: user.rua, numero: user.numero, complemento: user.complemento, estado: user.estado, cidade: user.cidade, permissions: user.permissions ? JSON.parse(user.permissions) : {} },
         company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan: company.subscriptionPlan, document: company.document }
       });
     } catch (error) {
@@ -154,13 +154,13 @@ export function registerAuthRoutes(app: Express) {
   app.patch("/api/auth/profile", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const { name, phone, cep, rua, numero, complemento, estado, cidade, avatar } = req.body;
+      const { name, phone, email, cep, rua, numero, complemento, estado, cidade, avatar } = req.body;
       
-      console.log(`[Auth] Updating profile for user ${req.user.id}:`, { name, phone, cep, rua, numero, complemento, estado, cidade });
+      console.log(`[Auth] Updating profile for user ${req.user.id}:`, { name, phone, email, cep, rua, numero, complemento, estado, cidade });
 
       const updateData: any = { 
         name, 
-        phone, 
+        phone,
         cep, 
         rua, 
         numero, 
@@ -170,6 +170,7 @@ export function registerAuthRoutes(app: Express) {
         updatedAt: new Date() 
       };
       
+      if (email) updateData.email = email;
       if (avatar) updateData.avatar = avatar;
 
       const [updatedUser] = await db.update(users)
