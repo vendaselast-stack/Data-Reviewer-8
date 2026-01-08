@@ -51,7 +51,7 @@ function MainApp() {
         <Route path="/team" component={TeamPage} />
         <Route path="/profile" component={Profile} />
         
-        {user?.role === "super_admin" && (
+        {user?.isSuperAdmin && (
           <>
             <Route path="/admin" component={SuperAdminDashboard} />
             <Route path="/admin/customers" component={AdminCustomers} />
