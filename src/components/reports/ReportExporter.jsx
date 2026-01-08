@@ -17,12 +17,11 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
   };
 
   const captureChart = async (id) => {
-    // Tentar capturar primeiro a versão de impressão (invisível mas renderizada)
     const printId = `${id}-print`;
     const element = document.getElementById(printId) || document.getElementById(id);
     
     if (!element) {
-      console.warn(`Element ${id} or ${printId} not found`);
+      console.warn(`Element ${id} not found`);
       return null;
     }
 
@@ -32,13 +31,13 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
         logging: false,
         useCORS: true,
         backgroundColor: '#ffffff',
-        windowWidth: 1200,
+        windowWidth: 800,
         onclone: (clonedDoc) => {
           const el = clonedDoc.getElementById(printId) || clonedDoc.getElementById(id);
           if (el) {
+            el.style.width = '750px';
             el.style.height = 'auto';
-            el.style.width = '1000px';
-            el.style.padding = '20px';
+            el.style.padding = '15px';
             el.style.visibility = 'visible';
             el.style.display = 'block';
           }
@@ -53,7 +52,7 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
 
   const exportToPDF = async () => {
     if (!analysisResult) {
-      toast.error('Gere uma análise primeiro para exportar o relatório completo.');
+      toast.error('Gere uma analise primeiro para exportar o relatorio completo.');
       return;
     }
 
@@ -67,7 +66,7 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
       let yPos = 20;
 
       const checkPageBreak = (neededHeight) => {
-        if (yPos + neededHeight > pageHeight - 20) {
+        if (yPos + neededHeight > pageHeight - 25) {
           pdf.addPage();
           yPos = 20;
           return true;
@@ -75,171 +74,364 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
         return false;
       };
 
-      const addSectionTitle = (title) => {
-        checkPageBreak(15);
-        pdf.setFontSize(14);
-        pdf.setTextColor(44, 62, 80);
+      const addSectionTitle = (title, color = [44, 62, 80]) => {
+        checkPageBreak(18);
+        pdf.setFillColor(color[0], color[1], color[2]);
+        pdf.rect(margin, yPos - 2, contentWidth, 10, 'F');
+        pdf.setFontSize(12);
+        pdf.setTextColor(255, 255, 255);
         pdf.setFont('helvetica', 'bold');
-        pdf.text(title, margin, yPos);
-        yPos += 8;
+        pdf.text(title, margin + 4, yPos + 5);
+        yPos += 14;
+        pdf.setTextColor(44, 62, 80);
       };
 
-      // --- CAPA ---
+      const addSubtitle = (text) => {
+        checkPageBreak(10);
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(52, 73, 94);
+        pdf.text(text, margin, yPos);
+        yPos += 7;
+      };
+
+      const addParagraph = (text, maxWidth = contentWidth - 5) => {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+        pdf.setTextColor(60, 60, 60);
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        const neededHeight = lines.length * 4.5;
+        checkPageBreak(neededHeight + 5);
+        pdf.text(lines, margin + 2, yPos);
+        yPos += neededHeight + 4;
+      };
+
+      // === CAPA ===
       pdf.setFillColor(44, 62, 80);
-      pdf.rect(0, 0, pageWidth, 40, 'F');
+      pdf.rect(0, 0, pageWidth, 55, 'F');
+      
       pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(24);
-      pdf.text('RELATÓRIO FINANCEIRO', margin, 25);
+      pdf.setFontSize(28);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('RELATORIO FINANCEIRO', margin, 28);
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Analise Inteligente com IA', margin, 40);
       
       pdf.setTextColor(44, 62, 80);
-      pdf.setFontSize(12);
-      yPos = 55;
-      pdf.text(`Empresa: ${reportData?.summary?.companyName || 'Minha Empresa'}`, margin, yPos);
-      yPos += 7;
-      pdf.text(`Período: ${reportData?.summary?.periodo || 'N/A'}`, margin, yPos);
-      yPos += 7;
-      pdf.text(`Gerado em: ${formatDateTimeUTC3()}`, margin, yPos);
+      pdf.setFontSize(11);
+      yPos = 70;
       
-      yPos += 15;
-      pdf.setDrawColor(200, 200, 200);
-      pdf.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 15;
-
-      // Section 1: Executive Summary
-      addSectionTitle('1. Sumário Executivo');
-      const summaryText = analysisResult?.executive_summary || 'Análise em processamento ou dados insuficientes para sumário executivo...';
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Empresa:', margin, yPos);
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(10);
-      pdf.setTextColor(52, 73, 94);
-      const splitSummary = pdf.splitTextToSize(summaryText, contentWidth - 10);
-      const summaryHeight = (splitSummary.length * 5) + 10;
+      pdf.text(reportData?.summary?.companyName || 'Minha Empresa', margin + 25, yPos);
+      yPos += 8;
       
-      pdf.setFillColor(248, 249, 250);
-      pdf.roundedRect(margin, yPos, contentWidth, summaryHeight, 2, 2, 'F');
-      pdf.text(splitSummary, margin + 5, yPos + 8);
-      yPos += summaryHeight + 15;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Periodo:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(reportData?.summary?.periodo || 'N/A', margin + 25, yPos);
+      yPos += 8;
+      
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Gerado em:', margin, yPos);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(formatDateTimeUTC3(), margin + 30, yPos);
+      yPos += 15;
 
-      // Section 2: KPIs
-      addSectionTitle('2. Indicadores Chave (KPIs)');
-      const cardWidth = (contentWidth - 15) / 4;
-      const kpis = [
-        { label: 'Receita', value: reportData?.summary?.receita_total || 0, color: [46, 204, 113] },
-        { label: 'Despesas', value: reportData?.summary?.despesas_total || 0, color: [231, 76, 60] },
-        { label: 'Lucro', value: (reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0), color: [52, 152, 219] },
-        { label: 'Margem', value: `${(((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`, color: [155, 89, 182], isPercent: true }
-      ];
+      // === KPIs PRINCIPAIS ===
+      addSectionTitle('INDICADORES CHAVE (KPIs)', [52, 152, 219]);
+      
+      const receita = parseFloat(reportData?.summary?.receita_total || 0);
+      const despesa = parseFloat(reportData?.summary?.despesas_total || 0);
+      const lucro = receita - despesa;
+      const margem = receita > 0 ? ((lucro / receita) * 100).toFixed(1) : '0.0';
 
-      kpis.forEach((kpi, i) => {
-        const x = margin + (i * (cardWidth + 5));
-        pdf.setFillColor(248, 249, 250);
-        pdf.roundedRect(x, yPos, cardWidth, 22, 2, 2, 'F');
-        pdf.setFontSize(8);
-        pdf.setTextColor(127, 140, 141);
-        pdf.text(kpi.label, x + 5, yPos + 7);
-        pdf.setFontSize(10);
-        pdf.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(kpi.isPercent ? kpi.value : formatCurrency(kpi.value), x + 5, yPos + 15);
-      });
-      yPos += 35;
-
-      // Section 3: Charts
-      const charts = [
-        { id: 'report-chart-cashflow', title: '3. Previsão de Fluxo de Caixa' },
-        { id: 'report-chart-revenue', title: '4. Tendência de Receita' },
-        { id: 'report-chart-expenses', title: '5. Distribuição de Despesas' },
-        { id: 'report-chart-working-capital', title: '6. Capital de Giro' },
-        { id: 'report-chart-debt', title: '7. Análise de Dívidas' }
-      ];
-
-      for (const chart of charts) {
-        const chartImg = await captureChart(chart.id);
-        if (chartImg) {
-          addSectionTitle(chart.title);
-          // Manter proporção e evitar esticamento: 180mm largura -> ~70mm altura é seguro
-          pdf.addImage(chartImg, 'PNG', margin, yPos, contentWidth, 70, undefined, 'FAST');
-          yPos += 85;
-          checkPageBreak(20);
-        }
-      }
-
-      // Section 8: DRE
-      addSectionTitle('8. Demonstrativo de Resultados (DRE)');
-      const dreData = [
-        ['RECEITA BRUTA', formatCurrency(reportData?.summary?.receita_total || 0), '100%'],
-        ['(-) CUSTOS E DESPESAS', formatCurrency(reportData?.summary?.despesas_total || 0), `${((reportData?.summary?.despesas_total || 0) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`],
-        ['(=) RESULTADO LÍQUIDO', formatCurrency((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)), `${(((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`]
+      const kpiData = [
+        ['Receita Total', formatCurrency(receita)],
+        ['Despesas Totais', formatCurrency(despesa)],
+        ['Lucro Liquido', formatCurrency(lucro)],
+        ['Margem de Lucro', `${margem}%`]
       ];
 
       autoTable(pdf, {
         startY: yPos,
-        head: [['DESCRIÇÃO', 'VALOR (R$)', '%']],
+        body: kpiData,
+        theme: 'plain',
+        styles: { 
+          fontSize: 11, 
+          cellPadding: 4,
+          textColor: [44, 62, 80]
+        },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 60 },
+          1: { halign: 'left', cellWidth: 60 }
+        },
+        margin: { left: margin }
+      });
+      yPos = pdf.lastAutoTable.finalY + 12;
+
+      // === SUMARIO EXECUTIVO ===
+      addSectionTitle('SUMARIO EXECUTIVO', [46, 204, 113]);
+      
+      const summaryText = analysisResult?.executive_summary || 
+        'Analise em processamento. Gere uma nova analise para obter insights detalhados.';
+      
+      pdf.setFillColor(245, 250, 245);
+      const summaryLines = pdf.splitTextToSize(summaryText, contentWidth - 10);
+      const summaryHeight = summaryLines.length * 4.5 + 10;
+      checkPageBreak(summaryHeight + 5);
+      
+      pdf.roundedRect(margin, yPos, contentWidth, summaryHeight, 2, 2, 'F');
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(50, 50, 50);
+      pdf.text(summaryLines, margin + 5, yPos + 7);
+      yPos += summaryHeight + 10;
+
+      // === PREVISAO DE FLUXO DE CAIXA ===
+      if (analysisResult?.cash_flow_forecast && analysisResult.cash_flow_forecast.length > 0) {
+        addSectionTitle('PREVISAO DE FLUXO DE CAIXA', [155, 89, 182]);
+        
+        const forecastData = analysisResult.cash_flow_forecast.map(f => [
+          f.month || 'Mes',
+          formatCurrency(f.predicted_revenue || 0),
+          formatCurrency(f.predicted_expense || 0),
+          formatCurrency((f.predicted_revenue || 0) - (f.predicted_expense || 0))
+        ]);
+
+        autoTable(pdf, {
+          startY: yPos,
+          head: [['Periodo', 'Receita Prevista', 'Despesa Prevista', 'Resultado']],
+          body: forecastData,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [155, 89, 182],
+            textColor: [255, 255, 255],
+            fontSize: 9,
+            fontStyle: 'bold'
+          },
+          styles: { fontSize: 9, cellPadding: 4 },
+          columnStyles: {
+            0: { cellWidth: 40 },
+            1: { halign: 'right', cellWidth: 40 },
+            2: { halign: 'right', cellWidth: 40 },
+            3: { halign: 'right', cellWidth: 40 }
+          },
+          margin: { left: margin, right: margin }
+        });
+        yPos = pdf.lastAutoTable.finalY + 12;
+      }
+
+      // === GRAFICO DE FLUXO DE CAIXA ===
+      const cashflowImg = await captureChart('report-chart-cashflow');
+      if (cashflowImg) {
+        checkPageBreak(75);
+        addSubtitle('Grafico: Fluxo de Caixa Projetado');
+        const imgWidth = contentWidth * 0.9;
+        const imgHeight = imgWidth * 0.45;
+        pdf.addImage(cashflowImg, 'PNG', margin + 5, yPos, imgWidth, imgHeight, undefined, 'FAST');
+        yPos += imgHeight + 12;
+      }
+
+      // === DRE - DEMONSTRATIVO DE RESULTADOS ===
+      pdf.addPage();
+      yPos = 20;
+      addSectionTitle('DEMONSTRATIVO DE RESULTADOS (DRE)', [231, 76, 60]);
+
+      const dreData = [
+        ['RECEITA BRUTA', formatCurrency(receita), '100%'],
+        ['(-) Custos e Despesas', formatCurrency(despesa), receita > 0 ? `${((despesa / receita) * 100).toFixed(1)}%` : '0%'],
+        ['(=) RESULTADO LIQUIDO', formatCurrency(lucro), receita > 0 ? `${((lucro / receita) * 100).toFixed(1)}%` : '0%']
+      ];
+
+      autoTable(pdf, {
+        startY: yPos,
+        head: [['DESCRICAO', 'VALOR (R$)', '% RECEITA']],
         body: dreData,
         theme: 'grid',
-        headStyles: { fillColor: [44, 62, 80], halign: 'center' },
+        headStyles: { 
+          fillColor: [231, 76, 60],
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
         styles: { fontSize: 10, cellPadding: 5 },
         columnStyles: {
-          1: { halign: 'right' },
-          2: { halign: 'center' }
-        }
+          0: { cellWidth: 80 },
+          1: { halign: 'right', cellWidth: 50 },
+          2: { halign: 'center', cellWidth: 40 }
+        },
+        margin: { left: margin, right: margin }
       });
       yPos = pdf.lastAutoTable.finalY + 15;
 
-      // Section 9: AI Insights
-      addSectionTitle('9. Recomendações Estratégicas');
-      const insights = [
-        { label: 'Redução de Custos', data: analysisResult.expense_reduction_opportunities, field: 'suggestion', icon: '•' },
-        { label: 'Crescimento de Receita', data: analysisResult.revenue_growth_suggestions, field: 'strategy', icon: '→' }
-      ];
-
-      insights.forEach(insight => {
-        if (insight.data && insight.data.length > 0) {
-          checkPageBreak(20);
-          pdf.setFontSize(11);
+      // === OPORTUNIDADES DE REDUCAO DE CUSTOS ===
+      if (analysisResult?.expense_reduction_opportunities && analysisResult.expense_reduction_opportunities.length > 0) {
+        addSectionTitle('OPORTUNIDADES DE REDUCAO DE CUSTOS', [230, 126, 34]);
+        
+        analysisResult.expense_reduction_opportunities.forEach((item, idx) => {
+          checkPageBreak(15);
           pdf.setFont('helvetica', 'bold');
-          pdf.text(insight.label, margin, yPos);
-          yPos += 6;
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(9);
-          
-          insight.data.forEach(item => {
-            const text = `${insight.icon} ${item[insight.field]}${item.rationale ? `: ${item.rationale}` : ''}`;
-            const splitLines = pdf.splitTextToSize(text, contentWidth - 5);
-            checkPageBreak(splitLines.length * 5);
-            pdf.text(splitLines, margin + 2, yPos);
-            yPos += splitLines.length * 5 + 2;
-          });
+          pdf.setFontSize(10);
+          pdf.setTextColor(44, 62, 80);
+          pdf.text(`${idx + 1}. ${item.suggestion || item.category || 'Sugestao'}`, margin + 2, yPos);
           yPos += 5;
+          
+          if (item.potential_savings) {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(`   Economia potencial: ${item.potential_savings}`, margin + 2, yPos);
+            yPos += 6;
+          } else {
+            yPos += 3;
+          }
+        });
+        yPos += 8;
+      }
+
+      // === ESTRATEGIAS DE CRESCIMENTO ===
+      if (analysisResult?.revenue_growth_suggestions && analysisResult.revenue_growth_suggestions.length > 0) {
+        addSectionTitle('ESTRATEGIAS DE CRESCIMENTO DE RECEITA', [46, 204, 113]);
+        
+        analysisResult.revenue_growth_suggestions.forEach((item, idx) => {
+          checkPageBreak(20);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(10);
+          pdf.setTextColor(44, 62, 80);
+          pdf.text(`${idx + 1}. ${item.strategy || 'Estrategia'}`, margin + 2, yPos);
+          yPos += 5;
+          
+          if (item.rationale) {
+            pdf.setFont('helvetica', 'italic');
+            pdf.setFontSize(8);
+            pdf.setTextColor(80, 80, 80);
+            const rationaleLines = pdf.splitTextToSize(`   Por que: ${item.rationale}`, contentWidth - 10);
+            pdf.text(rationaleLines, margin + 2, yPos);
+            yPos += rationaleLines.length * 3.5 + 2;
+          }
+          
+          if (item.target_customer_segment) {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(`   Publico-alvo: ${item.target_customer_segment}`, margin + 2, yPos);
+            yPos += 6;
+          }
+          yPos += 2;
+        });
+        yPos += 8;
+      }
+
+      // === ALERTAS E RISCOS ===
+      if (analysisResult?.anomalies && analysisResult.anomalies.length > 0) {
+        checkPageBreak(30);
+        addSectionTitle('ALERTAS E RISCOS IDENTIFICADOS', [192, 57, 43]);
+        
+        analysisResult.anomalies.forEach((item, idx) => {
+          checkPageBreak(15);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(10);
+          pdf.setTextColor(192, 57, 43);
+          pdf.text(`! ${item.title || 'Alerta'}`, margin + 2, yPos);
+          yPos += 5;
+          
+          if (item.description) {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            pdf.setTextColor(80, 80, 80);
+            const descLines = pdf.splitTextToSize(`  ${item.description}`, contentWidth - 10);
+            pdf.text(descLines, margin + 2, yPos);
+            yPos += descLines.length * 3.5 + 4;
+          }
+        });
+        yPos += 8;
+      }
+
+      // === GRAFICO DE DESPESAS ===
+      const expensesImg = await captureChart('report-chart-expenses');
+      if (expensesImg) {
+        checkPageBreak(75);
+        addSubtitle('Grafico: Distribuicao de Despesas');
+        const imgWidth = contentWidth * 0.85;
+        const imgHeight = imgWidth * 0.5;
+        pdf.addImage(expensesImg, 'PNG', margin + 8, yPos, imgWidth, imgHeight, undefined, 'FAST');
+        yPos += imgHeight + 12;
+      }
+
+      // === GRAFICO DE RECEITAS ===
+      const revenueImg = await captureChart('report-chart-revenue');
+      if (revenueImg) {
+        checkPageBreak(75);
+        addSubtitle('Grafico: Tendencia de Receitas');
+        const imgWidth = contentWidth * 0.85;
+        const imgHeight = imgWidth * 0.5;
+        pdf.addImage(revenueImg, 'PNG', margin + 8, yPos, imgWidth, imgHeight, undefined, 'FAST');
+        yPos += imgHeight + 12;
+      }
+
+      // === TRANSACOES DO PERIODO ===
+      if (reportData?.transactions && reportData.transactions.length > 0) {
+        pdf.addPage();
+        yPos = 20;
+        addSectionTitle('HISTORICO ANALITICO DE TRANSACOES', [52, 73, 94]);
+
+        const txnData = reportData.transactions.slice(0, 50).map(t => [
+          t.date ? new Date(t.date).toLocaleDateString('pt-BR') : '-',
+          (t.description || '-').substring(0, 35),
+          t.category || 'Outros',
+          ['venda', 'receita', 'income'].includes(t.type) ? 'Receita' : 'Despesa',
+          formatCurrency(t.amount || 0)
+        ]);
+
+        autoTable(pdf, {
+          startY: yPos,
+          head: [['Data', 'Descricao', 'Categoria', 'Tipo', 'Valor']],
+          body: txnData,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [52, 73, 94],
+            textColor: [255, 255, 255],
+            fontSize: 8
+          },
+          styles: { fontSize: 7, cellPadding: 2 },
+          columnStyles: { 
+            0: { cellWidth: 22 },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 20 },
+            4: { halign: 'right', cellWidth: 28 }
+          },
+          margin: { left: margin, right: margin }
+        });
+
+        if (reportData.transactions.length > 50) {
+          yPos = pdf.lastAutoTable.finalY + 5;
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 100, 100);
+          pdf.text(`* Exibindo 50 de ${reportData.transactions.length} transacoes. Exporte para Excel para ver todas.`, margin, yPos);
         }
-      });
+      }
 
-      // Section 10: Transactions
-      pdf.addPage();
-      yPos = 20;
-      addSectionTitle('10. Histórico Analítico');
-      const txnData = (reportData?.transactions || []).map(t => [
-        t.date ? new Date(t.date).toLocaleDateString('pt-BR') : '-',
-        t.description || '-',
-        t.category || 'Outros',
-        ['venda', 'receita', 'income'].includes(t.type) ? 'Receita' : 'Despesa',
-        formatCurrency(t.amount || 0)
-      ]);
+      // === RODAPE EM TODAS AS PAGINAS ===
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text(`Pagina ${i} de ${totalPages}`, pageWidth - 30, pageHeight - 10);
+        pdf.text('Gerado por HUACONTROL - IA Analista Financeiro', margin, pageHeight - 10);
+      }
 
-      autoTable(pdf, {
-        startY: yPos,
-        head: [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor']],
-        body: txnData,
-        theme: 'striped',
-        headStyles: { fillColor: [44, 62, 80] },
-        styles: { fontSize: 8 },
-        columnStyles: { 4: { halign: 'right' } }
-      });
-
-      pdf.save(`Relatorio_Financeiro_${formatDateUTC3()}.pdf`);
-      toast.success('Relatório PDF gerado com sucesso!');
+      pdf.save(`Relatorio_Financeiro_IA_${formatDateUTC3()}.pdf`);
+      toast.success('Relatorio PDF gerado com sucesso!');
     } catch (error) {
       console.error('PDF Export Error:', error);
-      toast.error('Erro ao gerar PDF. Verifique se os gráficos estão visíveis.');
+      toast.error('Erro ao gerar PDF. Tente novamente.');
     } finally {
       setIsExporting(false);
     }
@@ -251,21 +443,30 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
       const wb = XLSX.utils.book_new();
 
       // Aba 1: Dashboard e Resumo
+      const receita = parseFloat(reportData?.summary?.receita_total || 0);
+      const despesa = parseFloat(reportData?.summary?.despesas_total || 0);
+      const lucro = receita - despesa;
+
       const summaryData = [
-        ['Resumo Financeiro Executivo'],
+        ['RELATORIO FINANCEIRO - IA ANALISTA'],
+        [''],
         ['Gerado em', formatDateTimeUTC3()],
-        ['Período', reportData?.summary?.periodo || 'N/A'],
-        [],
-        ['KPIs Principais', 'Valor'],
-        ['Receita Total', parseFloat(reportData?.summary?.receita_total || 0)],
-        ['Despesas Totais', parseFloat(reportData?.summary?.despesas_total || 0)],
-        ['Lucro Líquido', parseFloat((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0))],
-        [],
-        ['Fluxo de Caixa Projetado'],
-        ['Mês', 'Receita Prevista', 'Despesa Prevista', 'Lucro Previsto']
+        ['Periodo', reportData?.summary?.periodo || 'N/A'],
+        [''],
+        ['INDICADORES PRINCIPAIS'],
+        ['Receita Total', receita],
+        ['Despesas Totais', despesa],
+        ['Lucro Liquido', lucro],
+        ['Margem de Lucro', receita > 0 ? `${((lucro / receita) * 100).toFixed(1)}%` : '0%'],
+        [''],
+        ['SUMARIO EXECUTIVO'],
+        [analysisResult?.executive_summary || 'Gere uma analise para ver o sumario.']
       ];
 
       if (analysisResult?.cash_flow_forecast) {
+        summaryData.push(['']);
+        summaryData.push(['PREVISAO DE FLUXO DE CAIXA']);
+        summaryData.push(['Mes', 'Receita Prevista', 'Despesa Prevista', 'Resultado']);
         analysisResult.cash_flow_forecast.forEach(f => {
           const rev = parseFloat(f.predicted_revenue || 0);
           const exp = parseFloat(f.predicted_expense || 0);
@@ -274,22 +475,43 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
       }
 
       const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Dashboard e Resumo");
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo Executivo");
 
-      // Aba 2: DRE Detalhada
+      // Aba 2: DRE
       const dreData = [
-        ['Demonstrativo de Resultados (DRE)'],
-        [],
-        ['Categoria', 'Valor', '% do Total'],
-        ['Receitas', parseFloat(reportData?.summary?.receita_total || 0), '100%'],
-        ['Custos e Despesas', parseFloat(reportData?.summary?.despesas_total || 0), `${((reportData?.summary?.despesas_total || 0) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`],
-        ['Resultado Líquido', parseFloat((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)), `${(((reportData?.summary?.receita_total || 0) - (reportData?.summary?.despesas_total || 0)) / (reportData?.summary?.receita_total || 1) * 100).toFixed(1)}%`]
+        ['DEMONSTRATIVO DE RESULTADOS (DRE)'],
+        [''],
+        ['Descricao', 'Valor', '% Receita'],
+        ['Receita Bruta', receita, '100%'],
+        ['(-) Custos e Despesas', despesa, receita > 0 ? `${((despesa / receita) * 100).toFixed(1)}%` : '0%'],
+        ['(=) Resultado Liquido', lucro, receita > 0 ? `${((lucro / receita) * 100).toFixed(1)}%` : '0%']
       ];
       const wsDRE = XLSX.utils.aoa_to_sheet(dreData);
-      XLSX.utils.book_append_sheet(wb, wsDRE, "DRE Detalhada");
+      XLSX.utils.book_append_sheet(wb, wsDRE, "DRE");
 
-      // Aba 3: Transações (Analítico)
-      const txnHeader = ['Data', 'Descrição', 'Valor', 'Categoria', 'Tipo'];
+      // Aba 3: Recomendacoes
+      const recsData = [['RECOMENDACOES ESTRATEGICAS'], ['']];
+      
+      if (analysisResult?.expense_reduction_opportunities?.length > 0) {
+        recsData.push(['OPORTUNIDADES DE REDUCAO DE CUSTOS']);
+        analysisResult.expense_reduction_opportunities.forEach((item, i) => {
+          recsData.push([`${i + 1}. ${item.suggestion || item.category || 'Sugestao'}`]);
+        });
+        recsData.push(['']);
+      }
+
+      if (analysisResult?.revenue_growth_suggestions?.length > 0) {
+        recsData.push(['ESTRATEGIAS DE CRESCIMENTO']);
+        analysisResult.revenue_growth_suggestions.forEach((item, i) => {
+          recsData.push([`${i + 1}. ${item.strategy || 'Estrategia'}`, item.rationale || '', item.target_customer_segment || '']);
+        });
+      }
+
+      const wsRecs = XLSX.utils.aoa_to_sheet(recsData);
+      XLSX.utils.book_append_sheet(wb, wsRecs, "Recomendacoes");
+
+      // Aba 4: Transacoes
+      const txnHeader = ['Data', 'Descricao', 'Valor', 'Categoria', 'Tipo'];
       const txnData = [txnHeader];
       
       if (reportData?.transactions) {
@@ -297,14 +519,14 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
           const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR') : '';
           const amount = parseFloat(t.amount || 0);
           const typeLabel = ['venda', 'receita', 'income'].includes(t.type) ? 'Receita' : 'Despesa';
-          txnData.push([dateStr, t.description, amount, t.category || 'Outros', typeLabel]);
+          txnData.push([dateStr, t.description || '', amount, t.category || 'Outros', typeLabel]);
         });
       }
 
       const wsTxns = XLSX.utils.aoa_to_sheet(txnData);
-      XLSX.utils.book_append_sheet(wb, wsTxns, "Transações");
+      XLSX.utils.book_append_sheet(wb, wsTxns, "Transacoes");
 
-      XLSX.writeFile(wb, `Gestao_Financeira_${formatDateUTC3()}.xlsx`);
+      XLSX.writeFile(wb, `Relatorio_IA_${formatDateUTC3()}.xlsx`);
       toast.success('Planilha Excel gerada com sucesso!');
     } catch (error) {
       console.error('Excel Export Error:', error);
@@ -321,6 +543,7 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
         disabled={isExporting}
         variant="outline"
         className="gap-2 flex-1 sm:flex-none border-blue-200 hover:bg-blue-50"
+        data-testid="button-export-pdf"
       >
         {isExporting ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -334,6 +557,7 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
         disabled={isExporting}
         variant="outline"
         className="gap-2 flex-1 sm:flex-none border-emerald-200 hover:bg-emerald-50"
+        data-testid="button-export-excel"
       >
         {isExporting ? (
           <Loader2 className="w-4 h-4 animate-spin" />
