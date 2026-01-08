@@ -179,29 +179,56 @@ export default function TransactionsPage() {
     const handleExport = () => {
     if (!transactions.length) return;
     
-    const headers = ['Data', 'Descrição', 'Tipo', 'Categoria', 'Forma de Pagamento', 'Valor'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredTransactions.map(t => {
-        const categoryName = t.categoryId ? (categoryMap[t.categoryId] || 'Outros') : (t.categoryName || t.category || 'Outros');
-        
-        // Format date as DD/MM/YYYY (extract from ISO format YYYY-MM-DD)
-        const dateStr = t.date ? new Date(t.date).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
-        
-        // Format amount as R$ with proper Brazilian format
-        const amount = parseFloat(t.amount || 0);
-        const formattedAmount = amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        
-        // Map transaction type to Receita/Despesa
-        const typeLabel = t.type === 'venda' ? 'Receita' : t.type === 'compra' ? 'Despesa' : t.type;
-        
-        // Ensure no undefined values
-        const description = t.description || '';
-        const paymentMethod = t.paymentMethod || '-';
-        
-        return `${dateStr},"${description}",${typeLabel},${categoryName},${paymentMethod},${formattedAmount}`;
-      })
-    ].join('\n');
+    const formatCurrency = (val) => `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const formatDateBR = (d) => format(new Date(d), 'dd/MM/yyyy', { locale: ptBR });
+    
+    // Period info
+    const periodStart = formatDateBR(dateRange.startDate);
+    const periodEnd = formatDateBR(dateRange.endDate);
+    
+    // Calculate totals for filtered transactions
+    const totalIncome = filteredTransactions
+      .filter(t => t.type === 'venda' || t.type === 'income')
+      .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+    const totalExpense = filteredTransactions
+      .filter(t => t.type === 'compra' || t.type === 'expense')
+      .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount || 0)), 0);
+    
+    // Build CSV with header info
+    const csvLines = [
+      '=== EXTRATO DE TRANSACOES ===',
+      '',
+      `Periodo:,${periodStart} a ${periodEnd}`,
+      `Saldo Inicial:,${formatCurrency(balances.opening)}`,
+      `Total Entradas:,${formatCurrency(balances.income)}`,
+      `Total Saidas:,${formatCurrency(balances.expense)}`,
+      `Saldo Final:,${formatCurrency(balances.closing)}`,
+      '',
+      '=== DETALHAMENTO ===',
+      '',
+      'Data,Descricao,Tipo,Categoria,Forma de Pagamento,Valor'
+    ];
+    
+    filteredTransactions.forEach(t => {
+      const categoryName = t.categoryId ? (categoryMap[t.categoryId] || 'Outros') : (t.categoryName || t.category || 'Outros');
+      const dateStr = t.date ? formatDateBR(t.date) : '';
+      const amount = parseFloat(t.amount || 0);
+      const formattedAmount = formatCurrency(amount);
+      const typeLabel = (t.type === 'venda' || t.type === 'income') ? 'Receita' : 'Despesa';
+      const description = (t.description || '').replace(/"/g, '""');
+      const paymentMethod = t.paymentMethod || '-';
+      
+      csvLines.push(`${dateStr},"${description}",${typeLabel},${categoryName},${paymentMethod},${formattedAmount}`);
+    });
+    
+    // Add summary at the end
+    csvLines.push('');
+    csvLines.push('=== RESUMO ===');
+    csvLines.push(`Total de Receitas:,${formatCurrency(totalIncome)}`);
+    csvLines.push(`Total de Despesas:,${formatCurrency(totalExpense)}`);
+    csvLines.push(`Resultado do Periodo:,${formatCurrency(totalIncome - totalExpense)}`);
+    
+    const csvContent = csvLines.join('\n');
 
     // UTF-8 with BOM (Byte Order Mark) for proper Excel compatibility
     const encoder = new TextEncoder();
@@ -215,7 +242,7 @@ export default function TransactionsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `transacoes_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.setAttribute('download', `transacoes_${periodStart.replace(/\//g, '-')}_a_${periodEnd.replace(/\//g, '-')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
