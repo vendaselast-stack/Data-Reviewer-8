@@ -316,9 +316,28 @@ RESPOSTA OBRIGATÓRIA EM JSON E EM PORTUGUÊS DO BRASIL.`;
         response.cash_flow_forecast = generateDefaultForecast(allRevenue, allExpense, allTransactions.length);
       }
 
-      // Ensure other arrays exist
-      if (!response.expense_reduction_opportunities) response.expense_reduction_opportunities = [];
-      if (!response.revenue_growth_suggestions) response.revenue_growth_suggestions = [];
+      // Ensure executive_summary always exists with meaningful content
+      if (!response.executive_summary || response.executive_summary.trim() === '') {
+        const profit = allRevenue - allExpense;
+        const marginPercent = allRevenue > 0 ? ((profit / allRevenue) * 100).toFixed(1) : 0;
+        response.executive_summary = `Análise do período ${dateRange.label}: A empresa registrou receitas de R$ ${allRevenue.toLocaleString('pt-BR', {minimumFractionDigits: 2})} e despesas de R$ ${allExpense.toLocaleString('pt-BR', {minimumFractionDigits: 2})}, resultando em ${profit >= 0 ? 'lucro' : 'prejuízo'} de R$ ${Math.abs(profit).toLocaleString('pt-BR', {minimumFractionDigits: 2})} (margem de ${marginPercent}%). ${profit >= 0 ? 'A situação financeira está saudável. Recomenda-se manter o controle das despesas e buscar oportunidades de crescimento.' : 'A situação requer atenção. Recomenda-se revisar custos operacionais e identificar fontes adicionais de receita.'}`;
+      }
+
+      // Ensure other arrays exist with defaults
+      if (!response.expense_reduction_opportunities || response.expense_reduction_opportunities.length === 0) {
+        response.expense_reduction_opportunities = [
+          { suggestion: 'Revisar contratos de fornecedores para negociar melhores condições', potential_savings: '5-15%' },
+          { suggestion: 'Analisar despesas recorrentes e eliminar gastos desnecessários', potential_savings: '10-20%' },
+          { suggestion: 'Considerar automação de processos para reduzir custos operacionais', potential_savings: '15-25%' }
+        ];
+      }
+      if (!response.revenue_growth_suggestions || response.revenue_growth_suggestions.length === 0) {
+        response.revenue_growth_suggestions = [
+          { strategy: 'Implementar programa de fidelidade para clientes recorrentes', rationale: 'Clientes fiéis gastam em média 67% mais que novos clientes', target_customer_segment: 'Clientes ativos nos últimos 6 meses' },
+          { strategy: 'Diversificar canais de venda (e-commerce, marketplace)', rationale: 'Aumenta alcance e reduz dependência de um único canal', target_customer_segment: 'Novos clientes online' },
+          { strategy: 'Criar pacotes ou combos de produtos/serviços', rationale: 'Aumenta ticket médio em até 35%', target_customer_segment: 'Clientes de ticket médio' }
+        ];
+      }
       if (!response.anomalies) response.anomalies = [];
 
       setAnalysisResult(response);

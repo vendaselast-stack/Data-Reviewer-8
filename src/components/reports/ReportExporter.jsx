@@ -422,7 +422,7 @@ export default function ReportExporter({ reportData, reportType = 'general', ana
           (t.description || '-').substring(0, 28),
           t.category || 'Outros',
           t.paymentMethod || '-',
-          ['venda', 'receita', 'income'].includes(t.type) ? 'R' : 'D',
+          ['venda', 'venda_prazo', 'receita', 'income'].includes(t.type) ? 'Receita' : 'Despesa',
           formatCurrency(t.amount || 0)
         ]);
 
