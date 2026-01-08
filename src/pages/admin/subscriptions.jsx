@@ -13,16 +13,21 @@ import { Download, MoreVertical, Trash2, Eye, Lock, Unlock } from 'lucide-react'
 import { SubscriptionEditModal } from '@/components/admin/SubscriptionEditModal';
 import { formatDateWithTimezone } from '@/utils/dateFormatter';
 
-const apiRequest = async (url, options = {}) => {
+const apiRequest = async (method, url, body = null) => {
   const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
-  const response = await fetch(url, {
-    ...options,
+  const options = {
+    method,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
-      ...options.headers,
     },
-  });
+  };
+  
+  if (body && method !== 'GET') {
+    options.body = JSON.stringify(body);
+  }
+  
+  const response = await fetch(url, options);
   
   if (!response.ok) {
     const error = await response.json();
