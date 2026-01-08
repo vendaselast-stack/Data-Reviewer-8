@@ -9,6 +9,7 @@ import { registerAIRoutes } from "./ai";
 import { registerBankRoutes } from "./bank";
 import { registerCashFlowRoutes } from "./cash-flow";
 import { registerAdminRoutes } from "./admin";
+import { registerPaymentRoutes } from "./payment";
 
 export function registerAllRoutes(app: Express) {
   registerAuthRoutes(app);
@@ -21,6 +22,7 @@ export function registerAllRoutes(app: Express) {
   registerBankRoutes(app);
   registerCashFlowRoutes(app);
   registerAdminRoutes(app);
+  registerPaymentRoutes(app);
   
   // Health check
   app.get("/api/health", (req, res) => {

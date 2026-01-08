@@ -36,7 +36,13 @@ export default function Login() {
       
       const userName = data.user?.name || "usuário";
       toast.success(`Seja bem vindo, ${userName}!`);
-      setLocation("/dashboard");
+      
+      // Redirect Super Admin to admin dashboard
+      if (data.user?.isSuperAdmin) {
+        setLocation("/admin");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (error) {
       toast.error(error.message);
     } finally {

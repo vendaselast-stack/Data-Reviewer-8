@@ -5,15 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input as FormInput } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
-import { Download, MoreVertical, Trash2, Eye, Lock, Power, RotateCcw } from 'lucide-react';
+import { Download, MoreVertical, Trash2, Eye, Power, RotateCcw, Filter } from 'lucide-react';
 import { UserEditModal } from '@/components/admin/UserEditModal';
 import { formatDateWithTimezone } from '@/utils/dateFormatter';
 
@@ -41,17 +40,23 @@ const apiRequest = async (method, url, body = null) => {
   return response.json();
 };
 
+const roleLabels = {
+  admin: 'Administrador',
+  manager: 'Gerente',
+  operational: 'Operacional',
+  user: 'Usuario',
+};
+
 const exportToExcel = (data) => {
   const csv = [
-    ['Data Criação', 'Nome', 'Usuário', 'Empresa', 'Email', 'Telefone', 'Função', 'Status'],
+    ['Data Criacao', 'Nome', 'Empresa', 'Email', 'Telefone', 'Funcao', 'Status'],
     ...data.map(u => [
       formatDateWithTimezone(u.createdAt),
       u.name || '',
-      u.username || '',
       u.companyName || '',
       u.email || '',
       u.phone || '',
-      u.role || '',
+      roleLabels[u.role] || u.role,
       u.status === 'active' ? 'Ativo' : u.status === 'suspended' ? 'Suspenso' : 'Inativo',
     ])
   ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -65,6 +70,7 @@ const exportToExcel = (data) => {
 
 function UserListContent() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [resetPassword, setResetPassword] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -81,7 +87,7 @@ function UserListContent() {
     mutationFn: (data) => apiRequest('PATCH', `/api/admin/users/${data.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      toast.success('Sucesso: Usuário atualizado');
+      toast.success('Usuario atualizado com sucesso');
       setSelectedUser(null);
     },
     onError: (error) => {
@@ -92,7 +98,7 @@ function UserListContent() {
   const resetPasswordMutation = useMutation({
     mutationFn: ({ userId, newPassword: pwd }) => apiRequest('POST', `/api/admin/users/${userId}/reset-password`, { newPassword: pwd }),
     onSuccess: () => {
-      toast.success('Sucesso: Senha redefinida com sucesso');
+      toast.success('Senha redefinida com sucesso');
       setResetPassword(null);
       setNewPassword('');
     },
@@ -106,7 +112,7 @@ function UserListContent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
-      toast.success('Sucesso: Usuário deletado');
+      toast.success('Usuario deletado com sucesso');
       setDeleteConfirm(null);
     },
     onError: (error) => {
@@ -118,7 +124,7 @@ function UserListContent() {
     mutationFn: (user) => apiRequest('PATCH', `/api/admin/users/${user.id}`, { status: user.status === 'active' ? 'suspended' : 'active' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      toast.success('Sucesso: Status do usuário atualizado');
+      toast.success('Status do usuario atualizado');
     },
     onError: (error) => {
       toast.error('Erro: ' + error.message);
@@ -126,24 +132,39 @@ function UserListContent() {
   });
 
   const filtered = useMemo(() => {
-    return users.filter(u =>
-      u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [users, searchTerm]);
+    return users.filter(u => {
+      const matchesSearch = 
+        u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+      
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchTerm, roleFilter]);
+
+  // Count users by role
+  const roleCounts = useMemo(() => {
+    const counts = { admin: 0, manager: 0, operational: 0, user: 0 };
+    users.forEach(u => {
+      if (counts[u.role] !== undefined) counts[u.role]++;
+    });
+    return counts;
+  }, [users]);
 
   return (
-    <div className="space-y-8 p-4 md:p-8">
+    <div className="space-y-6 p-4 md:p-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-foreground">Usuários do Sistema</h1>
-          <p className="text-sm text-muted-foreground mt-2">Gerencie todos os usuários de todas as empresas</p>
+          <h1 className="text-3xl font-bold text-foreground">Usuarios do Sistema</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {users.length} usuarios cadastrados
+          </p>
         </div>
         <Button 
-          onClick={() => exportToExcel(users)} 
+          onClick={() => exportToExcel(filtered)} 
           className="gap-2 w-full md:w-auto"
           data-testid="button-export-users"
         >
@@ -152,15 +173,48 @@ function UserListContent() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-3">
+      {/* Role Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="p-4">
+          <div className="text-2xl font-bold text-blue-600">{roleCounts.admin}</div>
+          <div className="text-sm text-muted-foreground">Administradores</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-2xl font-bold text-purple-600">{roleCounts.manager}</div>
+          <div className="text-sm text-muted-foreground">Gerentes</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-2xl font-bold text-green-600">{roleCounts.operational}</div>
+          <div className="text-sm text-muted-foreground">Operacionais</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-2xl font-bold text-gray-600">{roleCounts.user}</div>
+          <div className="text-sm text-muted-foreground">Usuarios</div>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="flex flex-col md:flex-row gap-3">
         <Input
-          placeholder="Buscar por nome, usuário, email ou empresa..."
+          placeholder="Buscar por nome, email ou empresa..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1 bg-background border border-input"
           data-testid="input-search-users"
         />
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full md:w-[200px]" data-testid="select-role-filter">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Filtrar por tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectItem value="admin">Administrador</SelectItem>
+            <SelectItem value="manager">Gerente</SelectItem>
+            <SelectItem value="operational">Operacional</SelectItem>
+            <SelectItem value="user">Usuario</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -170,42 +224,53 @@ function UserListContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data Criação</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Usuário</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Nome / Email</TableHead>
                   <TableHead>Empresa</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Função</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right">Acoes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan="9" className="text-center py-8 text-muted-foreground">
-                      Carregando usuários...
+                    <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
+                      Carregando usuarios...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan="9" className="text-center py-8 text-muted-foreground">
-                      Nenhum usuário encontrado
+                    <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
+                      Nenhum usuario encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((u) => (
                     <TableRow key={u.id} data-testid={`row-user-${u.id}`}>
-                      <TableCell className="text-sm" data-testid={`text-created-${u.id}`}>
+                      <TableCell className="text-sm text-muted-foreground" data-testid={`text-created-${u.id}`}>
                         {formatDateWithTimezone(u.createdAt)}
                       </TableCell>
-                      <TableCell className="font-medium">{u.name || 'N/A'}</TableCell>
-                      <TableCell>{u.username}</TableCell>
-                      <TableCell>{u.companyName || 'N/A'}</TableCell>
-                      <TableCell>{u.email || '-'}</TableCell>
-                      <TableCell>{u.phone || '-'}</TableCell>
-                      <TableCell className="capitalize">{u.role}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{u.name || 'Sem nome'}</div>
+                          <div className="text-sm text-muted-foreground">{u.email || '-'}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{u.companyName || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline"
+                          className={
+                            u.role === 'admin' ? 'border-blue-500 text-blue-600' :
+                            u.role === 'manager' ? 'border-purple-500 text-purple-600' :
+                            u.role === 'operational' ? 'border-green-500 text-green-600' :
+                            'border-gray-500 text-gray-600'
+                          }
+                        >
+                          {roleLabels[u.role] || u.role}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge 
                           variant={u.status === 'active' ? 'default' : u.status === 'suspended' ? 'destructive' : 'secondary'}
@@ -254,7 +319,7 @@ function UserListContent() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="bg-muted/50 p-3 rounded text-sm">
-                Usuário: <span className="font-medium">{resetPassword.username}</span>
+                Email: <span className="font-medium">{resetPassword.email || resetPassword.username}</span>
               </div>
               <FormInput
                 type="password"
@@ -294,14 +359,14 @@ function UserListContent() {
         <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Deletar Usuário?</AlertDialogTitle>
+              <AlertDialogTitle>Deletar Usuario?</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja deletar <strong>{deleteConfirm.name}</strong>? Esta ação não pode ser desfeita.
+                Tem certeza que deseja deletar <strong>{deleteConfirm.name}</strong>? Esta acao nao pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="bg-destructive/10 border border-destructive/20 rounded p-4 mb-4">
               <p className="text-sm text-destructive font-medium">
-                Aviso: Isso vai deletar permanentemente o usuário e todos os seus dados.
+                Aviso: Isso vai deletar permanentemente o usuario e todos os seus dados.
               </p>
             </div>
             <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
@@ -311,7 +376,7 @@ function UserListContent() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? 'Deletando...' : 'Deletar Usuário'}
+              {deleteMutation.isPending ? 'Deletando...' : 'Deletar Usuario'}
             </AlertDialogAction>
           </AlertDialogContent>
         </AlertDialog>
