@@ -279,10 +279,48 @@ export function registerPaymentRoutes(app: Express) {
         return res.status(404).json({ error: "Company not found" });
       }
 
-      // Return success with updated company info (no new token needed in this flow)
+      // Get the admin user for this company to generate token
+      const [adminUser] = await db.select()
+        .from(users)
+        .where(eq(users.companyId, companyId))
+        .limit(1);
+
+      if (!adminUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Generate a new token for the user
+      const { generateToken, createSession } = await import("../auth");
+      const token = generateToken({ 
+        userId: adminUser.id, 
+        companyId: companyId, 
+        role: adminUser.role, 
+        isSuperAdmin: adminUser.isSuperAdmin || false 
+      });
+      
+      await createSession(adminUser.id, companyId, token);
+
+      console.log("[Payment] Token generated for user:", adminUser.id);
+
       res.json({
         success: true,
-        company: updatedCompany,
+        token,
+        user: {
+          id: adminUser.id,
+          username: adminUser.username,
+          email: adminUser.email,
+          name: adminUser.name,
+          phone: adminUser.phone,
+          role: adminUser.role,
+          isSuperAdmin: adminUser.isSuperAdmin,
+          companyId: adminUser.companyId,
+        },
+        company: {
+          id: updatedCompany.id,
+          name: updatedCompany.name,
+          paymentStatus: updatedCompany.paymentStatus,
+          subscriptionPlan: updatedCompany.subscriptionPlan,
+        },
         message: 'Subscription confirmed',
       });
 

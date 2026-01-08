@@ -229,7 +229,7 @@ export default function Checkout() {
       if (response.ok) {
         // Se for uma simulação ou aprovação imediata
         if (result.status === 'approved') {
-          // Chamada extra para garantir que o backend atualizou (importante para simulações)
+          // Chamada extra para garantir que o backend atualizou e obter token
           const simRes = await fetch('/api/payment/simulate-approval', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -238,18 +238,19 @@ export default function Checkout() {
           
           const simData = await simRes.json();
           
-          // Se recebemos um token novo, salvamos para evitar login manual
+          // Se recebemos um token novo, salvamos para acessar o dashboard
           if (simData.token) {
-            const auth = localStorage.getItem("auth");
-            if (auth) {
-              const parsed = JSON.parse(auth);
-              localStorage.setItem("auth", JSON.stringify({
-                ...parsed,
-                token: simData.token,
-                paymentPending: false,
-                company: { ...parsed.company, paymentStatus: 'approved' }
-              }));
-            }
+            localStorage.setItem("auth", JSON.stringify({
+              user: simData.user,
+              company: simData.company,
+              token: simData.token,
+              paymentPending: false
+            }));
+            
+            toast.success('Assinatura ativada com sucesso!');
+            // Redirect directly to dashboard
+            window.location.href = '/dashboard';
+            return;
           }
           
           toast.success('Assinatura ativada com sucesso!');
