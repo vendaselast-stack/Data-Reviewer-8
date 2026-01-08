@@ -153,26 +153,24 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
-    // Clear state FIRST to trigger re-renders
+  const logout = async () => {
+    // Clear storage first
+    localStorage.removeItem("auth");
+    sessionStorage.clear();
+    
+    // Clear queryClient cache
+    try {
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.clear();
+    } catch (e) {
+      // Ignore
+    }
+
+    // Clear state to trigger re-renders - React will handle navigation
     setToken(null);
     setUser(null);
     setCompany(null);
     setIsPaymentPending(false);
-
-    // Clear storage
-    localStorage.removeItem("auth");
-    sessionStorage.clear();
-    
-    // Redirect using window.location for a clean state reset
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-
-    // Background cleanup
-    import("@/lib/queryClient").then(({ queryClient }) => {
-      queryClient.clear();
-    }).catch(() => {});
   };
 
   const updateUser = (newUserData) => {

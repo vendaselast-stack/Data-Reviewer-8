@@ -9,13 +9,14 @@ import { usePermission } from '@/hooks/usePermission';
 import LogoSidebar from '@/assets/logo-sidebar.png';
 
 export default function Layout({ children }) {
-  const [pathname] = useLocation();
+  const [pathname, setLocation] = useLocation();
   const { user, company, logout } = useAuth();
   const { hasPermission } = usePermission();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    setLocation('/login');
   };
 
   // Super Admin navigation
