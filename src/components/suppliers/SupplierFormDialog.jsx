@@ -15,6 +15,16 @@ export default function SupplierFormDialog({ open, onOpenChange, supplier = null
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  // Clear the unused document field when switching types
+  const handleDocumentTypeChange = (newType) => {
+    setDocumentType(newType);
+    if (newType === 'cpf') {
+      setFormData({...formData, cnpj: ''});
+    } else {
+      setFormData({...formData, cpf: ''});
+    }
+  };
+
   useEffect(() => {
     if (open && supplier) {
       // Determine document type based on which field has value
@@ -57,6 +67,9 @@ export default function SupplierFormDialog({ open, onOpenChange, supplier = null
       cnpj: documentType === 'cnpj' && cleanCNPJ && cleanCNPJ.length > 0 ? cleanCNPJ : null,
       email: formData.email?.trim() || null,
       phone: formData.phone?.trim() || null,
+      contact: null,
+      category: null,
+      paymentTerms: null,
       status: 'ativo'
     };
 
@@ -84,7 +97,7 @@ export default function SupplierFormDialog({ open, onOpenChange, supplier = null
             
             <div className="space-y-2">
               <Label>Tipo de Documento</Label>
-              <Select value={documentType} onValueChange={setDocumentType}>
+              <Select value={documentType} onValueChange={handleDocumentTypeChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
