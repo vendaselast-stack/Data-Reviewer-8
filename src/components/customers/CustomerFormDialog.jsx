@@ -15,6 +15,16 @@ export default function CustomerFormDialog({ open, onOpenChange, customer = null
   const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  // Clear the unused document field when switching types
+  const handleDocumentTypeChange = (newType) => {
+    setDocumentType(newType);
+    if (newType === 'cpf') {
+      setFormData({...formData, cnpj: ''});
+    } else {
+      setFormData({...formData, cpf: ''});
+    }
+  };
+
   useEffect(() => {
     if (open && customer) {
       // Determine document type based on which field has value
@@ -87,7 +97,7 @@ export default function CustomerFormDialog({ open, onOpenChange, customer = null
             
             <div className="space-y-2">
               <Label>Tipo de Documento</Label>
-              <Select value={documentType} onValueChange={setDocumentType}>
+              <Select value={documentType} onValueChange={handleDocumentTypeChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
