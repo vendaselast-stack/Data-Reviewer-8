@@ -48,9 +48,6 @@ export default function SuppliersPage() {
     );
   }
 
-  // Log para depuração
-  console.log("[Suppliers Page] Empresa logada:", company);
-
   // 1. Query Principal
   const { 
     data: suppliersData, 
