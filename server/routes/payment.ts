@@ -107,23 +107,23 @@ export function registerPaymentRoutes(app: Express) {
               'X-Idempotency-Key': `${companyId}-${Date.now()}`,
             },
             body: JSON.stringify({
-              transaction_amount: parseFloat(total_amount),
+              transaction_amount: Number(parseFloat(total_amount).toFixed(2)),
               payment_method_id: 'bolbradesco',
               payer: {
                 email: email,
                 first_name: payer?.first_name || 'Admin',
                 last_name: payer?.last_name || 'User',
-                identification: payer?.identification || {
-                  type: 'CPF',
-                  number: '12345678909'
+                identification: {
+                  type: payer?.identification?.type || 'CPF',
+                  number: String(payer?.identification?.number || '').replace(/\D/g, '')
                 },
-                address: payer?.address || {
-                  zip_code: '01001000',
-                  street_name: 'Av. Paulista',
-                  street_number: '1000',
-                  neighborhood: 'Bela Vista',
-                  city: 'São Paulo',
-                  federal_unit: 'SP'
+                address: {
+                  zip_code: String(payer?.address?.zip_code || '').replace(/\D/g, ''),
+                  street_name: String(payer?.address?.street_name || ''),
+                  street_number: String(payer?.address?.street_number || ''),
+                  neighborhood: String(payer?.address?.neighborhood || ''),
+                  city: String(payer?.address?.city || ''),
+                  federal_unit: String(payer?.address?.federal_unit || '')
                 }
               },
               description: `Assinatura Mensal - HUACONTROL`,
