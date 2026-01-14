@@ -9,10 +9,7 @@ import { Building2, FileText, User, UserCheck, Mail, Lock, CheckCircle2, UserPlu
 import { formatCNPJ } from "@/utils/masks";
 
 const PLANS = {
-  basic: { name: 'Basic', price: 'R$ 99', features: 'Até 100 clientes, relatórios simples' },
-  monthly: { name: 'Mensal', price: 'R$ 97', features: 'Acesso completo, até 3 usuários' },
-  pro: { name: 'Vitalício', price: 'R$ 997', features: 'Acesso vitalício, usuários ilimitados' },
-  enterprise: { name: 'Enterprise', price: 'Customizado', features: 'Ilimitado, suporte 24/7' }
+  monthly: { name: 'Mensal', price: 'R$ 215', features: 'Acesso completo ao sistema' },
 };
 
 export default function Signup() {
@@ -24,12 +21,12 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     name: "",
-    plan: "pro",
+    plan: "monthly",
   });
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const [, setLocation] = useLocation();
-  const [selectedPlan, setSelectedPlan] = useState("pro");
+  const [selectedPlan, setSelectedPlan] = useState("monthly");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -155,8 +152,7 @@ export default function Signup() {
             <div>
               <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Plano Selecionado</p>
               <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                {PLANS[selectedPlan]?.name} - {PLANS[selectedPlan]?.price}
-                {selectedPlan === 'pro' ? ' (Pagamento Único)' : '/mês'}
+                {PLANS[selectedPlan]?.name} - {PLANS[selectedPlan]?.price}/mês
               </p>
               <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">{PLANS[selectedPlan]?.features}</p>
             </div>

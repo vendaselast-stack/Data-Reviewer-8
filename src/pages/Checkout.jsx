@@ -8,39 +8,14 @@ import { formatCurrency } from '@/utils/formatters';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PLANS = {
-  basic: {
-    name: 'Basic',
-    price: 99,
-    currency: 'BRL',
-    description: 'Perfeito para pequenas empresas',
-    features: ['Até 100 clientes', 'Gestão básica de vendas', 'Relatórios simples', 'Suporte por email', '5GB de armazenamento'],
-    badge: 'Iniciante'
-  },
   monthly: {
     name: 'Mensal',
-    price: 97,
+    price: 215,
     currency: 'BRL',
-    description: 'Ideal para testar a ferramenta',
-    features: ['Acesso completo ao sistema', 'Até 3 Usuários ativos', 'Controle de Fluxo de Caixa', 'Suporte via E-mail'],
-    badge: 'Individual'
-  },
-  pro: {
-    name: 'Vitalício',
-    price: 997,
-    currency: 'BRL',
-    description: 'Pague uma vez, use para sempre',
-    features: ['Acesso vitalício', 'Usuários ilimitados', 'Módulo de Equipe Avançado', 'Suporte VIP via WhatsApp', 'Todas as atualizações futuras'],
-    badge: 'Recomendado',
+    description: 'Acesso completo ao sistema',
+    features: ['Acesso completo ao sistema', 'Usuários ativos', 'Controle de Fluxo de Caixa', 'Suporte via E-mail'],
+    badge: 'Completo',
     isPopular: true
-  },
-  enterprise: {
-    name: 'Enterprise',
-    price: 0,
-    currency: 'BRL',
-    description: 'Para grandes corporações',
-    features: ['Clientes ilimitados', 'Customizável 100%', 'Analytics avançado', 'Suporte 24/7', 'Armazenamento ilimitado', 'Usuários ilimitados', 'APIs personalizadas', 'SLA garantido'],
-    contact: true,
-    badge: 'Enterprise'
   }
 };
 
@@ -434,7 +409,7 @@ export default function Checkout() {
                             data-testid="button-complete-payment"
                           >
                             <Lock className="w-4 h-4" />
-                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}${selectedPlan === 'pro' ? ' (Único)' : '/mês'}`}
+                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
                           </Button>
                         </div>
                       )}
@@ -457,7 +432,7 @@ export default function Checkout() {
                             data-testid="button-complete-payment"
                           >
                             <Lock className="w-4 h-4" />
-                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}${selectedPlan === 'pro' ? ' (Único)' : '/mês'}`}
+                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
                           </Button>
                         </div>
                       )}
@@ -480,7 +455,7 @@ export default function Checkout() {
                             data-testid="button-complete-payment"
                           >
                             <Lock className="w-4 h-4" />
-                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}${selectedPlan === 'pro' ? ' (Único)' : '/mês'}`}
+                            {isProcessing ? 'Processando...' : `Pagar ${formatCurrency(plan.price)}/mês`}
                           </Button>
                         </div>
                       )}
