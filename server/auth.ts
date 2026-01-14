@@ -151,6 +151,18 @@ export async function invalidateSession(token: string) {
 }
 
 export async function checkSubscriptionStatus(companyId: string): Promise<boolean> {
+  const company = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.id, companyId));
+  
+  if (!company.length) return false;
+  
+  // Bloqueia se o status de pagamento não for aprovado
+  if (company[0].paymentStatus !== "approved") {
+    return false;
+  }
+
   const sub = await db
     .select()
     .from(subscriptions)
