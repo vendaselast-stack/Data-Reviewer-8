@@ -161,15 +161,23 @@ export default function Checkout() {
         plan: selectedPlan,
         email: user?.email,
         total_amount: PLANS[selectedPlan].price.toFixed(2),
-        payment_method_id: paymentMethod,
+        payment_method_id: 'bolbradesco',
         recurring: true,
         payer: {
           email: user?.email,
-          first_name: cardData.cardholderName?.split(' ')[0] || '',
-          last_name: cardData.cardholderName?.split(' ').slice(1).join(' ') || '',
+          first_name: user?.name?.split(' ')[0] || '',
+          last_name: user?.name?.split(' ').slice(1).join(' ') || 'Admin',
           identification: {
             type: 'CPF',
-            number: ''
+            number: '12345678909' // Placeholder for testing, should be collected in a real app
+          },
+          address: {
+            zip_code: '01001000',
+            street_name: 'Av. Paulista',
+            street_number: '1000',
+            neighborhood: 'Bela Vista',
+            city: 'São Paulo',
+            federal_unit: 'SP'
           }
         }
       };

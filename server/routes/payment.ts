@@ -86,7 +86,7 @@ export function registerPaymentRoutes(app: Express) {
       } else if (payment_method_id === 'boleto' || payment_method_id === 'bolbradesco') {
         // Boleto payment
         if (isTestMode) {
-          // Simulate pending boleto for test mode (boletos are always pending initially)
+          // Simulate pending boleto for test mode
           paymentResponse = {
             id: `BOLETO_TEST_${Date.now()}`,
             status: 'pending',
@@ -98,6 +98,7 @@ export function registerPaymentRoutes(app: Express) {
           paymentStatus = 'pending';
           mpPaymentId = paymentResponse.id;
         } else {
+          // Real Boleto payment via Mercado Pago
           const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
             method: 'POST',
             headers: {
@@ -110,10 +111,22 @@ export function registerPaymentRoutes(app: Express) {
               payment_method_id: 'bolbradesco',
               payer: {
                 email: email,
-                first_name: payer?.first_name || '',
-                last_name: payer?.last_name || '',
+                first_name: payer?.first_name || 'Admin',
+                last_name: payer?.last_name || 'User',
+                identification: payer?.identification || {
+                  type: 'CPF',
+                  number: '12345678909'
+                },
+                address: payer?.address || {
+                  zip_code: '01001000',
+                  street_name: 'Av. Paulista',
+                  street_number: '1000',
+                  neighborhood: 'Bela Vista',
+                  city: 'São Paulo',
+                  federal_unit: 'SP'
+                }
               },
-              description: `Assinatura ${plan.toUpperCase()} - HUACONTROL`,
+              description: `Assinatura Mensal - HUACONTROL`,
             }),
           });
           paymentResponse = await mpResponse.json();
