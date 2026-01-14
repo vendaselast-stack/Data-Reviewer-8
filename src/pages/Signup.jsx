@@ -56,7 +56,13 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (Object.entries(formData).some(([key, v]) => key !== 'complemento' && !v)) {
+    const requiredFields = [
+      'companyName', 'companyDocument', 'username', 'email', 
+      'password', 'confirmPassword', 'name', 'cep', 
+      'rua', 'numero', 'cidade', 'estado'
+    ];
+
+    if (requiredFields.some(field => !formData[field])) {
       toast.error("Por favor, preencha todos os campos");
       return;
     }
