@@ -86,13 +86,16 @@ export function registerPaymentRoutes(app: Express) {
       } else if (payment_method_id === 'boleto' || payment_method_id === 'bolbradesco') {
         // Boleto payment
         if (isTestMode) {
-          // Simulate approved boleto for test mode
+          // Simulate pending boleto for test mode (boletos are always pending initially)
           paymentResponse = {
             id: `BOLETO_TEST_${Date.now()}`,
-            status: 'approved',
-            status_detail: 'accredited',
+            status: 'pending',
+            status_detail: 'pending_waiting_payment',
+            transaction_details: {
+              external_resource_url: 'https://www.mercadopago.com.br/payments/123456789/ticket'
+            }
           };
-          paymentStatus = 'approved';
+          paymentStatus = 'pending';
           mpPaymentId = paymentResponse.id;
         } else {
           const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {

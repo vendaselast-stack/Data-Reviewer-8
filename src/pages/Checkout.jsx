@@ -81,6 +81,7 @@ export default function Checkout() {
     const params = new URLSearchParams(window.location.search);
     const plan = params.get('plan');
     setSelectedPlan(plan && PLANS[plan] ? plan : 'monthly');
+    setPaymentMethod('boleto');
     setLoading(false);
   }, []);
 
