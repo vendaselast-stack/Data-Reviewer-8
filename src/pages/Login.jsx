@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -104,9 +104,11 @@ export default function Login() {
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Não tem conta?{" "}
-          <a href="/signup" className="text-primary font-medium hover:underline">
-            Criar conta
-          </a>
+          <Link href="/signup">
+            <a className="text-primary font-medium hover:underline">
+              Criar conta
+            </a>
+          </Link>
         </p>
       </Card>
     </div>
