@@ -92,7 +92,7 @@ export function registerPaymentRoutes(app: Express) {
             status: 'pending',
             status_detail: 'pending_waiting_payment',
             transaction_details: {
-              external_resource_url: 'https://www.mercadopago.com.br/payments/123456789/ticket'
+              external_resource_url: 'https://sandbox.mercadopago.com.br/checkout/v1/payment/redirect/ec0839e5-6d0a-406c-8208-164789543e0d/ticket/?p=1658428514708'
             }
           };
           paymentStatus = 'pending';
