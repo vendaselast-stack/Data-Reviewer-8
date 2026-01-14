@@ -2,8 +2,10 @@ import { Express, Request, Response } from "express";
 import { db } from "../db";
 import { eq, sql } from "drizzle-orm";
 import { companies, subscriptions, users } from "../../shared/schema";
+import crypto from "crypto";
 
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
+const MERCADOPAGO_WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
 interface PaymentRequest {
   companyId: string;
@@ -77,6 +79,11 @@ export function registerPaymentRoutes(app: Express) {
                 last_name: payer?.last_name || '',
               },
               description: `Assinatura ${plan.toUpperCase()} - HUACONTROL`,
+              external_reference: companyId,
+              metadata: {
+                company_id: companyId,
+                plan: plan
+              }
             }),
           });
           paymentResponse = await mpResponse.json();
@@ -127,6 +134,11 @@ export function registerPaymentRoutes(app: Express) {
                 }
               },
               description: `Assinatura Mensal - HUACONTROL`,
+              external_reference: companyId,
+              metadata: {
+                company_id: companyId,
+                plan: 'monthly'
+              }
             }),
           });
           paymentResponse = await mpResponse.json();
@@ -161,6 +173,11 @@ export function registerPaymentRoutes(app: Express) {
                 email: email,
               },
               description: `Assinatura ${plan.toUpperCase()} - HUACONTROL`,
+              external_reference: companyId,
+              metadata: {
+                company_id: companyId,
+                plan: plan
+              }
             }),
           });
           paymentResponse = await mpResponse.json();
@@ -242,36 +259,102 @@ export function registerPaymentRoutes(app: Express) {
   // Webhook for Mercado Pago notifications
   app.post("/api/payment/webhook", async (req: Request, res: Response) => {
     try {
-      const { type, data } = req.body;
+      const { type, data, action } = req.body;
+      const xSignature = req.headers['x-signature'] as string;
+      const xRequestId = req.headers['x-request-id'] as string;
       
-      console.log("[Webhook] Received notification:", { type, data });
+      console.log("[Webhook] Received notification:", { type, action, data, xRequestId });
 
-      if (type === 'payment') {
+      // Security Validation (HMAC SHA256)
+      if (MERCADOPAGO_WEBHOOK_SECRET && xSignature) {
+        const parts = xSignature.split(',');
+        let ts: string | undefined;
+        let v1: string | undefined;
+
+        parts.forEach(part => {
+          const [key, value] = part.split('=');
+          if (key === 'ts') ts = value;
+          if (key === 'v1') v1 = value;
+        });
+
+        if (ts && v1) {
+          const manifest = `id:${data.id};request-id:${xRequestId};ts:${ts};`;
+          const hmac = crypto.createHmac('sha256', MERCADOPAGO_WEBHOOK_SECRET);
+          hmac.update(manifest);
+          const sha = hmac.digest('hex');
+
+          if (sha !== v1) {
+            console.error("[Webhook] Invalid signature verification");
+            return res.status(401).send("Invalid signature");
+          }
+          console.log("[Webhook] Signature verified successfully");
+        }
+      }
+
+      // We only care about payment updates
+      if (type === 'payment' || action === 'payment.updated' || action === 'payment.created') {
         const paymentId = data?.id;
         
         if (paymentId && MERCADOPAGO_ACCESS_TOKEN) {
-          // Fetch payment details from Mercado Pago
+          // Fetch payment details from Mercado Pago to get the current status
           const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
             headers: {
               'Authorization': `Bearer ${MERCADOPAGO_ACCESS_TOKEN}`,
             },
           });
           
+          if (!response.ok) {
+            console.error("[Webhook] Failed to fetch payment details:", await response.text());
+            return res.status(200).send("Processed with errors"); // Still return 200 to MP
+          }
+
           const payment = await response.json();
-          console.log("[Webhook] Payment details:", { status: payment.status, id: payment.id });
+          const status = payment.status;
+          const externalReference = payment.external_reference; // Usually companyId if passed during creation
           
-          // Update subscription status based on payment status
-          if (payment.status === 'approved') {
-            // Find and update subscription
-            // Note: In production, store payment ID in subscription for lookup
+          console.log("[Webhook] Payment processing:", { id: payment.id, status, externalReference });
+          
+          if (status === 'approved') {
+            // Find company by ID (stored in external_reference or metadata)
+            const companyId = externalReference || payment.metadata?.company_id;
+            
+            if (companyId) {
+              console.log("[Webhook] Approving subscription for company:", companyId);
+              
+              // 1. Update company status
+              await db.update(companies)
+                .set({
+                  subscriptionStatus: 'active',
+                  paymentStatus: 'approved',
+                  updatedAt: new Date(),
+                })
+                .where(eq(companies.id, companyId));
+
+              // 2. Update existing subscription or create if missing
+              const [existingSub] = await db.select()
+                .from(subscriptions)
+                .where(eq(subscriptions.companyId, companyId))
+                .limit(1);
+
+              if (existingSub) {
+                await db.update(subscriptions)
+                  .set({
+                    status: 'active',
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(subscriptions.id, existingSub.id));
+              }
+            } else {
+              console.warn("[Webhook] Payment approved but no companyId found in reference/metadata");
+            }
           }
         }
       }
 
-      res.sendStatus(200);
+      res.status(200).send("OK");
     } catch (error) {
       console.error("[Webhook] Error:", error);
-      res.sendStatus(500);
+      res.status(500).send("Internal Server Error");
     }
   });
 
