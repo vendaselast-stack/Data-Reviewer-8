@@ -131,6 +131,7 @@ export const companies = pgTable("companies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   document: text("document").notNull().unique(),
+  cnpj: text("cnpj"), // Novo campo para CNPJ
   subscriptionStatus: text("subscription_status").notNull().default("active"), // active, suspended, cancelled
   paymentStatus: text("payment_status").notNull().default("approved"), // pending, approved, rejected, cancelled
   subscriptionPlan: text("subscription_plan").notNull().default("pro"), // basic, pro, enterprise

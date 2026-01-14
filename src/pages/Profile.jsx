@@ -66,6 +66,7 @@ export default function ProfilePage() {
         complemento: user.complemento || '',
         estado: user.estado || '',
         cidade: user.cidade || '',
+        cnpj: company?.document || company?.cnpj || '',
       });
       setPreviewUrl(user.avatar || '');
 
@@ -103,8 +104,8 @@ export default function ProfilePage() {
   const invoices = Array.isArray(invoicesResult) ? invoicesResult : [];
 
   const planTranslation = { 'monthly': 'Mensal', 'pro': 'Pro / Vitalício', 'basic': 'Básico', 'enterprise': 'Empresarial' };
-  const currentSubscription = planTranslation[company?.subscriptionPlan] || company?.subscriptionPlan || "Free";
-  const planValue = company?.subscriptionPlan === "pro" ? "997,00" : (company?.subscriptionPlan === "monthly" ? "97,00" : "0,00");
+  const currentSubscription = company?.subscriptionPlan === 'monthly' ? 'Mensal' : (planTranslation[company?.subscriptionPlan] || company?.subscriptionPlan || "Free");
+  const planValue = company?.subscriptionPlan === "pro" ? "997,00" : (company?.subscriptionPlan === "monthly" ? "215,00" : "0,00");
   const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
 
   // Handlers
@@ -228,7 +229,7 @@ export default function ProfilePage() {
                       data-testid="input-phone"
                     />
                   </div>
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input 
                       id="email" 
@@ -238,6 +239,17 @@ export default function ProfilePage() {
                       onChange={handleInputChange} 
                       placeholder="seu@email.com"
                       data-testid="input-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ</Label>
+                    <Input 
+                      id="cnpj" 
+                      name="cnpj" 
+                      value={formData.cnpj || ''} 
+                      onChange={handleInputChange} 
+                      placeholder="00.000.000/0000-00"
+                      data-testid="input-cnpj"
                     />
                   </div>
                 </div>
@@ -268,15 +280,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="cidade">Cidade</Label>
-                      <Select value={formData.cidade || ""} onValueChange={(v) => setFormData(p => ({...p, cidade: v}))} disabled={!formData.estado}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          {cities.length > 0 ? cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>) : 
-                           formData.cidade ? <SelectItem value={formData.cidade}>{formData.cidade}</SelectItem> : 
-                           <SelectItem value="outra" disabled>Nenhuma cidade listada</SelectItem>
-                          }
-                        </SelectContent>
-                      </Select>
+                      <Input id="cidade" name="cidade" value={formData.cidade} onChange={handleInputChange} />
                     </div>
                   </div>
                 </div>
