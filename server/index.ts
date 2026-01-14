@@ -5,9 +5,18 @@ import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
+import { checkAndSendSubscriptionEmails } from "./api/subscription-cron";
+
 const app = express();
 const PORT = parseInt(process.env.PORT || "5000", 10);
 const isDev = process.env.NODE_ENV !== "production";
+
+// Mock cron job - in production this would be a real cron job
+// Run once on startup and then every 24 hours
+if (process.env.DATABASE_URL) {
+  checkAndSendSubscriptionEmails();
+  setInterval(checkAndSendSubscriptionEmails, 24 * 60 * 60 * 1000);
+}
 
 console.log(`[Server] Starting in ${isDev ? 'development' : 'production'} mode`);
 console.log(`[Server] PORT: ${PORT}`);
