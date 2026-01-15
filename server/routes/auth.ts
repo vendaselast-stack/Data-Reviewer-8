@@ -128,7 +128,7 @@ export function registerAuthRoutes(app: Express) {
       await createSession(user.id, company.id, token);
       res.status(201).json({
         user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: company.id, permissions: {} },
-        company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan, document: company.document },
+        company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan: newSubscriptionPlan, document: company.document },
         token
       });
     } catch (error) {

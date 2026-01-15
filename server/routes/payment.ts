@@ -1,7 +1,7 @@
 import { Express, Request, Response } from "express";
 import { db } from "../db";
 import { eq, sql } from "drizzle-orm";
-import { companies, subscriptions, users } from "../../shared/schema";
+import { companies, subscriptions, users, User } from "../../shared/schema";
 import crypto from "crypto";
 
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -241,6 +241,35 @@ export function registerPaymentRoutes(app: Express) {
       }
 
       if (paymentStatus === 'approved') {
+        // Enviar e-mail de confirmação imediata se aprovado (ex: Cartão de Crédito)
+        const companyAdmins = await db
+          .select()
+          .from(users)
+          .where(and(eq(users.companyId, companyId), eq(users.role, "admin")))
+          .limit(1);
+        
+        const companyAdmin = companyAdmins[0] as User | undefined;
+
+        if (companyAdmin?.email) {
+          try {
+            const { Resend: ResendClient } = await import('resend');
+            const resend = new ResendClient(process.env.RESEND_API_KEY);
+            await resend.emails.send({
+              from: 'Financeiro <contato@huacontrol.com.br>',
+              to: companyAdmin.email,
+              subject: 'Pagamento Confirmado - HuaControl',
+              html: `
+                <h1>Pagamento Confirmado!</h1>
+                <p>Olá, ${companyAdmin.name || 'Administrador'}.</p>
+                <p>Seu pagamento foi aprovado e sua conta já está totalmente liberada para uso.</p>
+                <p>Obrigado por escolher a HuaControl!</p>
+              `
+            });
+          } catch (emailErr) {
+            console.error("[Payment] Error sending payment confirmation email:", emailErr);
+          }
+        }
+
         return res.json({
           success: true,
           status: paymentStatus,
@@ -358,6 +387,35 @@ export function registerPaymentRoutes(app: Express) {
                     updatedAt: new Date(),
                   })
                   .where(eq(subscriptions.id, existingSub.id));
+              }
+
+              // 3. Enviar e-mail de confirmação de pagamento
+              const companyAdmins = await db
+                .select()
+                .from(users)
+                .where(and(eq(users.companyId, companyId), eq(users.role, "admin")))
+                .limit(1);
+              
+              const companyAdmin = companyAdmins[0] as User | undefined;
+
+              if (companyAdmin?.email) {
+                try {
+                  const { Resend: ResendClient } = await import('resend');
+                  const resend = new ResendClient(process.env.RESEND_API_KEY);
+                  await resend.emails.send({
+                    from: 'Financeiro <contato@huacontrol.com.br>',
+                    to: companyAdmin.email,
+                    subject: 'Pagamento Confirmado - HuaControl',
+                    html: `
+                      <h1>Pagamento Confirmado!</h1>
+                      <p>Olá, ${companyAdmin.name || 'Administrador'}.</p>
+                      <p>Recebemos a confirmação do seu pagamento e sua conta já está totalmente liberada para uso.</p>
+                      <p>Obrigado por escolher a HuaControl!</p>
+                    `
+                  });
+                } catch (emailErr) {
+                  console.error("[Webhook] Error sending payment confirmation email:", emailErr);
+                }
               }
             } else {
               console.warn("[Webhook] Payment approved but no companyId found in reference/metadata");
