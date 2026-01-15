@@ -259,10 +259,9 @@ export function registerPaymentRoutes(app: Express) {
               to: companyAdmin.email,
               subject: 'Pagamento Confirmado - HuaControl',
               html: `
-                <h1>Pagamento Confirmado!</h1>
-                <p>Olá, ${companyAdmin.name || 'Administrador'}.</p>
-                <p>Seu pagamento foi aprovado e sua conta já está totalmente liberada para uso.</p>
-                <p>Obrigado por escolher a HuaControl!</p>
+                <p>Olá, ${companyAdmin.name || 'Administrador'}</p>
+                <p>Seu pagamento foi confirmado e seu acesso ao sistema está liberado.</p>
+                <p>Obrigado por escolher a HuaControl.</p>
               `
             });
           } catch (emailErr) {
@@ -407,10 +406,9 @@ export function registerPaymentRoutes(app: Express) {
                     to: companyAdmin.email,
                     subject: 'Pagamento Confirmado - HuaControl',
                     html: `
-                      <h1>Pagamento Confirmado!</h1>
-                      <p>Olá, ${companyAdmin.name || 'Administrador'}.</p>
-                      <p>Recebemos a confirmação do seu pagamento e sua conta já está totalmente liberada para uso.</p>
-                      <p>Obrigado por escolher a HuaControl!</p>
+                      <p>Olá, ${companyAdmin.name || 'Administrador'}</p>
+                      <p>Recebemos a confirmação do seu pagamento e seu acesso ao sistema está liberado.</p>
+                      <p>Obrigado por escolher a HuaControl.</p>
                     `
                   });
                 } catch (emailErr) {

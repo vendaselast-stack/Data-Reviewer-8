@@ -53,11 +53,11 @@ export async function checkAndSendSubscriptionEmails() {
             to: admin.email,
             subject: `Lembrete de Vencimento - ${sub.companyName}`,
             html: `
-              <h1>Olá, ${admin.name || 'Administrador'}</h1>
+              <p>Olá, ${admin.name || 'Administrador'}</p>
               <p>Sua assinatura vence em 5 dias (${new Date(sub.expiresAt!).toLocaleDateString('pt-BR')}).</p>
               <p>Valor: R$ ${parseFloat(sub.amount || "0").toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-              ${sub.ticketUrl ? `<p>Baixe seu boleto aqui: <a href="${sub.ticketUrl}">${sub.ticketUrl}</a></p>` : ''}
-              <p>Evite o bloqueio mantendo seu pagamento em dia.</p>
+              ${sub.ticketUrl ? `<p>Você pode acessar seu boleto no link abaixo:</p><p><a href="${sub.ticketUrl}">${sub.ticketUrl}</a></p>` : ''}
+              <p>Evite o bloqueio do sistema mantendo seu pagamento em dia.</p>
             `
           });
         } catch (emailError) {
@@ -112,13 +112,13 @@ export async function checkAndSendSubscriptionEmails() {
             to: admin.email,
             subject: `Acesso Suspenso - ${sub.companyName}`,
             html: `
-              <h1>Olá, ${admin.name || 'Administrador'}</h1>
-              <p>Seu acesso à HuaControl foi suspenso devido ao não pagamento da assinatura vencida em ${new Date(sub.expiresAt!).toLocaleDateString('pt-BR')}.</p>
-              <p>Para reativar sua conta imediatamente, realize o pagamento do boleto abaixo.</p>
+              <p>Olá, ${admin.name || 'Administrador'}</p>
+              <p>Seu acesso ao sistema foi suspenso devido ao não pagamento da assinatura vencida em ${new Date(sub.expiresAt!).toLocaleDateString('pt-BR')}.</p>
+              <p>Para reativar sua conta, realize o pagamento do boleto abaixo.</p>
               <p>Novo Vencimento: ${dueDateStr}</p>
               <p>Valor: R$ ${parseFloat(sub.amount || "0").toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-              ${sub.ticketUrl ? `<p>Baixe seu boleto atualizado: <a href="${sub.ticketUrl}">${sub.ticketUrl}</a></p>` : ''}
-              <p>Após a compensação, seu acesso será liberado automaticamente.</p>
+              ${sub.ticketUrl ? `<p>Boleto atualizado: <a href="${sub.ticketUrl}">${sub.ticketUrl}</a></p>` : ''}
+              <p>Após a confirmação do pagamento, seu acesso será liberado automaticamente.</p>
             `
           });
         } catch (emailError) {

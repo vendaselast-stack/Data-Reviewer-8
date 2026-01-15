@@ -73,13 +73,14 @@ export function registerAuthRoutes(app: Express) {
           to: email,
           subject: 'Conta Criada com Sucesso - Pagamento Pendente',
           html: `
-            <h1>Bem-vindo à HuaControl, ${name || username}</h1>
-            <p>Sua conta foi criada com sucesso, mas para começar a usar todos os recursos, é necessário realizar o pagamento da sua assinatura.</p>
-            <p>Plano Escolhido: ${newSubscriptionPlan.toUpperCase()}</p>
+            <p>Olá, ${name || username}</p>
+            <p>Sua conta na HuaControl foi criada com sucesso.</p>
+            <p>Para começar a usar o sistema, é necessário realizar o pagamento da sua assinatura.</p>
+            <p>Plano: ${newSubscriptionPlan.toUpperCase()}</p>
             <p>Valor: R$ ${parseFloat(amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-            <p>Acesse seu boleto no link abaixo:</p>
+            <p>Você pode acessar seu boleto no link abaixo:</p>
             <p><a href="${ticketUrl}">${ticketUrl}</a></p>
-            <p>Após o pagamento, sua conta será liberada automaticamente.</p>
+            <p>Após a confirmação do pagamento, seu acesso será liberado automaticamente.</p>
           `
         });
       } catch (emailErr) {

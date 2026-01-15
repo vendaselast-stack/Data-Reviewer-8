@@ -110,7 +110,7 @@ export function registerAdminRoutes(app: Express) {
           to: emailTo,
           subject: `Novo Boleto Gerado - ${subscription.companyName}`,
           html: `
-            <h1>Olá, ${companyAdmin?.name || 'Administrador'}</h1>
+            <p>Olá, ${companyAdmin?.name || 'Administrador'}</p>
             <p>Um novo boleto foi gerado para sua assinatura com vencimento em ${new Date(dueDate).toLocaleDateString('pt-BR')}.</p>
             <p>Valor: R$ ${parseFloat(subscription.amount || "0").toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             ${subscription.ticketUrl ? `<p>Acesse seu boleto aqui: <a href="${subscription.ticketUrl}">${subscription.ticketUrl}</a></p>` : ''}
@@ -143,13 +143,13 @@ export function registerAdminRoutes(app: Express) {
         to: email,
         subject: 'Conta Criada com Sucesso - Pagamento Pendente',
         html: `
-          <h1>Bem-vindo à HuaControl</h1>
-          <p>Sua conta foi criada com sucesso, mas para começar a usar todos os recursos, é necessário realizar o pagamento da sua assinatura.</p>
-          <p>Plano Escolhido: PRO (Exemplo)</p>
-          <p>Valor: R$ 997,00 (Exemplo)</p>
+          <p>Olá,</p>
+          <p>Sua conta foi criada com sucesso. Para começar a usar o sistema, é necessário realizar o pagamento da sua assinatura.</p>
+          <p>Plano: PRO</p>
+          <p>Valor: R$ 997,00</p>
           <p>Acesse seu boleto no link abaixo:</p>
           <p><a href="https://boletos.huacontrol.com.br/exemplo">https://boletos.huacontrol.com.br/exemplo</a></p>
-          <p>Após o pagamento, sua conta será liberada automaticamente.</p>
+          <p>Após a confirmação do pagamento, seu acesso será liberado automaticamente.</p>
         `
       });
 
