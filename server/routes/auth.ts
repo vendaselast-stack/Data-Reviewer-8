@@ -145,18 +145,23 @@ export function registerAuthRoutes(app: Express) {
       if (!username || !password) return res.status(400).json({ error: "Missing username or password" });
       const rateLimitCheck = await checkRateLimit(ip);
       if (!rateLimitCheck.allowed) return res.status(429).json({ error: "Too many login attempts. Please try again later." });
+      console.log("Login attempt for:", username);
       let user = await findUserByUsername(username);
       if (!user) user = await findUserByEmail(username);
       if (!user) {
+        console.log("User not found:", username);
         await recordLoginAttempt(ip, username, false);
         return res.status(401).json({ error: "Credenciais inválidas" });
       }
+      console.log("User found:", user.username, "Role:", user.role, "isSuperAdmin:", user.isSuperAdmin);
       const isValid = await verifyPassword(password, user.password);
       if (!isValid) {
+        console.log("Invalid password for:", username);
         await recordLoginAttempt(ip, username, false);
         return res.status(401).json({ error: "Invalid credentials" });
       }
       const company = await findCompanyById(user.companyId as string);
+      console.log("Company found:", company?.name || "None", "PaymentStatus:", company?.paymentStatus || "N/A");
       
       // Super admin can always bypass company check
       if (!company && !user.isSuperAdmin) return res.status(404).json({ error: "Company not found" });
@@ -170,9 +175,10 @@ export function registerAuthRoutes(app: Express) {
           supportNumber: "5554996231432"
         });
       }
-      const token = generateToken({ userId: user.id, companyId: (user.companyId || "") as string, role: user.role, isSuperAdmin: user.isSuperAdmin });
-      await createSession(user.id, (user.companyId || "") as string, token);
-      await createAuditLog(user.id, (user.companyId || "") as string, "LOGIN", "user", user.id, undefined, ip, req.headers['user-agent'] || 'unknown');
+      const companyId = user.companyId || null;
+      const token = generateToken({ userId: user.id, companyId: companyId as string, role: user.role, isSuperAdmin: user.isSuperAdmin });
+      await createSession(user.id, companyId, token);
+      await createAuditLog(user.id, companyId, "LOGIN", "user", user.id, undefined, ip, req.headers['user-agent'] || 'unknown');
       res.json({
         user: { 
           id: user.id, 
@@ -203,6 +209,7 @@ export function registerAuthRoutes(app: Express) {
         paymentPending: false
       });
     } catch (error) {
+      console.error("Login Error:", error);
       res.status(500).json({ error: "Login failed" });
     }
   });

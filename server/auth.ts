@@ -135,7 +135,7 @@ export async function createCompany(name: string, document: string) {
   return result[0];
 }
 
-export async function createSession(userId: string, companyId: string, token: string) {
+export async function createSession(userId: string, companyId: string | null, token: string) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
   
@@ -143,16 +143,12 @@ export async function createSession(userId: string, companyId: string, token: st
     .insert(sessions)
     .values({ 
       userId, 
-      companyId: companyId || null, 
+      companyId, 
       token, 
       expiresAt 
     } as any)
     .returning();
   return result[0];
-}
-
-export async function invalidateSession(token: string) {
-  await db.delete(sessions).where(eq(sessions.token, token));
 }
 
 export async function checkSubscriptionStatus(companyId: string): Promise<boolean> {
@@ -165,9 +161,6 @@ export async function checkSubscriptionStatus(companyId: string): Promise<boolea
   
   // Bloqueia se o status de pagamento não for aprovado
   if (company[0].paymentStatus !== "approved") {
-    // Se for o primeiro acesso (status pending e sem assinatura ativa ou criada agora)
-    // o sistema deve permitir o login mas redirecionar para pagamento se necessário.
-    // No entanto, a regra diz: "O acesso total só é liberado após a confirmação desse pagamento inicial."
     return false;
   }
 
@@ -184,7 +177,7 @@ export async function checkSubscriptionStatus(companyId: string): Promise<boolea
 
 export async function createAuditLog(
   userId: string,
-  companyId: string,
+  companyId: string | null,
   action: string,
   resourceType: string,
   resourceId: string | undefined,
@@ -196,7 +189,7 @@ export async function createAuditLog(
   try {
     await db.insert(auditLogs).values({
       userId,
-      companyId: companyId || null,
+      companyId,
       action,
       resourceType,
       resourceId,
