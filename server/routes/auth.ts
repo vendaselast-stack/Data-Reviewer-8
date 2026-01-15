@@ -60,6 +60,32 @@ export function registerAuthRoutes(app: Express) {
         .set({ cep, rua, numero, cidade, estado })
         .where(eq(users.id, user.id));
       
+      const subscriptionPlan = plan || "pro";
+      const amount = subscriptionPlan === "pro" ? "997.00" : (subscriptionPlan === "monthly" ? "97.00" : "0.00");
+      const ticketUrl = `https://boletos.huacontrol.com.br/gerar?id=${company.id}`; // Exemplo de URL de boleto
+
+      // Enviar e-mail de boas-vindas com o boleto
+      try {
+        const { Resend } = await import('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'Financeiro <contato@huacontrol.com.br>',
+          to: email,
+          subject: 'Conta Criada com Sucesso - Pagamento Pendente',
+          html: `
+            <h1>Bem-vindo à HuaControl, ${name || username}</h1>
+            <p>Sua conta foi criada com sucesso, mas para começar a usar todos os recursos, é necessário realizar o pagamento da sua assinatura.</p>
+            <p>Plano Escolhido: ${subscriptionPlan.toUpperCase()}</p>
+            <p>Valor: R$ ${parseFloat(amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <p>Acesse seu boleto no link abaixo:</p>
+            <p><a href="${ticketUrl}">${ticketUrl}</a></p>
+            <p>Após o pagamento, sua conta será liberada automaticamente.</p>
+          `
+        });
+      } catch (emailErr) {
+        console.error("Error sending welcome email:", emailErr);
+      }
+      
       // Create default categories for the new company
       const defaultCategories = [
         { name: 'Vendas', type: 'income', color: '#10b981' },

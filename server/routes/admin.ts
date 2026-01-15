@@ -131,6 +131,30 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Test email endpoint
+  app.post("/api/admin/test-email", authMiddleware, requireSuperAdmin, async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: "Email is required" });
+
+      await resend.emails.send({
+        from: 'Financeiro <contato@huacontrol.com.br>',
+        to: email,
+        subject: 'E-mail de Teste - HuaControl',
+        html: `
+          <h1>Teste de Envio</h1>
+          <p>Este é um e-mail de teste enviado para validar a integração com o Resend.</p>
+          <p>Se você recebeu este e-mail, a configuração está correta!</p>
+        `
+      });
+
+      res.json({ success: true, message: `E-mail de teste enviado para ${email}` });
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ error: "Failed to send test email" });
+    }
+  });
+
   // Get all subscriptions with company info
   app.get("/api/admin/subscriptions", authMiddleware, requireSuperAdmin, async (req, res) => {
     try {
