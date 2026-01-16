@@ -12,6 +12,11 @@ export default function PaymentPending() {
 
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["/api/subscriptions/active"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/subscriptions/active");
+      if (!res.ok) return null;
+      return res.json();
+    },
     enabled: !!company?.id,
   });
 
