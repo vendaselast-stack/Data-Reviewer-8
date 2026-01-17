@@ -135,15 +135,25 @@ export default function Signup() {
         setTimeout(() => setLocation("/checkout?plan=" + formData.plan), 1000);
       }
     } catch (error) {
+      console.log("Signup error caught:", error);
+      
       // Handle duplicate company scenarios
       const errorMsg = error.message || "";
+      console.log("Error message:", errorMsg);
       
       if (errorMsg.includes("DUPLICATE_PAID")) {
+        console.log("Detected DUPLICATE_PAID");
         toast.error("Este CNPJ já possui uma conta ativa. Faça login para acessar o sistema.", {
           duration: 5000
         });
-        setTimeout(() => setLocation("/login"), 2000);
+        // Don't clear form, just redirect
+        setTimeout(() => {
+          setLoading(false);
+          setLocation("/login");
+        }, 2000);
+        return; // Important: prevent finally block from clearing loading
       } else if (errorMsg.includes("DUPLICATE_PENDING")) {
+        console.log("Detected DUPLICATE_PENDING");
         // SALVAR NO LOCALSTORAGE ANTES DE REDIRECIONAR
         const auth = localStorage.getItem("auth");
         if (auth) {
@@ -165,8 +175,11 @@ export default function Signup() {
         toast.success("Cadastro encontrado! Complete o pagamento para ativar sua conta.", {
           duration: 4000
         });
-        setTimeout(() => setLocation("/checkout?plan=" + formData.plan), 1500);
-        return;
+        setTimeout(() => {
+          setLoading(false);
+          setLocation("/checkout?plan=" + formData.plan);
+        }, 1500);
+        return; // Important: prevent finally block from clearing loading
       } else if (errorMsg.includes("já existe") || errorMsg.includes("already exists")) {
         toast.error("Este CNPJ já está cadastrado. Tente fazer login ou use outro CNPJ.", {
           duration: 5000
@@ -176,7 +189,6 @@ export default function Signup() {
           duration: 4000
         });
       }
-    } finally {
       setLoading(false);
     }
   };
