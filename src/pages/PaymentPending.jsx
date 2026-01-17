@@ -25,9 +25,30 @@ export default function PaymentPending() {
       const res = await apiRequest("POST", "/api/payment/regenerate-boleto", {
         companyId: company?.id,
         email: user?.email,
-        amount: subscription?.amount || "97.00",
-        plan: company?.subscriptionPlan || "monthly"
+        amount: subscription?.amount || "215.00",
+        plan: company?.subscriptionPlan || "monthly",
+        payer: {
+          email: user?.email,
+          first_name: user?.name?.split(' ')[0] || 'Admin',
+          last_name: user?.name?.split(' ').slice(1).join(' ') || 'User',
+          identification: {
+            type: company?.document?.replace(/\D/g, '').length > 11 ? 'CNPJ' : 'CPF',
+            number: company?.document?.replace(/\D/g, '') || ''
+          },
+          address: {
+            zip_code: user?.cep?.replace(/\D/g, '') || '',
+            street_name: user?.rua || '',
+            street_number: user?.numero || '',
+            neighborhood: user?.bairro || '',
+            city: user?.cidade || '',
+            federal_unit: user?.estado || ''
+          }
+        }
       });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.details || error.error || 'Failed to generate new boleto');
+      }
       return res.json();
     },
     onSuccess: (data) => {

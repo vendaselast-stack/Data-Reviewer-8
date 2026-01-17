@@ -560,10 +560,15 @@ export function registerPaymentRoutes(app: Express) {
   // Regenerate boleto with next day expiration
   app.post("/api/payment/regenerate-boleto", async (req: Request, res: Response) => {
     try {
-      const { companyId, email, amount, plan } = req.body;
+      const { companyId, email, amount, plan, payer } = req.body;
 
       if (!companyId || !email || !amount) {
         return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      if (!MERCADOPAGO_ACCESS_TOKEN) {
+        console.error("[Payment] MERCADOPAGO_ACCESS_TOKEN not configured");
+        return res.status(500).json({ error: "Payment gateway not configured" });
       }
 
       console.log("[Payment] Regenerating boleto for company:", companyId);
@@ -598,14 +603,42 @@ export function registerPaymentRoutes(app: Express) {
             date_of_expiration: tomorrow.toISOString(),
             payer: {
               email: email,
-              first_name: 'Admin',
-              last_name: 'User',
+              first_name: payer?.first_name || 'Admin',
+              last_name: payer?.last_name || 'User',
+              identification: {
+                type: payer?.identification?.type || 'CPF',
+                number: String(payer?.identification?.number || '').replace(/\D/g, '')
+              },
+              address: {
+                zip_code: String(payer?.address?.zip_code || '').replace(/\D/g, ''),
+                street_name: String(payer?.address?.street_name || ''),
+                street_number: String(payer?.address?.street_number || ''),
+                neighborhood: String(payer?.address?.neighborhood || ''),
+                city: String(payer?.address?.city || ''),
+                federal_unit: String(payer?.address?.federal_unit || '')
+              }
             },
             description: `Renovação Assinatura - HUACONTROL`,
             external_reference: companyId,
+            metadata: {
+              company_id: companyId,
+              plan: plan || 'monthly'
+            }
           }),
         });
+        
+        if (!mpResponse.ok) {
+          const errorData = await mpResponse.json();
+          console.error("[Payment] Mercado Pago API error on regenerate:", errorData);
+          return res.status(400).json({ 
+            error: "Failed to generate new boleto", 
+            details: errorData.message || errorData.cause || 'Unknown error',
+            mp_error: errorData
+          });
+        }
+        
         paymentResponse = await mpResponse.json();
+        console.log("[Payment] Boleto regenerated:", { id: paymentResponse.id, ticket_url: paymentResponse?.transaction_details?.external_resource_url });
       }
 
       if (paymentResponse.id) {
