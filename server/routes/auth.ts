@@ -51,13 +51,28 @@ export function registerAuthRoutes(app: Express) {
           return res.status(409).json({ error: "Essa empresa já possui um cadastro ativo", type: "DUPLICATE_PAID" });
         } else {
           const existingPlan = existingCompany.subscriptionPlan || plan || "monthly";
-          const existingAdmins = await db
+          let existingAdmins = await db
             .select()
             .from(users)
             .where(and(eq(users.companyId, existingCompany.id), eq(users.role, "admin")))
             .limit(1);
 
-          const existingAdmin = existingAdmins[0];
+          let existingAdmin = existingAdmins[0];
+
+          if (!existingAdmin && username && email && password) {
+            const createdAdmin = await createUser(existingCompany.id, username, email, password, name, "admin");
+            await db.update(users)
+              .set({ cep, rua, numero, complemento: bairro, cidade, estado } as any)
+              .where(eq(users.id, createdAdmin.id));
+
+            existingAdmins = await db
+              .select()
+              .from(users)
+              .where(and(eq(users.companyId, existingCompany.id), eq(users.role, "admin")))
+              .limit(1);
+
+            existingAdmin = existingAdmins[0];
+          }
 
           return res.status(200).json({
             existingPending: true,
