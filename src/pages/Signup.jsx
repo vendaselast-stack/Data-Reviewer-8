@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Building2, FileText, User, UserCheck, Mail, Lock, CheckCircle2, UserPlus, ArrowLeft } from "lucide-react";
-import { formatCNPJ } from "@/utils/masks";
+import { formatCNPJ, formatCPF } from "@/utils/masks";
 
 const PLANS = {
   monthly: { name: 'Mensal', price: 'R$ 215', features: 'Acesso completo ao sistema' },
@@ -47,7 +47,8 @@ export default function Signup() {
     const { name, value } = e.target;
     
     if (name === "companyDocument") {
-      const formatted = formatCNPJ(value);
+      const digits = value.replace(/\D/g, "");
+      const formatted = digits.length <= 11 ? formatCPF(value) : formatCNPJ(value);
       setFormData((prev) => ({ ...prev, [name]: formatted }));
     } else if (name === "cep") {
       const cep = value.replace(/\D/g, "");
