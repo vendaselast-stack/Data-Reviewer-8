@@ -175,7 +175,7 @@ export default function Checkout() {
             zip_code: user?.cep?.replace(/\D/g, '') || '',
             street_name: user?.rua || '',
             street_number: user?.numero || '',
-            neighborhood: user?.complemento || '',
+            neighborhood: user?.bairro || '',
             city: user?.cidade || '',
             federal_unit: user?.estado || ''
           }

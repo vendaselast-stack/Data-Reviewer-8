@@ -45,7 +45,12 @@ export function registerPaymentRoutes(app: Express) {
         return res.status(400).json({ error: "Company ID is required" });
       }
 
-      console.log("[Payment] Processing payment:", { companyId, plan, payment_method_id, amount: total_amount });
+      if (!MERCADOPAGO_ACCESS_TOKEN) {
+        console.error("[Payment] MERCADOPAGO_ACCESS_TOKEN not configured");
+        return res.status(500).json({ error: "Payment gateway not configured" });
+      }
+
+      console.log("[Payment] Processing payment:", { companyId, plan, payment_method_id, amount: total_amount, payer });
 
       // Calculate expiration date based on plan
       const isLifetime = plan === 'pro';
@@ -149,9 +154,22 @@ export function registerPaymentRoutes(app: Express) {
               }
             }),
           });
+          
+          if (!mpResponse.ok) {
+            const errorData = await mpResponse.json();
+            console.error("[Payment] Mercado Pago API error:", errorData);
+            return res.status(400).json({ 
+              error: "Payment processing failed", 
+              details: errorData.message || errorData.cause || 'Unknown error',
+              mp_error: errorData
+            });
+          }
+          
           paymentResponse = await mpResponse.json();
           paymentStatus = paymentResponse.status;
           mpPaymentId = paymentResponse.id;
+          
+          console.log("[Payment] Boleto created:", { id: mpPaymentId, status: paymentStatus, ticket_url: paymentResponse?.transaction_details?.external_resource_url });
         }
       } else if (payment_method_id === 'credit_card' || token) {
         // Credit card payment
@@ -278,12 +296,23 @@ export function registerPaymentRoutes(app: Express) {
           qr_code_base64: paymentResponse?.point_of_interaction?.transaction_data?.qr_code_base64,
           ticket_url: paymentResponse?.transaction_details?.external_resource_url,
         });
+      } else if (paymentStatus === 'pending' || paymentStatus === 'in_process') {
+        // Boleto e outros métodos que ficam pending devem ser aceitos
+        return res.json({
+          success: true,
+          status: paymentStatus,
+          message: 'Aguardando pagamento',
+          paymentId: mpPaymentId,
+          ticket_url: paymentResponse?.transaction_details?.external_resource_url,
+        });
       } else {
+        // rejected, cancelled, etc
         return res.status(400).json({
           success: false,
           status: paymentStatus,
           message: 'Pagamento recusado',
           error: paymentResponse?.status_detail || 'Payment failed',
+          mp_response: paymentResponse
         });
       }
 
