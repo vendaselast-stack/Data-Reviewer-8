@@ -156,8 +156,6 @@ Responda em JSON seguindo rigorosamente os nomes das chaves acima.`;
         });
       }
 
-      console.log("[AI Debug] Análise Validada:", validatedAnalysis);
-
       // Validar que temos pelo menos ALGUNS dados
       const hasAssessment = validatedAnalysis.assessment && validatedAnalysis.assessment.length > 0;
       const hasRecommendations = validatedAnalysis.recommendations && validatedAnalysis.recommendations.length > 0;

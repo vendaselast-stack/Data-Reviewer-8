@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Upload, Save, Lock, CreditCard, User, Loader2 } from 'lucide-react';
+import { Upload, Save, Lock, CreditCard, User, Loader2, Download } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -66,6 +66,7 @@ export default function ProfilePage() {
         complemento: user.complemento || '',
         estado: user.estado || '',
         cidade: user.cidade || '',
+        cnpj: company?.document || company?.cnpj || '',
       });
       setPreviewUrl(user.avatar || '');
 
@@ -103,8 +104,8 @@ export default function ProfilePage() {
   const invoices = Array.isArray(invoicesResult) ? invoicesResult : [];
 
   const planTranslation = { 'monthly': 'Mensal', 'pro': 'Pro / Vitalício', 'basic': 'Básico', 'enterprise': 'Empresarial' };
-  const currentSubscription = planTranslation[company?.subscriptionPlan] || company?.subscriptionPlan || "Free";
-  const planValue = company?.subscriptionPlan === "pro" ? "997,00" : (company?.subscriptionPlan === "monthly" ? "97,00" : "0,00");
+  const currentSubscription = company?.subscriptionPlan === 'monthly' ? 'Mensal' : (planTranslation[company?.subscriptionPlan] || company?.subscriptionPlan || "Free");
+  const planValue = company?.subscriptionPlan === "pro" ? "997,00" : (company?.subscriptionPlan === "monthly" ? "215,00" : "0,00");
   const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
 
   // Handlers
@@ -215,7 +216,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
-                    <Input id="name" name="name" value={formData.name} onChange={handleInputChange} />
+                    <Input id="name" name="name" value={formData.name} onChange={handleInputChange} data-testid="input-name" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
@@ -225,6 +226,30 @@ export default function ProfilePage() {
                       value={formData.phone} 
                       onChange={handleInputChange} 
                       placeholder="(00) 00000-0000"
+                      data-testid="input-phone"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email"
+                      value={formData.email} 
+                      onChange={handleInputChange} 
+                      placeholder="seu@email.com"
+                      data-testid="input-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ</Label>
+                    <Input 
+                      id="cnpj" 
+                      name="cnpj" 
+                      value={formData.cnpj || ''} 
+                      onChange={handleInputChange} 
+                      placeholder="00.000.000/0000-00"
+                      data-testid="input-cnpj"
                     />
                   </div>
                 </div>
@@ -255,15 +280,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="cidade">Cidade</Label>
-                      <Select value={formData.cidade || ""} onValueChange={(v) => setFormData(p => ({...p, cidade: v}))} disabled={!formData.estado}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          {cities.length > 0 ? cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>) : 
-                           formData.cidade ? <SelectItem value={formData.cidade}>{formData.cidade}</SelectItem> : 
-                           <SelectItem value="outra" disabled>Nenhuma cidade listada</SelectItem>
-                          }
-                        </SelectContent>
-                      </Select>
+                      <Input id="cidade" name="cidade" value={formData.cidade} onChange={handleInputChange} />
                     </div>
                   </div>
                 </div>
@@ -323,6 +340,20 @@ export default function ProfilePage() {
                    </Badge>
                 </div>
               </div>
+
+              {invoices.length > 0 && (
+                <div className="mb-6 p-4 border border-blue-100 bg-blue-50 rounded-lg flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-blue-900">Download do Boleto</div>
+                    <div className="text-sm text-blue-700">Baixe o boleto da sua última fatura.</div>
+                  </div>
+                  <Button asChild variant="outline" className="border-blue-200 hover:bg-blue-100">
+                    <a href={invoices[0].ticket_url || '#'} target="_blank" rel="noopener noreferrer">
+                      <Download className="w-4 h-4 mr-2" /> Baixar Boleto
+                    </a>
+                  </Button>
+                </div>
+              )}
 
               <div className="border rounded-md">
                  <table className="w-full text-sm">

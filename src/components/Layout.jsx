@@ -6,22 +6,23 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermission } from '@/hooks/usePermission';
-import LogoHUACONTROL from '@assets/ChatGPT_Image_6_de_jan._de_2026__17_13_28-removebg-preview_1767731092064.png';
+import LogoSidebar from '@/assets/logo-sidebar.png';
 
 export default function Layout({ children }) {
-  const [pathname] = useLocation();
+  const [pathname, setLocation] = useLocation();
   const { user, company, logout } = useAuth();
   const { hasPermission } = usePermission();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    setLocation('/login');
   };
 
   // Super Admin navigation
   const superAdminNavigation = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['super_admin'], permission: null },
-    { name: 'Assinaturas', icon: Users, path: '/admin/subscriptions', roles: ['super_admin'], permission: null },
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/admin', roles: ['super_admin'], permission: null },
+    { name: 'Assinaturas', icon: Receipt, path: '/admin/subscriptions', roles: ['super_admin'], permission: null },
     { name: 'Usuários', icon: Users, path: '/admin/users', roles: ['super_admin'], permission: null },
   ];
 
@@ -66,11 +67,11 @@ export default function Layout({ children }) {
   const NavContent = ({ onNavigate }) => (
     <div className="flex flex-col h-full py-3 px-4 text-white" style={{ backgroundColor: '#040303' }}>
       <div className="flex items-center pt-3 pb-4 mb-2">
-        <img src={LogoHUACONTROL} alt="HUACONTROL Logo" className="h-12 w-auto object-contain" />
+        <img src={LogoSidebar} alt="HUACONTROL" className="h-12 w-auto object-contain" />
       </div>
       <nav className="space-y-1 flex-1">
         {navigation.map((item) => {
-            const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
+            const isActive = pathname === item.path || (item.path !== '/' && item.path !== '/admin' && pathname.startsWith(item.path));
             return (
                 <Link key={item.name} href={item.path} onClick={onNavigate}>
                 <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive ? 'text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
@@ -114,7 +115,7 @@ export default function Layout({ children }) {
         <NavContent onNavigate={() => {}} />
       </div>
       <div className="md:hidden flex items-center justify-between p-3 text-white sticky top-0 z-20" style={{ backgroundColor: '#040303' }}>
-        <img src={LogoHUACONTROL} alt="HUACONTROL Logo" className="h-10 w-auto object-contain" />
+        <img src={LogoSidebar} alt="HUACONTROL" className="h-10 w-auto object-contain" />
         <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">

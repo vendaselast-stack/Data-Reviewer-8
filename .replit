@@ -1,0 +1,63 @@
+modules = ["nodejs-20", "web", "postgresql-16"]
+# CORREÇÃO 1: Executar o arquivo .mjs
+run = ["node", "./dist/index.mjs"]
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["unzip"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
+
+[env]
+PORT = "5000"
+
+[deployment]
+deploymentTarget = "gce"
+# CORREÇÃO 2: Executar o arquivo .mjs no deploy também
+run = ["node", "./dist/index.mjs"]
+build = [
+  "sh",
+  "-c",
+  # CORREÇÃO 3: Gerar o arquivo com final .mjs (--outfile=dist/index.mjs)
+  "vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.mjs",
+]
+
+[workflows]
+runButton = "Start application"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx tsx server/index.ts"
+
+[userenv]
+
+[userenv.shared]
+VITE_GOOGLE_GEMINI_API_KEY = "AIzaSyAys-euD6wR2hKEGgvFyYBlD-ZY-98tGQU"
+DATABASE_URL = "postgresql://neondb_owner:npg_NvCa6n1hGZBo@ep-bold-surf-acxc3vye-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+MERCADOPAGO_ACCESS_TOKEN = "TEST-480170991685621-122922-242361804774376ec1ad15e2cc323035-1220647240"
+VITE_MERCADOPAGO_PUBLIC_KEY = "TEST-b451766f-a43e-498b-9441-38d6ac0ce68e"
+MERCADOPAGO_WEBHOOK_SECRET = "8be0f574ef57591ed15c4e4828803b33e76e1fbcfd97579b92ed1fb93d0caad9"
+RESEND_API_KEY = "re_bLKFDXoo_BjaYVuBkpGVV8eLbb87zV2Ja"
+
+[agent]
+integrations = ["javascript_database:1.0.0"]

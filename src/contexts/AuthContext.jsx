@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [token]);
 
-  const signup = async (companyName, companyDocument, username, email, password, name, plan) => {
+  const signup = async (companyName, companyDocument, username, email, password, name, plan, addressData = {}) => {
     try {
       setError(null);
       const res = await fetch("/api/auth/signup", {
@@ -63,6 +63,7 @@ export function AuthProvider({ children }) {
           password,
           name,
           plan,
+          ...addressData
         }),
       });
 
@@ -76,6 +77,7 @@ export function AuthProvider({ children }) {
         } else if (data.type === "DUPLICATE_PENDING") {
           const error = new Error("DUPLICATE_PENDING: " + (data.error || "Company exists with pending payment"));
           error.companyId = data.companyId;
+          error.plan = data.plan;
           throw error;
         }
         throw new Error(data.error || "Signup failed");
@@ -153,26 +155,24 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
-    // Clear state FIRST to trigger re-renders
+  const logout = async () => {
+    // Clear storage first
+    localStorage.removeItem("auth");
+    sessionStorage.clear();
+    
+    // Clear queryClient cache
+    try {
+      const { queryClient } = await import("@/lib/queryClient");
+      queryClient.clear();
+    } catch (e) {
+      // Ignore
+    }
+
+    // Clear state to trigger re-renders - React will handle navigation
     setToken(null);
     setUser(null);
     setCompany(null);
     setIsPaymentPending(false);
-
-    // Clear storage
-    localStorage.removeItem("auth");
-    sessionStorage.clear();
-    
-    // Redirect using window.location for a clean state reset
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-
-    // Background cleanup
-    import("@/lib/queryClient").then(({ queryClient }) => {
-      queryClient.clear();
-    }).catch(() => {});
   };
 
   const updateUser = (newUserData) => {

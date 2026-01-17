@@ -6,11 +6,9 @@ export const InvokeLLM = async (prompt, responseJsonSchema = null) => {
 
 export const UploadFile = async (file) => {
   // Mock ou implementação real se necessário
-  console.log('UploadFile calling backend...');
   return { success: true };
 };
 
 export const ExtractDataFromUploadedFile = async (fileId) => {
-  console.log('ExtractData calling backend...');
   return { data: {} };
 };

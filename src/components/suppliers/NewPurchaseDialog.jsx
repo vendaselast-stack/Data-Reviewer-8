@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CurrencyInput, formatCurrency } from "@/components/ui/currency-input";
+import { CurrencyInput, formatCurrency, parseCurrency } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
@@ -13,14 +13,6 @@ import CreateCategoryModal from '../transactions/CreateCategoryModal';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
-
-// MESMA FUNÇÃO SEGURA DA VENDA
-const parseCurrency = (value) => {
-  if (!value) return 0;
-  if (typeof value === 'number') return value;
-  const cleanValue = value.toString().replace(/\./g, '').replace(',', '.');
-  return parseFloat(cleanValue) || 0;
-};
 
 export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
   const { company } = useAuth();
@@ -105,21 +97,14 @@ export default function NewPurchaseDialog({ supplier, open, onOpenChange }) {
 
       return await apiRequest('POST', '/api/purchases', payload);
     },
-    onSuccess: async () => {
-      // Invalida e recarrega os dados para garantir que o total na tabela atualize
+    onSuccess: () => {
+      // Invalida caches - React Query refaz automaticamente quando necessário
       queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/purchases'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/cash-flow'] });
 
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['/api/transactions'] }),
-        queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] }),
-        queryClient.refetchQueries({ queryKey: ['/api/suppliers'] }),
-        queryClient.refetchQueries({ queryKey: ['/api/suppliers', company?.id] }),
-        queryClient.invalidateQueries({ queryKey: ['/api/suppliers', company?.id] })
-      ]);
-
-      toast.success('Compra registrada e saldos atualizados!');
+      toast.success('Compra registrada com sucesso!');
       onOpenChange(false);
     },
     onError: (error) => {

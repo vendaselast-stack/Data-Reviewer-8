@@ -9,13 +9,42 @@ export function formatCurrency(value) {
   return numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Parse Brazilian currency format to number
+// Parse currency value to number (handles both BR and US formats)
 export function parseCurrency(value) {
   if (value === null || value === undefined || value === '') return 0;
   if (typeof value === 'number') return value;
   
-  // Replace thousand separators (.) and then comma (,) with dot (.)
-  const cleanValue = value.toString().replace(/\./g, '').replace(',', '.');
+  const strValue = value.toString().trim();
+  
+  // Detect format: if has comma as decimal separator, it's Brazilian format
+  // Brazilian: 1.234,56 (dot = thousand, comma = decimal)
+  // American: 1234.56 or 1,234.56 (comma = thousand, dot = decimal)
+  
+  const hasComma = strValue.includes(',');
+  const hasDot = strValue.includes('.');
+  
+  let cleanValue;
+  
+  if (hasComma && hasDot) {
+    // Both present: determine by position (last one is decimal)
+    const lastComma = strValue.lastIndexOf(',');
+    const lastDot = strValue.lastIndexOf('.');
+    
+    if (lastComma > lastDot) {
+      // Brazilian format: 1.234,56
+      cleanValue = strValue.replace(/\./g, '').replace(',', '.');
+    } else {
+      // American format: 1,234.56
+      cleanValue = strValue.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    // Only comma: Brazilian decimal (544,44)
+    cleanValue = strValue.replace(',', '.');
+  } else {
+    // Only dot or no separator: American format (544.44 or 544)
+    cleanValue = strValue;
+  }
+  
   const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? 0 : parsed;
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -36,7 +36,13 @@ export default function Login() {
       
       const userName = data.user?.name || "usuário";
       toast.success(`Seja bem vindo, ${userName}!`);
-      setLocation("/dashboard");
+      
+      // Redirect Super Admin to admin dashboard
+      if (data.user?.isSuperAdmin) {
+        setLocation("/admin");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -98,9 +104,9 @@ export default function Login() {
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Não tem conta?{" "}
-          <a href="/signup" className="text-primary font-medium hover:underline">
+          <Link href="/signup" className="text-primary font-medium hover:underline">
             Criar conta
-          </a>
+          </Link>
         </p>
       </Card>
     </div>

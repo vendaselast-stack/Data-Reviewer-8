@@ -22,7 +22,22 @@ export function registerAuthRoutes(app: Express) {
   // Sign up
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { companyName, companyDocument, username, email, password, name, plan } = req.body;
+      const { 
+        companyName, 
+        companyDocument, 
+        username, 
+        email, 
+        password, 
+        name, 
+        plan,
+        cep,
+        rua,
+        numero,
+        bairro,
+        cidade,
+        estado
+      } = req.body;
+      
       if (!companyName || !companyDocument || !username || !password || !email) {
         return res.status(400).json({ error: "Missing required fields" });
       }
@@ -35,11 +50,97 @@ export function registerAuthRoutes(app: Express) {
         if (existingCompany.paymentStatus === "approved") {
           return res.status(409).json({ error: "Essa empresa já possui um cadastro ativo", type: "DUPLICATE_PAID" });
         } else {
-          return res.status(409).json({ error: "Cadastro encontrado com pagamento pendente", type: "DUPLICATE_PENDING", companyId: existingCompany.id, plan: "pro" });
+          const existingPlan = existingCompany.subscriptionPlan || plan || "monthly";
+          let existingAdmins = await db
+            .select()
+            .from(users)
+            .where(and(eq(users.companyId, existingCompany.id), eq(users.role, "admin")))
+            .limit(1);
+
+          let existingAdmin = existingAdmins[0];
+
+          if (!existingAdmin && username && email && password) {
+            const createdAdmin = await createUser(existingCompany.id, username, email, password, name, "admin");
+            await db.update(users)
+              .set({ cep, rua, numero, complemento: bairro, cidade, estado } as any)
+              .where(eq(users.id, createdAdmin.id));
+
+            existingAdmins = await db
+              .select()
+              .from(users)
+              .where(and(eq(users.companyId, existingCompany.id), eq(users.role, "admin")))
+              .limit(1);
+
+            existingAdmin = existingAdmins[0];
+          }
+
+          return res.status(200).json({
+            existingPending: true,
+            message: "Cadastro encontrado com pagamento pendente",
+            company: {
+              id: existingCompany.id,
+              name: existingCompany.name,
+              document: existingCompany.document,
+              subscriptionPlan: existingPlan,
+              paymentStatus: existingCompany.paymentStatus,
+            },
+            user: existingAdmin
+              ? {
+                  id: existingAdmin.id,
+                  username: existingAdmin.username,
+                  email: existingAdmin.email,
+                  name: existingAdmin.name,
+                  cep: existingAdmin.cep,
+                  rua: existingAdmin.rua,
+                  numero: existingAdmin.numero,
+                  complemento: existingAdmin.complemento,
+                  cidade: existingAdmin.cidade,
+                  estado: existingAdmin.estado,
+                }
+              : {
+                  id: null,
+                  username,
+                  email,
+                  name,
+                },
+            plan: existingPlan,
+          });
         }
       }
       const company = await createCompany(companyName, companyDocument);
       const user = await createUser(company.id, username, email, password, name, "admin");
+      
+      // Update user with address fields
+      await db.update(users)
+        .set({ cep, rua, numero, complemento: bairro, cidade, estado } as any)
+        .where(eq(users.id, user.id));
+      
+      const newSubscriptionPlan = plan || "pro";
+      const amount = newSubscriptionPlan === "pro" ? "997.00" : (newSubscriptionPlan === "monthly" ? "97.00" : "0.00");
+      const ticketUrl = `https://boletos.huacontrol.com.br/gerar?id=${company.id}`; // Exemplo de URL de boleto
+
+      // Enviar e-mail de boas-vindas com o boleto
+      try {
+        const { Resend: ResendClient } = await import('resend');
+        const resend = new ResendClient(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'Financeiro <contato@huacontrol.com.br>',
+          to: email,
+          subject: 'Conta Criada com Sucesso - Pagamento Pendente',
+          html: `
+            <p>Olá, ${name || username}</p>
+            <p>Sua conta na HuaControl foi criada com sucesso.</p>
+            <p>Para começar a usar o sistema, é necessário realizar o pagamento da sua assinatura.</p>
+            <p>Plano: ${newSubscriptionPlan.toUpperCase()}</p>
+            <p>Valor: R$ ${parseFloat(amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            <p>Você pode acessar seu boleto no link abaixo:</p>
+            <p><a href="${ticketUrl}">${ticketUrl}</a></p>
+            <p>Após a confirmação do pagamento, seu acesso será liberado automaticamente.</p>
+          `
+        });
+      } catch (emailErr) {
+        console.error("Error sending welcome email:", emailErr);
+      }
       
       // Create default categories for the new company
       const defaultCategories = [
@@ -62,21 +163,19 @@ export function registerAuthRoutes(app: Express) {
         console.error('Error creating default categories:', catError);
       }
 
-      const subscriptionPlan = plan || "pro";
       try {
         // Check if subscription already exists to prevent duplication on retries/errors
         const existingSubs = await db.select().from(subscriptions).where(eq(subscriptions.companyId, company.id)).limit(1);
         if (existingSubs.length === 0) {
-          const amount = subscriptionPlan === "pro" ? "997.00" : (subscriptionPlan === "monthly" ? "97.00" : "0.00");
           await db.insert(subscriptions).values({ 
             companyId: company.id, 
-            plan: subscriptionPlan, 
+            plan: newSubscriptionPlan, 
             status: "active",
             amount: amount,
             subscriberName: name || username,
             createdAt: new Date()
           } as any);
-          await db.update(companies).set({ subscriptionPlan: subscriptionPlan, paymentStatus: "approved" } as any).where(eq(companies.id, company.id));
+          await db.update(companies).set({ subscriptionPlan: newSubscriptionPlan, paymentStatus: "approved" } as any).where(eq(companies.id, company.id));
         }
       } catch (err) {
         console.error("Error setting up company subscription:", err);
@@ -85,7 +184,7 @@ export function registerAuthRoutes(app: Express) {
       await createSession(user.id, company.id, token);
       res.status(201).json({
         user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: company.id, permissions: {} },
-        company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan, document: company.document },
+        company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan: newSubscriptionPlan, document: company.document },
         token
       });
     } catch (error) {
@@ -101,36 +200,75 @@ export function registerAuthRoutes(app: Express) {
       if (!username || !password) return res.status(400).json({ error: "Missing username or password" });
       const rateLimitCheck = await checkRateLimit(ip);
       if (!rateLimitCheck.allowed) return res.status(429).json({ error: "Too many login attempts. Please try again later." });
+      console.log("Login attempt for:", username);
       let user = await findUserByUsername(username);
       if (!user) user = await findUserByEmail(username);
       if (!user) {
+        console.log("User not found:", username);
         await recordLoginAttempt(ip, username, false);
         return res.status(401).json({ error: "Credenciais inválidas" });
       }
+      console.log("User found:", user.username, "Role:", user.role, "isSuperAdmin:", user.isSuperAdmin);
       const isValid = await verifyPassword(password, user.password);
       if (!isValid) {
+        console.log("Invalid password for:", username);
         await recordLoginAttempt(ip, username, false);
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      const company = await findCompanyById(user.companyId as string);
-      if (!company) return res.status(404).json({ error: "Company not found" });
+      
+      let company = null;
+      if (user.companyId) {
+        company = await findCompanyById(user.companyId as string);
+        console.log("Company found:", company?.name || "None", "PaymentStatus:", company?.paymentStatus || "N/A");
+      }
+      
+      // Super admin can always bypass company check
+      if (!company && !user.isSuperAdmin) return res.status(404).json({ error: "Company not found" });
+      
       await recordLoginAttempt(ip, username, true);
-      if (company.paymentStatus !== "approved") {
-        return res.json({
-          user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, permissions: user.permissions ? JSON.parse(user.permissions as string) : {} },
-          company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus },
-          token: null, paymentPending: true, message: "Pagamento pendente."
+      
+      if (company && company.paymentStatus !== "approved" && !user.isSuperAdmin) {
+        return res.status(403).json({
+          error: "PAGAMENTO_PENDENTE",
+          message: "Seu acesso está bloqueado pois o pagamento da assinatura está pendente. Por favor, realize o pagamento do boleto ou entre em contato com o suporte.",
+          supportNumber: "5554996231432"
         });
       }
-      const token = generateToken({ userId: user.id, companyId: user.companyId as string, role: user.role, isSuperAdmin: user.isSuperAdmin });
-      await createSession(user.id, user.companyId as string, token);
-      await createAuditLog(user.id, user.companyId as string, "LOGIN", "user", user.id, undefined, ip, req.headers['user-agent'] || 'unknown');
+      const companyId = user.companyId || null;
+      const token = generateToken({ userId: user.id, companyId: companyId as string, role: user.role, isSuperAdmin: user.isSuperAdmin });
+      await createSession(user.id, companyId, token);
+      await createAuditLog(user.id, companyId, "LOGIN", "user", user.id, undefined, ip, req.headers['user-agent'] || 'unknown');
       res.json({
-        user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, permissions: user.permissions ? JSON.parse(user.permissions as string) : {} },
-        company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan: company.subscriptionPlan, document: company.document },
-        token, paymentPending: false
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          name: user.name, 
+          phone: user.phone, 
+          avatar: user.avatar, 
+          role: user.role, 
+          isSuperAdmin: user.isSuperAdmin, 
+          companyId: user.companyId, 
+          cep: user.cep, 
+          rua: user.rua, 
+          numero: user.numero, 
+          complemento: user.complemento, 
+          estado: user.estado, 
+          cidade: user.cidade, 
+          permissions: user.permissions ? (typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions) : {} 
+        },
+        company: company ? { 
+          id: company.id, 
+          name: company.name, 
+          paymentStatus: company.paymentStatus, 
+          subscriptionPlan: company.subscriptionPlan, 
+          document: company.document 
+        } : null,
+        token, 
+        paymentPending: false
       });
     } catch (error) {
+      console.error("Login Error:", error);
       res.status(500).json({ error: "Login failed" });
     }
   });
@@ -142,7 +280,7 @@ export function registerAuthRoutes(app: Express) {
       const company = await findCompanyById(req.user.companyId);
       if (!user || !company) return res.status(404).json({ error: "User or company not found" });
       res.json({
-        user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, permissions: user.permissions ? JSON.parse(user.permissions) : {} },
+        user: { id: user.id, username: user.username, email: user.email, name: user.name, phone: user.phone, avatar: user.avatar, role: user.role, isSuperAdmin: user.isSuperAdmin, companyId: user.companyId, cep: user.cep, rua: user.rua, numero: user.numero, complemento: user.complemento, estado: user.estado, cidade: user.cidade, permissions: user.permissions ? JSON.parse(user.permissions) : {} },
         company: { id: company.id, name: company.name, paymentStatus: company.paymentStatus, subscriptionPlan: company.subscriptionPlan, document: company.document }
       });
     } catch (error) {
@@ -154,13 +292,11 @@ export function registerAuthRoutes(app: Express) {
   app.patch("/api/auth/profile", authMiddleware, async (req: AuthenticatedRequest, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-      const { name, phone, cep, rua, numero, complemento, estado, cidade, avatar } = req.body;
-      
-      console.log(`[Auth] Updating profile for user ${req.user.id}:`, { name, phone, cep, rua, numero, complemento, estado, cidade });
+      const { name, phone, email, cep, rua, numero, complemento, estado, cidade, avatar } = req.body;
 
       const updateData: any = { 
         name, 
-        phone, 
+        phone,
         cep, 
         rua, 
         numero, 
@@ -170,6 +306,7 @@ export function registerAuthRoutes(app: Express) {
         updatedAt: new Date() 
       };
       
+      if (email) updateData.email = email;
       if (avatar) updateData.avatar = avatar;
 
       const [updatedUser] = await db.update(users)
@@ -178,8 +315,6 @@ export function registerAuthRoutes(app: Express) {
         .returning();
 
       if (!updatedUser) return res.status(404).json({ error: "User not found" });
-
-      console.log(`[Auth] Profile updated successfully for user ${req.user.id}`);
 
       res.json({
         user: { 
@@ -349,7 +484,11 @@ export function registerAuthRoutes(app: Express) {
         };
       }
 
-      const hashedPassword = await hashPassword(password || "mudar123");
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: "Password is required and must be at least 6 characters" });
+      }
+
+      const hashedPassword = await hashPassword(password);
       const [newUser] = await db.insert(users).values({
         companyId: req.user.companyId,
         username: username || email,

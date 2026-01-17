@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CurrencyInput, formatCurrency } from "@/components/ui/currency-input";
+import { CurrencyInput, formatCurrency, parseCurrency } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,16 +13,6 @@ import { apiRequest } from '@/lib/queryClient';
 import CreateCategoryModal from '../transactions/CreateCategoryModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
-
-// Função utilitária para converter string formatada (BR) para float (Universal)
-// Ex: "5.454,51" vira 5454.51
-const parseCurrency = (value) => {
-  if (!value) return 0;
-  if (typeof value === 'number') return value;
-  // Remove pontos de milhar e troca vírgula por ponto
-  const cleanValue = value.toString().replace(/\./g, '').replace(',', '.');
-  return parseFloat(cleanValue) || 0;
-};
 
 export default function NewSaleDialog({ customer, open, onOpenChange }) {
   const { company } = useAuth();
@@ -110,18 +100,14 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       const res = await apiRequest('POST', '/api/sales', payload);
       return res;
     },
-    onSuccess: async () => {
-      onOpenChange(false);
-      toast.success('Venda registrada com sucesso!');
-
-      // Invalida e recarrega os dados para garantir que o total na tabela atualize
+    onSuccess: () => {
+      // Invalida caches - React Query refaz automaticamente quando necessário
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/sales'] });
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      
-      // Força o refetch imediato
-      queryClient.refetchQueries({ queryKey: ['/api/customers', company?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/cash-flow'] });
 
+      // Reset form
       setFormData({
         description: '',
         total_amount: '',
@@ -135,24 +121,8 @@ export default function NewSaleDialog({ customer, open, onOpenChange }) {
       });
       setCustomInstallments([]);
 
-      setTimeout(async () => {
-        await queryClient.refetchQueries({ queryKey: ['/api/transactions'] });
-        await queryClient.refetchQueries({ queryKey: ['/api/cash-flow'] });
-
-        if (company?.id) {
-          await queryClient.refetchQueries({ queryKey: ['/api/transactions', company.id] });
-          await queryClient.refetchQueries({ queryKey: ['/api/customers', company.id] });
-        }
-
-        if (customer?.id) {
-          await queryClient.refetchQueries({ 
-            queryKey: ['/api/transactions', { customerId: customer.id }] 
-          });
-          await queryClient.refetchQueries({ 
-            queryKey: [`/api/customers/${customer.id}/sales`] 
-          });
-        }
-      }, 500);
+      toast.success('Venda registrada com sucesso!');
+      onOpenChange(false);
     },
     onError: (error) => {
       toast.error(error.message || 'Erro ao registrar venda', { duration: 5000 });

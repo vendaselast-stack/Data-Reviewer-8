@@ -10,6 +10,7 @@ import Checkout from "@/pages/Checkout.jsx";
 import PaymentSuccess from "@/pages/PaymentSuccess.jsx";
 import AcceptInvite from "@/pages/AcceptInvite.jsx";
 import AccessDenied from "@/pages/AccessDenied.jsx";
+import PaymentPending from "@/pages/PaymentPending.jsx";
 
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
@@ -51,7 +52,7 @@ function MainApp() {
         <Route path="/team" component={TeamPage} />
         <Route path="/profile" component={Profile} />
         
-        {user?.role === "super_admin" && (
+        {user?.isSuperAdmin && (
           <>
             <Route path="/admin" component={SuperAdminDashboard} />
             <Route path="/admin/customers" component={AdminCustomers} />
@@ -80,9 +81,18 @@ function AppContent() {
       <Route path="/accept-invite" component={AcceptInvite} />
       <Route path="/terms" component={TermsOfUse} />
       <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/payment-pending" component={PaymentPending} />
       <Route path="/" component={LandingPage} />
       <Route>
-        {auth.user ? <MainApp /> : <Login />}
+        {auth.user ? (
+          (auth.user.isSuperAdmin || auth.user.company?.paymentStatus === 'approved') ? (
+            <MainApp />
+          ) : (
+            <PaymentPending />
+          )
+        ) : (
+          <Login />
+        )}
       </Route>
     </Switch>
   );

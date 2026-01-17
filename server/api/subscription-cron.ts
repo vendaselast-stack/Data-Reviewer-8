@@ -1,0 +1,195 @@
+import { db } from "../db";
+import { subscriptions, companies, users } from "../../shared/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function checkAndSendSubscriptionEmails() {
+  const fiveDaysFromNow = new Date();
+  fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+  
+  const dateStr = fiveDaysFromNow.toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  console.log(`[Cron] Checking for subscriptions expiring on ${dateStr} and expired on ${yesterdayStr}`);
+
+  try {
+    // 1. Lembrete de 5 dias antes
+    const expiringSoon = await db
+      .select({
+        id: subscriptions.id,
+        companyId: subscriptions.companyId,
+        subscriberName: subscriptions.subscriberName,
+        expiresAt: subscriptions.expiresAt,
+        amount: subscriptions.amount,
+        ticketUrl: subscriptions.ticket_url,
+        companyName: companies.name,
+      })
+      .from(subscriptions)
+      .leftJoin(companies, eq(subscriptions.companyId, companies.id))
+      .where(
+        and(
+          eq(subscriptions.status, 'active'),
+          sql`DATE(${subscriptions.expiresAt}) = ${dateStr}`
+        )
+      );
+
+    for (const sub of expiringSoon) {
+      const [admin] = await db
+        .select({ email: users.email, name: users.name })
+        .from(users)
+        .where(and(eq(users.companyId, sub.companyId), eq(users.role, 'admin')))
+        .limit(1);
+
+      if (admin?.email) {
+        console.log(`[Cron] Sending payment reminder email to ${admin.email} for company ${sub.companyName}`);
+        
+        try {
+          await resend.emails.send({
+            from: 'Financeiro <contato@huacontrol.com.br>',
+            to: admin.email,
+            subject: `Lembrete de Vencimento - ${sub.companyName}`,
+            html: `
+              <div style="font-family: sans-serif; color: #333;">
+                <h2>Olá, ${admin.name || 'Administrador'}</h2>
+                <p>Sua assinatura vence em 5 dias (${new Date(sub.expiresAt!).toLocaleDateString('pt-BR')}).</p>
+                <p>Valor: <strong>R$ ${parseFloat(sub.amount || "0").toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></p>
+                ${sub.ticketUrl ? `<p>Você pode acessar seu boleto no link abaixo:</p><p><a href="${sub.ticketUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Acessar Boleto</a></p>` : ''}
+                <p>Evite o bloqueio do sistema mantendo seu pagamento em dia.</p>
+                <br/>
+                <p>Atenciosamente,<br/>Equipe Hua Control</p>
+              </div>
+            `
+          });
+        } catch (emailError) {
+          console.error(`[Cron] Failed to send email to ${admin.email}:`, emailError);
+        }
+      }
+    }
+
+    // 2. Notificação de Suspensão (1 dia após vencimento)
+    const justExpired = await db
+      .select({
+        id: subscriptions.id,
+        companyId: subscriptions.companyId,
+        subscriberName: subscriptions.subscriberName,
+        expiresAt: subscriptions.expiresAt,
+        amount: subscriptions.amount,
+        ticketUrl: subscriptions.ticket_url,
+        companyName: companies.name,
+      })
+      .from(subscriptions)
+      .leftJoin(companies, eq(subscriptions.companyId, companies.id))
+      .where(
+        and(
+          eq(subscriptions.status, 'active'),
+          sql`DATE(${subscriptions.expiresAt}) = ${yesterdayStr}`
+        )
+      );
+
+    for (const sub of justExpired) {
+      const [admin] = await db
+        .select({ email: users.email, name: users.name })
+        .from(users)
+        .where(and(eq(users.companyId, sub.companyId), eq(users.role, 'admin')))
+        .limit(1);
+
+      if (admin?.email) {
+        // Bloquear acesso da empresa
+        await db.update(companies)
+          .set({ paymentStatus: 'pending' } as any)
+          .where(eq(companies.id, sub.companyId as string));
+
+        console.log(`[Cron] Sending suspension email to ${admin.email} for company ${sub.companyName}`);
+        
+        // Data para o próximo dia (hoje + 1)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dueDateStr = tomorrow.toLocaleDateString('pt-BR');
+
+        try {
+          await resend.emails.send({
+            from: 'Financeiro <contato@huacontrol.com.br>',
+            to: admin.email,
+            subject: `Acesso Suspenso - ${sub.companyName}`,
+            html: `
+              <div style="font-family: sans-serif; color: #333;">
+                <h2 style="color: #d9534f;">Acesso Suspenso - ${sub.companyName}</h2>
+                <p>Olá, ${admin.name || 'Administrador'}</p>
+                <p>Seu acesso ao sistema foi suspenso devido ao não pagamento da assinatura vencida em ${new Date(sub.expiresAt!).toLocaleDateString('pt-BR')}.</p>
+                <p>Para reativar sua conta, realize o pagamento do boleto abaixo.</p>
+                <p>Novo Vencimento: <strong>${dueDateStr}</strong></p>
+                <p>Valor: <strong>R$ ${parseFloat(sub.amount || "0").toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></p>
+                ${sub.ticketUrl ? `<p><a href="${sub.ticketUrl}" style="background-color: #d9534f; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Boleto Atualizado</a></p>` : ''}
+                <p>Após a confirmação do pagamento, seu acesso será liberado automaticamente.</p>
+                <br/>
+                <p>Atenciosamente,<br/>Equipe Hua Control</p>
+              </div>
+            `
+          });
+        } catch (emailError) {
+          console.error(`[Cron] Failed to send suspension email to ${admin.email}:`, emailError);
+        }
+      }
+    }
+    // 3. E-mail de Boas-vindas (Criação de Conta)
+    // Isso deve ser chamado no signup, mas podemos adicionar um check aqui para empresas recém-criadas sem e-mail enviado
+    const newCompanies = await db
+      .select({
+        id: companies.id,
+        name: companies.name,
+        paymentStatus: companies.paymentStatus,
+        createdAt: companies.createdAt,
+      })
+      .from(companies)
+      .where(
+        and(
+          eq(companies.paymentStatus, 'pending'),
+          sql`${companies.createdAt} > now() - interval '1 hour'`
+        )
+      );
+
+    for (const company of newCompanies) {
+      const [admin] = await db
+        .select({ email: users.email, name: users.name })
+        .from(users)
+        .where(and(eq(users.companyId, company.id), eq(users.role, 'admin')))
+        .limit(1);
+
+      const [sub] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.companyId, company.id))
+        .limit(1);
+
+      if (admin?.email) {
+        console.log(`[Cron] Sending welcome email to ${admin.email} for company ${company.name}`);
+        try {
+          await resend.emails.send({
+            from: 'Boas-vindas <contato@huacontrol.com.br>',
+            to: admin.email,
+            subject: `Bem-vindo à Hua Control - ${company.name}`,
+            html: `
+              <div style="font-family: sans-serif; color: #333;">
+                <h2>Bem-vindo, ${admin.name || 'Administrador'}!</h2>
+                <p>É um prazer ter a <strong>${company.name}</strong> conosco.</p>
+                <p>Para liberar seu acesso total ao sistema, realize o pagamento do primeiro boleto.</p>
+                ${sub?.ticket_url ? `<p><a href="${sub.ticket_url}" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Acessar Primeiro Boleto</a></p>` : ''}
+                <p>Seu acesso será liberado automaticamente após a confirmação do pagamento.</p>
+                <br/>
+                <p>Atenciosamente,<br/>Equipe Hua Control</p>
+              </div>
+            `
+          });
+        } catch (emailError) {
+          console.error(`[Cron] Failed to send welcome email to ${admin.email}:`, emailError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("[Cron] Error checking expiring subscriptions:", error);
+  }
+}

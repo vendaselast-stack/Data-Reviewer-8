@@ -4,11 +4,28 @@ import http from "http";
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import { registerAllRoutes } from "./routes/index";
+
+import { checkAndSendSubscriptionEmails } from "./api/subscription-cron";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "5000", 10);
 const isDev = process.env.NODE_ENV !== "production";
+
+// Mock cron job - in production this would be a real cron job
+// Run once on startup and then every 24 hours
+if (process.env.DATABASE_URL) {
+  checkAndSendSubscriptionEmails();
+  setInterval(checkAndSendSubscriptionEmails, 24 * 60 * 60 * 1000);
+}
+
+console.log(`[Server] Starting in ${isDev ? 'development' : 'production'} mode`);
+console.log(`[Server] PORT: ${PORT}`);
+console.log(`[Server] DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
+
+// Health check - FIRST (before any db-dependent routes)
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
 // Security Headers
 app.use(helmet({
@@ -19,7 +36,6 @@ app.use(helmet({
 // Basic Rate Limiting
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW = 1 * 60 * 1000;
-const MAX_REQUESTS = 100000000;
 
 app.use((req, res, next) => {
   const ip = req.ip || "unknown";
@@ -45,29 +61,42 @@ app.use(cookieParser());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Register API routes
-registerAllRoutes(app);
-
 // Create HTTP server
 const httpServer = http.createServer(app);
 
 (async () => {
-  if (isDev) {
-    const { setupVite } = await import("./vite");
-    // setupVite in this environment expects (server, app)
-    await setupVite(httpServer, app);
-  } else {
-    const staticPath = path.join(__dirname, "..", "dist", "public");
-    app.use(express.static(staticPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(staticPath, "index.html"));
-    });
-  }
+  try {
+    // Register API routes (requires DATABASE_URL)
+    if (process.env.DATABASE_URL) {
+      const { registerAllRoutes } = await import("./routes/index");
+      registerAllRoutes(app);
+      console.log("[Server] API routes registered");
+    } else {
+      console.warn("[Server] DATABASE_URL not set - API routes disabled");
+    }
 
-  // Start server
-  httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-  });
+    if (isDev) {
+      // Development: use Vite dev server (only imported in dev)
+      const viteModule = await import("./vite");
+      await viteModule.setupVite(httpServer, app);
+    } else {
+      // Production: serve static files
+      const staticPath = path.join(__dirname, "..", "dist", "public");
+      console.log(`[Server] Serving static files from: ${staticPath}`);
+      app.use(express.static(staticPath));
+      app.get("*", (_req, res) => {
+        res.sendFile(path.join(staticPath, "index.html"));
+      });
+    }
+
+    // Start server
+    httpServer.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    });
+  } catch (error) {
+    console.error("[Server] Fatal error during startup:", error);
+    process.exit(1);
+  }
 })();
 
 export default app;

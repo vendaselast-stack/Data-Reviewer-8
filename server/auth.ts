@@ -4,7 +4,12 @@ import { db } from "./db";
 import { users, companies, sessions, subscriptions, auditLogs } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-for-dev-only";
+
+if (!JWT_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("JWT_SECRET environment variable is required in production");
+}
+
 const JWT_EXPIRY = "7d";
 const BCRYPT_ROUNDS = 12;
 
@@ -130,22 +135,35 @@ export async function createCompany(name: string, document: string) {
   return result[0];
 }
 
-export async function createSession(userId: string, companyId: string, token: string) {
+export async function createSession(userId: string, companyId: string | null, token: string) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
   
   const result = await db
     .insert(sessions)
-    .values({ userId, companyId, token, expiresAt })
+    .values({ 
+      userId, 
+      companyId, 
+      token, 
+      expiresAt 
+    } as any)
     .returning();
   return result[0];
 }
 
-export async function invalidateSession(token: string) {
-  await db.delete(sessions).where(eq(sessions.token, token));
-}
-
 export async function checkSubscriptionStatus(companyId: string): Promise<boolean> {
+  const company = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.id, companyId));
+  
+  if (!company.length) return false;
+  
+  // Bloqueia se o status de pagamento não for aprovado
+  if (company[0].paymentStatus !== "approved") {
+    return false;
+  }
+
   const sub = await db
     .select()
     .from(subscriptions)
@@ -159,7 +177,7 @@ export async function checkSubscriptionStatus(companyId: string): Promise<boolea
 
 export async function createAuditLog(
   userId: string,
-  companyId: string,
+  companyId: string | null,
   action: string,
   resourceType: string,
   resourceId: string | undefined,
@@ -179,7 +197,7 @@ export async function createAuditLog(
       ipAddress,
       userAgent,
       status,
-    });
+    } as any);
   } catch (error) {
     console.error("Failed to create audit log:", error);
   }

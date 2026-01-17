@@ -6,13 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Building2, FileText, User, UserCheck, Mail, Lock, CheckCircle2, UserPlus, ArrowLeft } from "lucide-react";
-import { formatCNPJ } from "@/utils/masks";
+import { formatCNPJ, formatCPF } from "@/utils/masks";
 
 const PLANS = {
-  basic: { name: 'Basic', price: 'R$ 99', features: 'Até 100 clientes, relatórios simples' },
-  monthly: { name: 'Mensal', price: 'R$ 97', features: 'Acesso completo, até 3 usuários' },
-  pro: { name: 'Vitalício', price: 'R$ 997', features: 'Acesso vitalício, usuários ilimitados' },
-  enterprise: { name: 'Enterprise', price: 'Customizado', features: 'Ilimitado, suporte 24/7' }
+  monthly: { name: 'Mensal', price: 'R$ 215', features: 'Acesso completo ao sistema' },
 };
 
 export default function Signup() {
@@ -24,12 +21,18 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     name: "",
-    plan: "pro",
+    plan: "monthly",
+    cep: "",
+    rua: "",
+    numero: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
   });
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const [, setLocation] = useLocation();
-  const [selectedPlan, setSelectedPlan] = useState("pro");
+  const [selectedPlan, setSelectedPlan] = useState("monthly");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -44,8 +47,28 @@ export default function Signup() {
     const { name, value } = e.target;
     
     if (name === "companyDocument") {
-      const formatted = formatCNPJ(value);
+      const digits = value.replace(/\D/g, "");
+      const formatted = digits.length <= 11 ? formatCPF(value) : formatCNPJ(value);
       setFormData((prev) => ({ ...prev, [name]: formatted }));
+    } else if (name === "cep") {
+      const cep = value.replace(/\D/g, "");
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      if (cep.length === 8) {
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+          .then(res => res.json())
+          .then(data => {
+            if (!data.erro) {
+              setFormData(prev => ({
+                ...prev,
+                rua: data.logradouro,
+                bairro: data.bairro,
+                cidade: data.localidade,
+                estado: data.uf
+              }));
+            }
+          })
+          .catch(() => {});
+      }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -54,8 +77,17 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (Object.values(formData).some((v) => !v)) {
-      toast.error("Por favor, preencha todos os campos");
+    const requiredFields = [
+      'companyName', 'companyDocument', 'username', 'email', 
+      'password', 'confirmPassword', 'name', 'cep', 
+      'rua', 'numero', 'bairro', 'cidade', 'estado'
+    ];
+
+    console.log("Validação - Dados atuais:", formData);
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    if (missingFields.length > 0) {
+      console.log("Campos faltando:", missingFields);
+      toast.error("Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
@@ -85,9 +117,29 @@ export default function Signup() {
         formData.email,
         formData.password,
         formData.name,
-        formData.plan
+        formData.plan,
+        {
+          cep: formData.cep,
+          rua: formData.rua,
+          numero: formData.numero,
+          bairro: formData.bairro,
+          cidade: formData.cidade,
+          estado: formData.estado
+        }
       );
       
+      // Check if this was an existing pending signup
+      if (result?.existingPending) {
+        toast.success("Cadastro encontrado! Complete o pagamento para ativar sua conta.", {
+          duration: 4000
+        });
+        setTimeout(() => {
+          setLoading(false);
+          window.location.href = `/checkout?plan=${result.plan || formData.plan}`;
+        }, 1500);
+        return;
+      }
+
       // Check if this was a successful new signup
       if (result.user) {
         // O signup já salva no localStorage e seta paymentPending
@@ -96,39 +148,67 @@ export default function Signup() {
         setTimeout(() => setLocation("/checkout?plan=" + formData.plan), 1000);
       }
     } catch (error) {
+      console.log("Signup error caught:", error);
+      
       // Handle duplicate company scenarios
       const errorMsg = error.message || "";
-      if (errorMsg.includes("409") || errorMsg.includes("DUPLICATE")) {
-        if (errorMsg.includes("DUPLICATE_PAID")) {
-          toast.error("Essa empresa já possui um cadastro ativo com pagamento confirmado");
-        } else if (errorMsg.includes("DUPLICATE_PENDING")) {
-          // SALVAR NO LOCALSTORAGE ANTES DE REDIRECIONAR
-          const auth = localStorage.getItem("auth");
-          if (auth) {
-            try {
-              const parsed = JSON.parse(auth);
-              localStorage.setItem("auth", JSON.stringify({
-                ...parsed,
-                company: { ...parsed.company },
-                user: { ...parsed.user },
-                plan: formData.plan,
-                token: null,
-                paymentPending: true
-              }));
-            } catch (e) {
-            }
-          }
-          // Redirect to checkout for existing company
-          toast.success("Cadastro encontrado! Redirecionando para completar pagamento...");
-          setTimeout(() => setLocation("/checkout?plan=" + formData.plan), 1500);
-          return;
-        } else {
-          toast.error(errorMsg || "Essa empresa já existe");
-        }
+      console.log("Error message:", errorMsg);
+      
+      if (errorMsg.includes("DUPLICATE_PAID")) {
+        console.log("Detected DUPLICATE_PAID");
+        toast.error("Este CNPJ já possui uma conta ativa. Faça login para acessar o sistema.", {
+          duration: 5000
+        });
+        // Don't clear form, just redirect
+        setTimeout(() => {
+          setLoading(false);
+          setLocation("/login");
+        }, 2000);
+        return; // Important: prevent finally block from clearing loading
+      } else if (errorMsg.includes("DUPLICATE_PENDING")) {
+        console.log("Detected DUPLICATE_PENDING", error);
+        
+        // Salvar sessão temporária com os dados disponíveis
+        const pendingSession = {
+          company: { id: error.companyId },
+          user: { 
+            username: formData.username,
+            email: formData.email,
+            name: formData.name,
+            cep: formData.cep,
+            rua: formData.rua,
+            numero: formData.numero,
+            bairro: formData.bairro,
+            cidade: formData.cidade,
+            estado: formData.estado
+          },
+          plan: error.plan || formData.plan,
+          token: null,
+          paymentPending: true
+        };
+        
+        console.log("Saving pending session:", pendingSession);
+        localStorage.setItem("auth", JSON.stringify(pendingSession));
+        
+        // Redirect to checkout for existing company
+        toast.success("Cadastro encontrado! Complete o pagamento para ativar sua conta.", {
+          duration: 4000
+        });
+        setTimeout(() => {
+          console.log("Redirecting to checkout...");
+          setLoading(false);
+          window.location.href = `/checkout?plan=${pendingSession.plan}`;
+        }, 1500);
+        return; // Important: prevent finally block from clearing loading
+      } else if (errorMsg.includes("já existe") || errorMsg.includes("already exists")) {
+        toast.error("Este CNPJ já está cadastrado. Tente fazer login ou use outro CNPJ.", {
+          duration: 5000
+        });
       } else {
-        toast.error(errorMsg || "Erro ao criar conta");
+        toast.error(errorMsg || "Erro ao criar conta. Tente novamente.", {
+          duration: 4000
+        });
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -138,12 +218,12 @@ export default function Signup() {
       <Card className="w-full max-w-2xl p-8 shadow-lg">
         <div className="mb-8">
           <button 
-            onClick={() => setLocation('/')}
+            onClick={() => setLocation('/login')}
             className="flex items-center gap-2 text-primary hover:underline mb-4"
-            data-testid="button-back-plans"
+            data-testid="button-back-login"
           >
             <ArrowLeft className="w-4 h-4" />
-            Voltar aos Planos
+            Voltar ao Login
           </button>
           <h1 className="text-3xl font-bold">Criar Conta</h1>
           <p className="text-sm text-muted-foreground mt-2">Registre-se para começar a usar</p>
@@ -155,8 +235,7 @@ export default function Signup() {
             <div>
               <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Plano Selecionado</p>
               <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                {PLANS[selectedPlan]?.name} - {PLANS[selectedPlan]?.price}
-                {selectedPlan === 'pro' ? ' (Pagamento Único)' : '/mês'}
+                {PLANS[selectedPlan]?.name} - {PLANS[selectedPlan]?.price}/mês
               </p>
               <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">{PLANS[selectedPlan]?.features}</p>
             </div>
@@ -220,6 +299,83 @@ export default function Signup() {
                 disabled={loading}
                 data-testid="input-name"
                 className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">CEP</label>
+              <Input
+                type="text"
+                name="cep"
+                value={formData.cep}
+                onChange={handleChange}
+                placeholder="00000-000"
+                disabled={loading}
+                maxLength="9"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Estado (UF)</label>
+              <Input
+                type="text"
+                name="estado"
+                value={formData.estado}
+                onChange={handleChange}
+                placeholder="SP"
+                disabled={loading}
+                maxLength="2"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Cidade</label>
+              <Input
+                type="text"
+                name="cidade"
+                value={formData.cidade}
+                onChange={handleChange}
+                placeholder="Sua cidade"
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Bairro</label>
+              <Input
+                type="text"
+                name="bairro"
+                value={formData.bairro}
+                onChange={handleChange}
+                placeholder="Seu bairro"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2 space-y-2">
+              <label className="block text-sm font-medium">Rua</label>
+              <Input
+                type="text"
+                name="rua"
+                value={formData.rua}
+                onChange={handleChange}
+                placeholder="Endereço"
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Nº</label>
+              <Input
+                type="text"
+                name="numero"
+                value={formData.numero}
+                onChange={handleChange}
+                placeholder="123"
+                disabled={loading}
               />
             </div>
           </div>

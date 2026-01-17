@@ -1,10 +1,8 @@
 
 import React, { useState } from 'react';
-import { LogoIcon } from './constants';
 import { Menu, X } from 'lucide-react';
 import { Link } from "wouter";
-
-import LogoHUACONTROL from '@assets/unnamed-removebg-preview_1767731241199.png';
+import LogoNavbar from '@/assets/logo-navbar.png';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,7 +12,6 @@ const Header: React.FC = () => {
     { name: 'A Solução', href: '#solucao' },
     { name: 'Benefícios', href: '#beneficios' },
     { name: 'Recursos', href: '#recursos' },
-    { name: 'Planos', href: '#precos' },
     { name: 'FAQ', href: '#faq' },
   ];
 
@@ -22,7 +19,7 @@ const Header: React.FC = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 transition-all duration-300">
       <div className="container mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2.5 shrink-0 group transition-transform">
-          <img src={LogoHUACONTROL} alt="HUACONTROL Logo" className="h-10 md:h-12 w-auto object-contain" />
+          <img src={LogoNavbar} alt="HUACONTROL" className="h-10 md:h-12 w-auto object-contain" />
         </a>
         
         {/* Desktop Navigation */}
@@ -56,10 +53,12 @@ const Header: React.FC = () => {
             Entrar
           </Link>
           <a 
-            href="#precos" 
+            href="https://wa.me/5554996231432?text=Olá,%20gostaria%20de%20saber%20o%20valor!"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hidden sm:inline-flex bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-xl active:scale-95"
           >
-            Começar Agora
+            Falar com Consultor
           </a>
           
           {/* Mobile Menu Toggle */}
@@ -104,13 +103,15 @@ const Header: React.FC = () => {
             >
               Entrar
             </Link>
-            <Link 
-              href="/signup?plan=pro" 
+            <a 
+              href="https://wa.me/5554996231432?text=Olá,%20gostaria%20de%20saber%20o%20valor!"
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={() => setIsMenuOpen(false)}
               className="w-full bg-blue-600 text-white text-center py-4 rounded-xl font-bold shadow-lg"
             >
-              Garantir Acesso Vitalício
-            </Link>
+              Falar com Consultor
+            </a>
           </div>
         </nav>
       </div>

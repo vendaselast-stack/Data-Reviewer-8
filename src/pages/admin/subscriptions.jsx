@@ -1,28 +1,36 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Download, MoreVertical, Trash2, Eye, Lock, Unlock } from 'lucide-react';
+import { Download, MoreVertical, Trash2, Eye, Mail, CheckCircle, XCircle, Send, Loader2 } from 'lucide-react';
 import { SubscriptionEditModal } from '@/components/admin/SubscriptionEditModal';
 import { formatDateWithTimezone } from '@/utils/dateFormatter';
+import { formatCurrency } from '@/utils/formatters';
 
-const apiRequest = async (url, options = {}) => {
+const apiRequest = async (method, url, body = null) => {
   const token = JSON.parse(localStorage.getItem('auth') || '{}').token;
-  const response = await fetch(url, {
-    ...options,
+  const options = {
+    method,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
-      ...options.headers,
     },
-  });
+  };
+  
+  if (body && method !== 'GET') {
+    options.body = JSON.stringify(body);
+  }
+  
+  const response = await fetch(url, options);
   
   if (!response.ok) {
     const error = await response.json();
@@ -58,6 +66,8 @@ function SubscriptionListContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [mailSub, setMailSub] = useState(null);
+  const [dueDate, setDueDate] = useState('');
 
   const { data: subscriptions = [], isLoading } = useQuery({
     queryKey: ['/api/admin/subscriptions'],
@@ -88,22 +98,36 @@ function SubscriptionListContent() {
     },
   });
 
-  const toggleStatusMutation = useMutation({
-    mutationFn: (subscription) => apiRequest('PATCH', `/api/admin/subscriptions/${subscription.id}`, { status: subscription.status === 'active' ? 'blocked' : 'active' }),
+  const toggleCompanyStatus = useMutation({
+    mutationFn: ({ companyId, status }) => 
+      apiRequest('PATCH', `/api/admin/companies/${companyId}`, { 
+        subscriptionStatus: status, 
+        paymentStatus: status === 'active' ? 'approved' : 'pending' 
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/subscriptions'] });
-      toast.success('Sucesso: Status da assinatura atualizado');
+      toast.success('Status da empresa atualizado');
     },
-    onError: (error) => {
-      toast.error('Erro: ' + error.message);
-    },
+    onError: (err) => toast.error(err.message),
   });
 
-  const filtered = subscriptions.filter(s =>
-    (s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.subscriberName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.paymentMethod?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const resendBoleto = useMutation({
+    mutationFn: ({ id, dueDate }) => apiRequest('POST', `/api/admin/subscriptions/${id}/resend-boleto`, { dueDate }),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Boleto enviado com sucesso');
+      setMailSub(null);
+      setDueDate('');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const filtered = useMemo(() => {
+    return subscriptions.filter(s =>
+      (s.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.subscriberName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.paymentMethod?.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [subscriptions, searchTerm]);
 
   const isActive = (subscription) => {
     if (subscription.status === 'blocked') return false;
@@ -119,7 +143,7 @@ function SubscriptionListContent() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-bold text-foreground">Assinaturas</h1>
+          <h1 className="text-4xl font-bold text-foreground">Assinaturas e Pagamentos</h1>
           <p className="text-sm text-muted-foreground mt-2">Gerencie todas as assinaturas das empresas</p>
         </div>
         <Button 
@@ -150,9 +174,10 @@ function SubscriptionListContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data Compra</TableHead>
-                  <TableHead>Nome do Comprador</TableHead>
-                  <TableHead>Forma de Pagamento</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Primeiro Pagamento</TableHead>
                   <TableHead>Próximo Vencimento</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -161,33 +186,33 @@ function SubscriptionListContent() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan="7" className="text-center py-8 text-muted-foreground">
                       Carregando assinaturas...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan="7" className="text-center py-8 text-muted-foreground">
                       Nenhuma assinatura encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((s) => (
                     <TableRow key={s.id} data-testid={`row-subscription-${s.id}`}>
-                      <TableCell className="text-sm" data-testid={`text-created-${s.id}`}>
-                        {formatDateWithTimezone(s.createdAt)}
+                      <TableCell>
+                        <div className="font-medium">{s.companyName}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{s.companyDocument}</div>
                       </TableCell>
-                      <TableCell className="font-medium">{s.subscriberName || 'N/A'}</TableCell>
-                      <TableCell className="text-sm capitalize">
-                        {s.paymentMethod ? s.paymentMethod.replace('_', ' ') : '-'}
+                      <TableCell><Badge variant="outline">{s.plan?.toUpperCase()}</Badge></TableCell>
+                      <TableCell>{formatCurrency(s.amount)}</TableCell>
+                      <TableCell className="text-sm">
+                        {formatDateWithTimezone(s.createdAt)}
                       </TableCell>
                       <TableCell className="text-sm">
                         {s.isLifetime ? (
-                          <Badge variant="outline">Vitalício</Badge>
+                          <Badge variant="secondary">Vitalício</Badge>
                         ) : s.expiresAt ? (
-                          <div>
-                            {formatDateWithTimezone(s.expiresAt)}
-                          </div>
+                          formatDateWithTimezone(s.expiresAt)
                         ) : (
                           '-'
                         )}
@@ -197,16 +222,17 @@ function SubscriptionListContent() {
                           variant={isActive(s) ? 'default' : s.status === 'blocked' ? 'destructive' : 'secondary'}
                           data-testid={`badge-status-${s.id}`}
                         >
-                          {isActive(s) ? 'Ativo' : s.status === 'blocked' ? 'Cancelado' : 'Não Pagou'}
+                          {isActive(s) ? 'Ativo' : s.status === 'blocked' ? 'Bloqueada' : 'Pendente/Inativa'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <SubscriptionActionsMenu
                           subscription={s}
                           onView={() => setSelectedSubscription(s)}
-                          onToggleStatus={() => toggleStatusMutation.mutate(s)}
+                          onResendBoleto={() => setMailSub(s)}
+                          onToggleCompanyStatus={(newStatus) => toggleCompanyStatus.mutate({ companyId: s.companyId, status: newStatus })}
                           onDelete={() => setDeleteConfirm(s)}
-                          isStatusLoading={toggleStatusMutation.isPending}
+                          isPending={toggleCompanyStatus.isPending || resendBoleto.isPending}
                         />
                       </TableCell>
                     </TableRow>
@@ -217,6 +243,40 @@ function SubscriptionListContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Send Email Dialog */}
+      <Dialog open={!!mailSub} onOpenChange={() => setMailSub(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar Boleto por E-mail</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Data de Vencimento do Boleto</Label>
+              <Input 
+                type="date" 
+                value={dueDate} 
+                onChange={(e) => setDueDate(e.target.value)} 
+              />
+            </div>
+            {mailSub && (
+              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                Enviando boleto de <strong>R$ {parseFloat(mailSub.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> para a empresa <strong>{mailSub.companyName}</strong>.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setMailSub(null)}>Cancelar</Button>
+            <Button 
+              onClick={() => resendBoleto.mutate({ id: mailSub.id, dueDate })}
+              disabled={!dueDate || resendBoleto.isPending}
+            >
+              {resendBoleto.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Send className="w-4 h-4 mr-2" />}
+              Confirmar e Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Subscription Edit Modal */}
       {selectedSubscription && (
@@ -260,13 +320,14 @@ function SubscriptionListContent() {
   );
 }
 
-function SubscriptionActionsMenu({ subscription, onView, onToggleStatus, onDelete, isStatusLoading }) {
+function SubscriptionActionsMenu({ subscription, onView, onResendBoleto, onToggleCompanyStatus, onDelete, isPending }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
           size="icon" 
+          disabled={isPending}
           data-testid={`button-actions-${subscription.id}`}
         >
           <MoreVertical className="h-4 w-4" />
@@ -277,22 +338,19 @@ function SubscriptionActionsMenu({ subscription, onView, onToggleStatus, onDelet
           <Eye className="h-4 w-4 mr-2" />
           Ver Detalhes
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={onResendBoleto} data-testid={`action-resend-${subscription.id}`}>
+          <Mail className="h-4 w-4 mr-2" />
+          Enviar E-mail
+        </DropdownMenuItem>
         <DropdownMenuItem 
-          onClick={onToggleStatus}
-          disabled={isStatusLoading}
-          className={subscription.status === 'blocked' ? 'text-green-600' : 'text-orange-600'}
+          onClick={() => onToggleCompanyStatus(subscription.status === 'active' ? 'suspended' : 'active')}
+          className={subscription.status === 'active' ? 'text-destructive' : 'text-green-600'}
           data-testid={`action-toggle-status-${subscription.id}`}
         >
-          {subscription.status === 'blocked' ? (
-            <>
-              <Unlock className="h-4 w-4 mr-2" />
-              Desbloquear
-            </>
+          {subscription.status === 'active' ? (
+            <><XCircle className="h-4 w-4 mr-2" /> Suspender Conta</>
           ) : (
-            <>
-              <Lock className="h-4 w-4 mr-2" />
-              Bloquear
-            </>
+            <><CheckCircle className="h-4 w-4 mr-2" /> Ativar Conta</>
           )}
         </DropdownMenuItem>
         <DropdownMenuItem 
